@@ -2,7 +2,11 @@
   "cSpell.words": [
     "Embedder",
     "embedders",
+    "endfor",
+    "fastapi",
     "Ollama",
+    "termy",
+    "uvicorn",
     "yblog"
   ]
 }
