@@ -1,0 +1,35 @@
+/*========= page template css ==========*/
+.page-template .footer-credit--img{
+    background-color: var(--page-bg);
+}
+.callto{
+    margin-bottom: rem(50);
+    &__grid{
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: rem(30);
+        
+        & .callto-text{
+            h5{
+                font-size: rem(30);
+                font-weight: 600;
+                color: var(--pc);
+                line-height: rem(45);
+                margin-bottom: 0;
+            }
+        }
+        & .login-btn{
+            width: auto;
+        }
+    }
+}
+@import 'breadcrumb';
+@import 'contact';
+@import 'error';
+@import 'faq';
+@import 'login-signup';
+@import 'pricing';
+@import 'sidebar';
+@import 'pagination';

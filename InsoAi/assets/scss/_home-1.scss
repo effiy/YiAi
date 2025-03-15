@@ -1,0 +1,243 @@
+@import 'offcanvase';
+@import 'hero-slider';
+@import 'sponsor';
+@import 'service';
+@import 'about';
+@import 'project';
+@import 'team';
+@import 'testimonial';
+@import 'blog';
+
+// platform
+
+.platform {
+    &__content {
+        h3 {
+            font-size: rem(30);
+            font-weight: 600;
+            line-height: rem(45);
+            color: var(--pc);
+            margin-bottom: rem(20);
+        }
+
+        p {
+            margin-bottom: rem(30);
+        }
+    }
+
+    &__image {
+        position: relative;
+
+        img:nth-child(1) {
+            position: absolute;
+            height: 180px;
+            width: 180px;
+            object-fit: cover;
+            bottom: 80px;
+            left: -80px;
+            border-radius: 10px;
+
+            @include responsive($md) {
+                display: none;
+            }
+        }
+
+        img:nth-child(2) {
+            border-radius: rem(20);
+            min-height: rem(450);
+        }
+    }
+
+    & .row {
+        @include responsive($md) {
+            flex-direction: column-reverse;
+            gap: rem(40);
+        }
+
+    }
+
+}
+
+// section
+.section {
+    &__title {
+        font-size: rem(30);
+        font-weight: 600;
+        color: var(--pc);
+        margin-bottom: rem(20);
+    }
+
+    &__subtitle {
+        font-size: rem(16);
+    }
+}
+
+// how it works (hiw) section
+.hiw {
+    &__tab {
+        display: grid;
+        grid-template-columns: 15% 85%;
+        align-items: center;
+
+        @include responsive($md) {
+            grid-template-columns: 1fr;
+        }
+
+        & .tab__elements {
+            @include responsive($md) {
+                flex-direction: row !important;
+                gap: rem(50) !important;
+                margin-bottom: rem(40);
+                justify-content: center !important;
+            }
+        }
+
+        & .tab__button {
+            height: rem(60);
+            width: rem(60);
+            border-radius: 50%;
+            color: var(--pc);
+            background: var(--g-1);
+            display: grid;
+            place-items: center;
+            position: relative;
+            cursor: pointer;
+            z-index: 1;
+            font-weight: 600;
+
+            &:before {
+                content: "";
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: -1;
+                margin: 2px;
+                border-radius: inherit;
+                background: var(--body-bg);
+            }
+
+            &.active {
+                &::before {
+                    background: var(--g-1);
+                }
+
+                &::after {
+                    content: "";
+                    width: 140px;
+                    background: #fff;
+                    height: 1px;
+                    position: absolute;
+                    left: 60px;
+
+                    @include responsive($md) {
+                        display: none;
+                    }
+                }
+            }
+        }
+
+        & .tab__content {
+            & .tab__item {
+                grid-template-columns: 55% 45%;
+                display: grid;
+
+                @include responsive($md) {
+                    grid-template-columns: 50% 50%;
+                }
+
+                @include responsive($sm) {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                & .tab__content--image {
+                    overflow: hidden;
+                    position: relative;
+                    z-index: 1;
+                    height: 100%;
+                    width: 100%;
+
+                    img {
+                        max-height: 330px;
+                        width: 100%;
+                        object-fit: cover;
+                        border-radius: 10px;
+
+                        @include responsive($md) {
+                            height: 100%;
+                            position: absolute;
+                            width: 100%;
+                        }
+
+                        @include responsive($sm) {
+                            position: relative;
+                        }
+                    }
+                }
+
+                & .tab__content--details {
+                    & .title {
+                        font-size: rem(55);
+                        font-weight: 700;
+                        line-height: rem(75);
+                        margin-bottom: rem(20);
+                    }
+
+                    h4 {
+                        font-size: rem(20);
+                        font-weight: 600;
+                        color: var(--pc);
+                        margin-bottom: rem(15);
+                    }
+
+                    p {
+                        margin-bottom: rem(30);
+                    }
+                }
+            }
+
+
+        }
+    }
+
+}
+
+// video section
+.video-player {
+    position: relative;
+}
+
+.play {
+    position: absolute;
+    background: black;
+    display: flex;
+    width: 4rem;
+    aspect-ratio: 1/1;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    color: var(--pc);
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 2;
+    opacity: 0;
+    scale: 0;
+}
+
+.video-container {
+    aspect-ratio: 16/9;
+    background-size: cover;
+    background-position: center 50%;
+    position: relative;
+    max-height: 770px;
+    width: 100%;
+}
+.video-iframe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}

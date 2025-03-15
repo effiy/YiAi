@@ -1,0 +1,108 @@
+/*====== sidebar ========*/
+.sidebar {
+   background: var(--body-bg);
+   border-radius: var(--radius);
+   padding: rem(20);
+   &__widget{
+
+    &:not(:last-child){
+        margin-bottom: rem(30);
+    }
+    & .search{
+        position: relative;
+        input{
+            padding: rem(20);
+            border-radius: var(--radius);
+            width: 100%;
+            border: 0;
+            background: var(--sc);
+            color: var(--pc);
+            outline: 0;
+        }
+        button{
+            position: absolute;
+            right: 2%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: rem(40);
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            background: var(--btn-bg-2);
+            border: 0;
+            color: var(--pc);
+
+        }
+    }
+    h5{
+        font-size: rem(20);
+        font-weight: 600;
+        color: var(--pc);
+        padding-bottom: rem(20);
+        border-bottom: 1px solid var(--bc);
+    }
+    &--category{
+        margin-top: rem(20);
+        li{
+            a{
+                display: flex;
+                justify-content: space-between;
+                color: var(--btc);
+                margin-bottom: rem(20);
+                @include animation(transition, all .3s ease-in);
+                span{
+
+                }
+                &:hover{
+                    color: var(--pc);
+                }
+            }
+        }
+    }
+    &--popular{
+        margin-top: rem(30);
+        & .s-post{
+            
+            &:not(:last-child){
+                margin-bottom: rem(20);
+            }
+            & .p-img{
+                img{
+                    height: rem(60);
+                    min-width: rem(60);
+                    border-radius: 50%;
+                    object-fit: cover;
+                }
+            }
+            & .p-content{
+                font-size: rem(16);
+                span{}
+                a{
+                    font-weight: 600;
+                    color: var(--pc);
+                    font-size: rem(20);
+                    line-height: rem(26);
+                }
+            }
+        }
+    }
+    &--tag{
+        margin-top: rem(30);
+        .tag-item{
+            padding: rem(15);
+            background: var(--sc);
+            border-radius: var(--radius);
+            display: inline-block;
+            margin: rem(5);
+            border: 1px solid transparent;
+            @include animation(transition, all .3s ease-in);
+            a{
+                color: var(--pc);
+            }
+            &:hover{
+                border-color: #ff0078;
+            }
+        }
+    }
+
+   }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "InsoAi - AI writing, Video, and Image Generator HTML5 Template",
+  "version": "1.0.0",
+  "description": "InsoAi - AI writing, Video, and Image Generator HTML5 Template",
+  "main": "index.js",
+  "scripts": {
+    "dev": "sass assets/scss/main.scss style.css -w"
+  },
+  "author": "insomniacafe.org",
+  "license": "ISC",
+  "devDependencies": {
+    "node-sass": "^9.0.0",
+    "sass": "^1.69.4"
+  }
+}

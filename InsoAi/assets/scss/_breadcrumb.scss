@@ -1,0 +1,59 @@
+/*======== breadcrumb css ======== */
+.inso-breadcrumb {
+    background: var(--body-bg);
+    &__title{
+        h4{
+            font-size: rem(20);
+            font-weight: 600;
+            color: var(--pc);
+            margin-bottom: rem(20);
+        }
+    }
+    &__images{
+        position: absolute;
+        @include responsive($xs){
+            display: none;
+        }
+        img:nth-child(1){
+            position: absolute;
+            left: -10%;
+            @include responsive($sm){
+                left: -20%;
+            }
+            @include animation(animation, right 10s infinite alternate);
+        }
+        img:nth-child(2){
+            position: absolute;
+            left: 30%;
+            @include responsive($md){
+                display: none;
+            }
+            @include animation(animation, roundAnim 15s infinite alternate);
+        }
+        img:nth-child(3){
+            right: 0;
+            position: absolute;
+            bottom: -140px;
+            @include animation(animation, offOn 15s infinite alternate);
+        }
+    }
+    &__wrapper--link{
+        ul{
+            position: relative;
+            li{
+                display: inline-block;
+                font-size: rem(14);
+                a{
+                    color: var(--pc);
+                    font-weight: 600;
+                 
+                }
+            }
+            .breadcrumb-item + .breadcrumb-item::before {
+                padding-right: 5PX;
+                content: var(--bs-breadcrumb-divider, "-");
+            }
+        }
+    }
+
+}

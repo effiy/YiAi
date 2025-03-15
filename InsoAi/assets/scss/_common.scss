@@ -1,0 +1,69 @@
+
+:root {
+	--sora: 'Sora', sans-serif;
+	--font-awesome: "Font Awesome 6 Pro";
+	--btc: #CCC8DB; //body text color
+	--pc: #fff; // primary color
+	--bc: #364563; // border color
+	--line-height: 26px;
+	--fs: 16px; //default font size
+	--body-bg: #111827;
+	--fb: #0C121F; //footer background
+	--fc: #070C17; //footer credit bg
+	--btn-bg: #68F2A0; // btn bg
+	--btn-bg-2: #3F3EED;
+	--sc: #1C263B; // secondary color
+	--pb: #182236; // page-bg
+	--radius: 10px;
+	--g-1: linear-gradient(159deg, #FF006B 15.18%, #DD00F7 85.79%);
+	--g-2: linear-gradient(122deg, #55F4C4 9.38%, #CCFF02 56.31%, #CCFF03 100%);
+	--g-3: linear-gradient(90deg, #B22DFE 0%, #E16DCF 51.04%, #F58E4E 100%);
+}
+
+body{
+	font-family: var(--sora);
+	color: 	var(--btc);
+	line-height: var(--line-height);
+	font-size: var(--fs);
+	font-weight: 400;
+	background: var(--body-bg);
+	scroll-behavior: smooth;
+}
+a, abbr{
+	text-decoration: none;
+}
+ul{
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+p{
+	margin: 0;
+}
+img{
+	max-width: 100%;
+}
+.page-template{
+	background: var(--pb);
+}
+input[type="number"] {
+	-webkit-appearance: none;
+	-moz-appearance: textfield in !important;
+	appearance: none;
+}
+input {
+	@include animation(transition, all .3s ease-in);
+}
+textarea {
+	@include animation(transition, all .3s ease-in);
+}
+
+
+  .slick-track {
+	display: flex;
+	gap: 30px;
+}
+@import 'preloader';
+@import 'spacing';
+@import 'slider-style';
+

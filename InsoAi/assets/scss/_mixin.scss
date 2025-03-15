@@ -1,0 +1,118 @@
+@use "sass:math";
+$size: 16;
+
+/*======= px to rem converter =========*/
+@function rem($value) {
+  @return math.div(($value), $size) * 1rem;
+}
+
+/*========== flex ===========*/
+@mixin flex($direction, $justify, $align) {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  @include prefix(flex-direction, $direction);
+  @include prefix(justify-content, $justify);
+  @include prefix(align-items, $align);
+}
+
+@mixin df{
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+/*============ grid ============*/
+@mixin grid($columns, $rows, $gap) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  grid-template-rows: repeat($rows, 1fr);
+  gap: $gap;
+
+  @include prefix(grid-template-columns, repeat($columns, 1fr));
+  @include prefix(grid-template-rows, repeat($rows, 1fr));
+  @include prefix(gap, $gap);
+}
+
+/*========= prefix ==========*/
+@mixin prefix($property, $value) {
+  -webkit-#{$property}: $value;
+  -moz-#{$property}: $value;
+  -ms-#{$property}: $value;
+  #{$property}: $value;
+}
+
+/*========== animation prefix ============*/
+@mixin animation($property, $values...) {
+  @each $value in $values {
+    -webkit-#{$property}: $value;
+    -moz-#{$property}: $value;
+    -ms-#{$property}: $value;
+    -o-#{$property}: $value;
+    #{$property}: $value;
+  }
+}
+
+/*========== filter =======*/
+@mixin filter($value) {
+  -webkit-filter: $value;
+  filter: $value;
+}
+
+/*========= appearance ========*/
+@mixin appearance($value) {
+  -webkit-appearance: $value;
+  -moz-appearance: $value;
+  -ms-appearance: $value;
+  -o-appearance: $value;
+  appearance: $value;
+}
+
+/*========== keyframe with prefix ============*/ 
+@mixin keyframes($name) {
+  @-webkit-keyframes #{$name} {
+    @content;
+  }
+
+  @-moz-keyframes #{$name} {
+    @content;
+  }
+
+  @-ms-keyframes #{$name} {
+    @content;
+  }
+
+  @keyframes #{$name} {
+    @content;
+  }
+}
+
+/*========== for background image ============*/
+@mixin background {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/*======== responsive breakpoint ==========*/
+$xxl: "screen and (min-width: 1400px) and (max-width: 1600px)";
+$xl: "screen and (max-width: 1400px)";
+$lg: "screen and (max-width: 1200px)";
+$md: "screen and (max-width: 992px)";
+$sm: "screen and (max-width: 768px)";
+$xs: "screen and (max-width: 576px)";
+$xss: "screen and (max-width: 400px)";
+
+@mixin responsive($query) {
+  @media #{$query} {
+    @content;
+  }
+}
+
+@mixin ul{
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}

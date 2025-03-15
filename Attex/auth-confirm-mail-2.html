@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Confirm Mail | Attex - Responsive Tailwind CSS 3 Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc., Tailwind, TailwindCSS, Tailwind CSS 3" name="description">
+    <meta content="coderthemes" name="author">
+
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.ico">
+
+    <!--Swiper slider css-->
+    <link href="assets/libs/swiper/swiper-bundle.min.css" rel="stylesheet" type="text/css">
+
+    <!-- App css -->
+    <link href="assets/css/app.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Icons css -->
+    <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Theme Config Js -->
+    <script src="assets/js/config.js"></script>
+</head>
+
+<body class="">
+
+    <div class="lg:flex items-stretch h-screen bg-cover bg-center relative bg-no-repeat  bg-[url('../images/bg-auth.jpg')]">
+        <div class="bg-white lg:max-w-[480px] z-10 p-12 relative w-full h-full border-t-[3px] border-primary dark:bg-gray-800">
+            <div class="flex flex-col h-full gap-4">
+                <div class="mb-8 text-center lg:text-start">
+                    <a href="index.html" class="flex justify-center lg:justify-start">
+                        <img src="assets/images/logo.png" alt="logo" class="h-6 hidden dark:block">
+                        <img src="assets/images/logo-dark.png" alt="logo" class="h-6 block dark:hidden">
+                    </a>
+                </div>
+                <div class="my-auto">
+                    <div class="text-center">
+                        <img src="assets/images/svg/mail_sent.svg" alt="mail sent image" class="h-16 mx-auto">
+                        <h4 class="text-dark/70 text-center text-lg font-bold dark:text-light/80 mb-2 mt-9">Please check your email</h4>
+                        <p class="text-gray-400 mb-9">A email has been send to youremail@domain.com. Please check for an email from company and click on the included link to reset your password.</p>
+                    </div>
+
+                    <form action="#">
+                        <div class="text-center mb-6">
+                            <a href="index.html" class="btn bg-primary text-white w-full" type="submit"><i class="ri-home-4-line me-1.5"></i> Back To Home </a>
+                        </div>
+                    </form>
+                </div>
+
+                <footer class="text-center justify-center h-14 -mb-12">
+                    <p class="text-muted">
+                        <script>document.write(new Date().getFullYear())</script> © Attex - Coderthemes.com
+                    </p>
+                </footer>
+            </div>
+        </div>
+
+        <div class="bg-black/30 w-full h-full relative hidden lg:block">
+            <div class="absolute start-0 end-0 bottom-0 flex mt-auto justify-center text-center">
+                <div class="xl:w-1/2 w-full mx-auto">
+                    <div class="swiper mt-auto cursor-col-resize" id="swiper_one">
+                        <div class="swiper-wrapper mb-12">
+                            <div class="swiper-slide">
+                                <div class="swiper-slide-content">
+                                    <h2 class="text-3xl text-white mb-6">I love the color!</h2>
+                                    <p class="text-lg text-white mb-5"><i class="ri-double-quotes-l"></i> Everything you need is in this template. Love the overall look and feel. Not too flashy, and still very professional and smart.</p>
+                                    <p class="text-white mx-auto">
+                                        - Admin User
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- swiper-slide End -->
+    
+                            <div class="swiper-slide">
+                                <div class="swiper-slide-content">
+                                    <h2 class="text-3xl text-white mb-6">Flexibility !</h2>
+                                    <p class="text-lg text-white mb-5"><i class="ri-double-quotes-l"></i> Pretty nice theme, hoping you guys could add more features to this. Keep up the good work.</p>
+                                    <p class="text-white mx-auto">
+                                        - Admin User
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- swiper-slide End -->
+    
+                            <div class="swiper-slide">
+                                <div class="swiper-slide-content">
+                                    <h2 class="text-3xl text-white mb-6">Feature Availability!</h2>
+                                    <p class="text-lg text-white mb-5"><i class="ri-double-quotes-l"></i> This is a great product, helped us a lot and very quick to work with and implement.</p>
+                                    <p class="text-white mx-auto">
+                                        - Admin User
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- swiper-slide End -->
+                        </div>
+                        <!-- swiper-wrapper End -->
+    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plugin Js -->
+    <script src="assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="assets/libs/lucide/umd/lucide.min.js"></script>
+    <script src="assets/libs/@frostui/tailwindcss/frostui.js"></script>
+
+    <!-- App Js -->
+    <script src="assets/js/app.js"></script>
+
+    <!-- Swiper Plugin Js -->
+    <script src="assets/libs/swiper/swiper-bundle.min.js"></script>
+
+    <script>
+        // Swiper (Plugin)
+        // new Swiper("#swiper_one", {
+        //     slidesPerView: 0.5,
+        //     spaceBetween: 30,
+        //     loop: true,
+        //     autoplay: {
+        //         delay: 2500,
+        //         disableOnInteraction: false,
+        //     },
+        //     pagination: {
+        //         el: ".swiper-pagination",
+        //         clickable: true,
+        //     },
+        //     rewind: true,
+        //     navigation: {
+        //         nextEl: ".button-next",
+        //         prevEl: ".button-prev",
+        //     },
+        //     breakpoints: {
+        //         320: {
+        //             slidesPerView: 1,
+        //         },
+        //     },
+        // });
+
+        var swiper = new Swiper("#swiper_one", {
+            slidesPerView: 0.5,
+            spaceBetween: 30,
+            loop: true,
+            effect: "fade",
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+            },
+            breakpoints: {
+                 320: {
+                     slidesPerView: 1,
+                 },
+             },
+        });
+    </script>
+    
+</body>
+
+</html>

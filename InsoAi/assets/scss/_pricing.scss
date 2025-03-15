@@ -1,0 +1,345 @@
+/*======== Pricing Table ==========*/
+.pricing {
+    &__single {
+        padding: rem(30);
+        position: relative;
+        background: var(--sc);
+        border-radius: rem(10);
+
+        &:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--g-1);
+            border-radius: 1.25rem;
+            z-index: -1;
+            margin: -2px;
+            opacity: 0;
+            border-radius: inherit;
+            @include animation(transition, all .3s ease-in);
+        }
+
+        &:hover {
+            &::before {
+                opacity: 1;
+            }
+
+            & .line-border {
+                border-color: #fff;
+            }
+
+            & .btn-main {
+                &::before {
+                    background: #1C263B;
+                }
+            }
+        }
+    }
+
+    &__box {
+        &--plan {
+            & .plan-price {
+                h5 {
+                    font-size: rem(30);
+                    font-weight: 600;
+                    color: var(--pc);
+                    line-height: rem(45);
+                    margin-bottom: 0;
+                }
+            }
+
+            & .plan-name {
+                font-size: rem(14);
+                font-weight: 600;
+                color: var(--pc);
+            }
+        }
+
+        &--feature {
+            li {
+                margin-bottom: rem(20);
+                @include df;
+                justify-content: space-between;
+
+                &:last-child {
+                    margin-bottom: rem(30);
+                }
+
+                span {
+                    height: rem(25);
+                    width: rem(25);
+                    background: #3F3EED;
+                    border-radius: 50%;
+                    text-align: center;
+
+                    i {
+                        color: var(--pc);
+                        font-size: rem(15);
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+// style two
+.style-two .pricing {
+    &__single {
+        padding: rem(30);
+        position: relative;
+        background: var(--sc);
+        border-radius: rem(10);
+
+        &:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--g-2);
+            z-index: -1;
+            margin: -2px;
+            opacity: 0;
+            border-radius: inherit;
+            @include animation(transition, all .3s ease-in);
+        }
+
+        &:hover {
+            &::before {
+                opacity: 1;
+            }
+
+            & .line-border {
+                border-color: #fff;
+            }
+
+            & .btn-main {
+                &::before {
+                    background: #1C263B;
+                }
+            }
+        }
+    }
+
+    &__box {
+        text-align: center;
+        &--plan {
+            & .plan-price {
+                h5 {
+                    font-size: rem(30);
+                    font-weight: 600;
+                    color: var(--pc);
+                    line-height: rem(45);
+                    margin-bottom: 0;
+                }
+            }
+
+            & .plan-name {
+                font-size: rem(14);
+                font-weight: 600;
+                color: var(--pc);
+            }
+        }
+
+        &--feature {
+            li {
+                margin-bottom: rem(20);
+                @include df;
+                justify-content: start;
+                gap: rem(20);
+                color: var(--pc);
+
+                &:last-child {
+                    margin-bottom: rem(30);
+                }
+
+                span {
+                    height: rem(25);
+                    width: rem(25);
+                    background: transparent;
+                    border-radius: 50%;
+                    text-align: center;
+
+                    i {
+                        color: var(--pc);
+                        font-size: rem(15);
+                    }
+                }
+            }
+        }
+        .btn-main{
+            background: var(--g-2);
+            &:hover{
+                color: var(--pc);
+            }
+        }
+    }
+
+}
+
+
+//   style three
+.style-three .pricing {
+    &__single {
+        padding: rem(30);
+        position: relative;
+        background: var(--sc);
+        border-radius: rem(10);
+
+        &.popular-product {
+            padding-top: 0;
+            background: var(--sc);
+            margin-top: -4.875rem;
+            
+            @include responsive($sm) {
+                margin-top: 0;
+            }
+        }
+
+        @include animation(transition, all .3s ease-in);
+
+        & .plan-price {
+            sub {
+                font-size: rem(16);
+                color: var(--pc);
+                text-transform: capitalize;
+            }
+        }
+
+        & .popular {
+            padding: 1.875rem;
+            font-size: rem(14);
+            font-weight: 600;
+            color: var(--pc);
+            position: relative;
+            margin-bottom: 1.875rem;
+            overflow: hidden;
+
+            &::before {
+                position: absolute;
+                left: 20px;
+                bottom: 0;
+                content: "";
+                width: 117%;
+                background: var(--g-3);
+                height: 2.5px;
+                transform: translate(-12%);
+            }
+        }
+
+        &:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--g-3);
+            border-radius: 1.25rem;
+            z-index: -1;
+            margin: -2px;
+            opacity: 0;
+            border-radius: inherit;
+            @include animation(transition, all .3s ease-in);
+        }
+
+        &:hover {
+            &::before {
+                opacity: 1;
+            }
+
+            & .line-border {
+                border-color: #fff;
+            }
+
+            & .btn-main {
+                &::before {
+                    background: #1C263B;
+                }
+            }
+        }
+
+        &.popular-product::before {
+            opacity: 1;
+        }
+
+    }
+
+    &__box {
+        &--plan {
+            & .plan-price {
+                h5 {
+                    font-size: rem(30);
+                    font-weight: 600;
+                    color: var(--pc);
+                    line-height: rem(45);
+                    margin-bottom: 0;
+                }
+            }
+
+            & .plan-name {
+                font-size: rem(14);
+                font-weight: 600;
+                color: var(--pc);
+            }
+        }
+
+        &--feature {
+            li {
+                margin-bottom: rem(20);
+                @include df;
+                justify-content: start;
+                gap: rem(15);
+                color: var(--pc);
+
+                &:last-child {
+                    margin-bottom: rem(30);
+                }
+
+                span {
+                    background: transparent;
+
+                    i {
+                        color: var(--pc);
+                        font-size: rem(15);
+                    }
+                }
+            }
+        }
+
+        a {
+            text-align: center;
+            display: block;
+            color: var(--pc);
+            @include animation(transition, all .3s ease-in);
+            &:hover {
+                background: var(--g-3);
+                background-clip: text;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+    }
+
+}
+
+
+.bg {
+    position: absolute;
+    left: -150px;
+    top: -150px;
+    z-index: -1;
+}
+
+.bg img {
+    object-fit: cover;
+    object-position: top center;
+    /*! position: absolute; */
+    height: 800px;
+    filter: blur(15px);
+}

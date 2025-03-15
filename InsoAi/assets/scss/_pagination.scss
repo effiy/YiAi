@@ -1,0 +1,44 @@
+/*======== pagination css ========*/
+.pagination {
+    & .pagination-link {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        gap: .875rem;
+
+        & .page-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--body-bg);
+            border-radius: .625rem;
+            height: 3.125rem;
+            width: 3.125rem;
+            @include animation(transition, all .4s ease);
+            &:hover{
+                background: var(--g-1);
+                & a {
+                    color: var(--pc);
+
+                }
+            }
+            &.active{
+                background: var(--g-1);
+                & a{
+                    color: var(--pc);
+                }
+            }
+
+            & a {
+                height: 3.125rem;
+                width: 3.125rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                color: #fff;
+                @include animation(transition, all .4s ease);
+            }
+        }
+    }
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Lock Screen | Attex - Responsive Tailwind CSS 3 Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc., Tailwind, TailwindCSS, Tailwind CSS 3" name="description">
+    <meta content="coderthemes" name="author">
+
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.ico">
+
+    <!--Swiper slider css-->
+    <link href="assets/libs/swiper/swiper-bundle.min.css" rel="stylesheet" type="text/css">
+
+    <!-- App css -->
+    <link href="assets/css/app.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Icons css -->
+    <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Theme Config Js -->
+    <script src="assets/js/config.js"></script>
+</head>
+
+<body class="">
+
+    <div class="flex items-stretch h-screen bg-cover bg-center relative bg-no-repeat  bg-[url('../images/bg-auth.jpg')]">
+        <div class="bg-white lg:max-w-[480px] z-10 p-12 relative w-full h-full border-t-[3px] border-primary dark:bg-gray-800">
+            <div class="flex flex-col h-full gap-4">
+                <div class="mb-8 text-center lg:text-start">
+                    <a href="index.html" class="flex justify-center lg:justify-start">
+                        <img src="assets/images/logo.png" alt="logo" class="h-6 hidden dark:block">
+                        <img src="assets/images/logo-dark.png" alt="logo" class="h-6 block dark:hidden">
+                    </a>
+                </div>
+                <div class="my-auto">
+                    <!-- title-->
+                    <div class="">
+                        <img src="assets/images/users/avatar-1.jpg" alt="" class="rounded-full shadow h-16 mx-auto">
+                        <h4 class="text-dark/70 text-center text-lg font-bold dark:text-light/80 mb-2 mt-6"> Hi ! Tosha </h4>
+                        <p class="text-gray-500 text-center mb-9">Enter your password to access the admin.</p>
+                    </div>
+
+                    <!-- form -->
+                    <form action="#">
+                        <div class="mb-6 space-y-2">
+                            <label for="password" class="font-semibold text-gray-500">Password</label>
+                            <div class="flex items-center">
+                                <input type="password" id="password" class="form-input rounded-e-none" placeholder="Enter your password">
+                                <span class="px-3 py-1 border rounded-e-md -ms-px dark:border-white/10"><i class="ri-eye-line text-lg"></i></span>
+                            </div>
+                        </div>
+                        <div class=" text-center">
+                            <button class="btn bg-primary text-white w-full" type="submit"><i class="ri-login-box-line me-1"></i> Log In </button>
+                        </div>
+                        <!-- social-->
+                        <div class="text-center mt-9">
+                            <p class="text-gray-400 text-base mb-6">Authentication in with</p>
+                            <ul class="inline-flex gap-2">
+                                <li class="">
+                                    <a href="javascript: void(0);" class="rounded-full border-2 border-primary text-primary w-8 h-8 inline-flex items-center justify-center"><i class="ri-facebook-circle-fill"></i></a>
+                                </li>
+                                <li class="">
+                                    <a href="javascript: void(0);" class="rounded-full border-2 border-danger text-danger w-8 h-8 inline-flex items-center justify-center"><i class="ri-google-fill"></i></a>
+                                </li>
+                                <li class="">
+                                    <a href="javascript: void(0);" class="rounded-full border-2 border-info text-info w-8 h-8 inline-flex items-center justify-center"><i class="ri-twitter-fill"></i></a>
+                                </li>
+                                <li class="">
+                                    <a href="javascript: void(0);" class="rounded-full border-2 border-secondary text-secondary w-8 h-8 inline-flex items-center justify-center"><i class="ri-github-fill"></i></a>
+                                </li>
+                            </ul>
+                        </div>
+                    </form>
+                    <!-- end form-->
+                </div>
+
+                <footer class="text-center justify-center h-14 -mb-12">
+                    <p class="text-gray-400">Not you? return  <a href="auth-register-2.html" class="text-gray-500 ms-1"><b>Sign In</b></a></p>
+                </footer>
+            </div>
+        </div>
+
+        <div class="bg-black/30 w-full h-full relative hidden lg:block">
+            <div class="absolute start-0 end-0 bottom-0 flex mt-auto justify-center text-center">
+                <div class="xl:w-1/2 w-full mx-auto">
+                    <div class="swiper mt-auto cursor-col-resize" id="swiper_one">
+                        <div class="swiper-wrapper mb-12">
+                            <div class="swiper-slide">
+                                <div class="swiper-slide-content">
+                                    <h2 class="text-3xl text-white mb-6">I love the color!</h2>
+                                    <p class="text-lg text-white mb-5"><i class="ri-double-quotes-l"></i> Everything you need is in this template. Love the overall look and feel. Not too flashy, and still very professional and smart.</p>
+                                    <p class="text-white mx-auto">
+                                        - Admin User
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- swiper-slide End -->
+    
+                            <div class="swiper-slide">
+                                <div class="swiper-slide-content">
+                                    <h2 class="text-3xl text-white mb-6">Flexibility !</h2>
+                                    <p class="text-lg text-white mb-5"><i class="ri-double-quotes-l"></i> Pretty nice theme, hoping you guys could add more features to this. Keep up the good work.</p>
+                                    <p class="text-white mx-auto">
+                                        - Admin User
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- swiper-slide End -->
+    
+                            <div class="swiper-slide">
+                                <div class="swiper-slide-content">
+                                    <h2 class="text-3xl text-white mb-6">Feature Availability!</h2>
+                                    <p class="text-lg text-white mb-5"><i class="ri-double-quotes-l"></i> This is a great product, helped us a lot and very quick to work with and implement.</p>
+                                    <p class="text-white mx-auto">
+                                        - Admin User
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- swiper-slide End -->
+                        </div>
+                        <!-- swiper-wrapper End -->
+    
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plugin Js -->
+    <script src="assets/libs/simplebar/simplebar.min.js"></script>
+    <script src="assets/libs/lucide/umd/lucide.min.js"></script>
+    <script src="assets/libs/@frostui/tailwindcss/frostui.js"></script>
+
+    <!-- App Js -->
+    <script src="assets/js/app.js"></script>
+
+    <!-- Swiper Plugin Js -->
+    <script src="assets/libs/swiper/swiper-bundle.min.js"></script>
+
+    <script>
+        // Swiper (Plugin)
+        // new Swiper("#swiper_one", {
+        //     slidesPerView: 0.5,
+        //     spaceBetween: 30,
+        //     loop: true,
+        //     autoplay: {
+        //         delay: 2500,
+        //         disableOnInteraction: false,
+        //     },
+        //     pagination: {
+        //         el: ".swiper-pagination",
+        //         clickable: true,
+        //     },
+        //     rewind: true,
+        //     navigation: {
+        //         nextEl: ".button-next",
+        //         prevEl: ".button-prev",
+        //     },
+        //     breakpoints: {
+        //         320: {
+        //             slidesPerView: 1,
+        //         },
+        //     },
+        // });
+
+        var swiper = new Swiper("#swiper_one", {
+            slidesPerView: 0.5,
+            spaceBetween: 30,
+            loop: true,
+            effect: "fade",
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+            },
+            breakpoints: {
+                 320: {
+                     slidesPerView: 1,
+                 },
+             },
+        });
+    </script>
+    
+</body>
+
+</html>

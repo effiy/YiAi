@@ -1,0 +1,19 @@
+// sponsor
+.sponsor{
+    &__item{
+        padding: rem(40);
+        background: #0F1623;
+        text-align: center;
+       
+    }
+    &__single{
+        cursor: pointer;
+        img{
+            filter: brightness(1);
+            @include animation(transition, all .3s ease-in);
+            &:hover{
+                filter: brightness(5);
+            }
+        }
+    }
+}

@@ -1,0 +1,52 @@
+/*======= footer ====*/
+.footer {
+    background: var(--fb);
+
+    &__widget {
+        margin-bottom: 1.875rem;
+        & h5 {
+            margin-bottom: 1.875rem;
+            font-size: rem(16);
+            color: #fff;
+            font-weight: 600;
+
+        }
+        &--item{
+            ul{
+                li{
+                    a{
+                        display: block;
+                        margin-bottom: rem(15);
+                        color: var(--btc);
+                        @include animation(all .3s ease-in);
+
+                        &:hover{
+                            font-weight: 500;
+                            color: var(--pc);
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+}
+
+/*===== footer credit=====*/
+.footer-credit {
+    padding: 1.625rem 0;
+    position: relative;
+    background: var(--fc);
+
+    & .copy-right {
+        a{
+            background: var(--g-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            
+        }
+    }
+   
+}

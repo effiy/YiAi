@@ -1,0 +1,264 @@
+/*====== about us ======*/
+.about {
+    position: relative;
+
+    &__small {
+        padding: 10.625rem 0;
+        position: relative;
+
+        &--img {
+            & .about__wrapper--vector {
+                @include responsive($sm) {
+                    display: none;
+                }
+
+                & img:nth-child(1) {
+                    left: -10%;
+                    position: absolute;
+                    @include animation(animation, left 5s ease-in infinite);
+                }
+
+                & img:nth-child(2) {
+                    position: absolute;
+                    right: 15%;
+                    bottom: 15%;
+                    @include animation(animation, roundAnim 15s ease-in infinite);
+                }
+
+                & img:nth-child(3) {
+                    position: absolute;
+                    bottom: 15%;
+                    right: 0;
+                    ;
+                    @include animation(animation, offOn 5s ease-in infinite);
+
+                }
+            }
+
+            & .about-img {
+                display: flex;
+                justify-content: center;
+
+                & img:nth-child(1) {
+                    position: absolute;
+                    height: 8.125rem;
+                    width: 8.125rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    left: 10%;
+                    top: 0;
+
+                    @include responsive($sm) {
+                        left: 0;
+                        border: 3px solid var(--btn-bg);
+                    }
+                }
+
+                & img:nth-child(2) {
+                    position: absolute;
+                    height: 8.5rem;
+                    width: 8.5rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    right: 10%;
+                    top: 10%;
+
+                    @include responsive($sm) {
+                        right: 0;
+                        border: 3px solid var(--btn-bg);
+                    }
+                }
+
+                & img:nth-child(3) {
+                    position: absolute;
+                    height: 8.75rem;
+                    width: 8.75rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    bottom: 0%;
+                    left: 10%;
+
+                    @include responsive($sm) {
+                        left: 0;
+                        border: 3px solid var(--btn-bg);
+                    }
+                }
+
+                & img:nth-child(4) {
+                    position: absolute;
+                    height: 18rem;
+                    width: 18rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    object-position: left;
+                    top: 55%;
+                    transform: translateY(-55%);
+                    border: 2px solid var(--btn-bg);
+
+                    @include responsive($sm) {
+                        height: 16rem;
+                        width: 16rem;
+                        z-index: -1;
+                    }
+                }
+            }
+
+        }
+    }
+
+    &__wrapper {
+        display: grid;
+        grid-template-columns: 50% auto;
+
+        @include responsive($md) {
+            grid-template-columns: auto;
+        }
+
+        &--text {
+            & .hero__button {
+                display: inline-block;
+
+                & a {
+                    margin: 0;
+                }
+            }
+
+            & .section__title {
+                margin-bottom: 1.25rem;
+            }
+        }
+
+        & .section__content {
+            max-width: 80%;
+        }
+
+        &--li {
+            display: flex;
+            gap: 3.125rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            @include responsive($xss){
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            & li {
+                background: var(--Linear-01);
+                background-clip: text;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                position: relative;
+                left: 1rem;
+
+                &:before {
+                    position: absolute;
+                    content: '';
+                    height: 0.625rem;
+                    width: 0.625rem;
+                    border-radius: 50%;
+                    background: var(--Linear-01);
+                    left: -1rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+
+                }
+
+            }
+
+        }
+
+        &--vector {
+            & img:nth-child(1) {
+                left: -10%;
+                position: absolute;
+                @include animation(animation, left 5s infinite alternate, right 5s infinite alternate);
+            }
+
+            & img:nth-child(2) {
+                position: absolute;
+                right: 15%;
+                bottom: 15%;
+                @include animation(animation, roundAnim 15s ease-in infinite);
+            }
+
+            & img:nth-child(3) {
+                position: absolute;
+                bottom: 15%;
+                left: -5%;
+                @include animation(animation, offOn 5s ease-in infinite);
+
+            }
+        }
+
+        &--img {
+
+            position: relative;
+
+            & .about-img {
+                display: flex;
+                justify-content: center;
+
+                & img:nth-child(1) {
+                    position: absolute;
+                    height: 8.125rem;
+                    width: 8.125rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    left: 15%;
+
+                    @include responsive($xl) {
+                        left: 10%;
+                    }
+                }
+
+                & img:nth-child(2) {
+                    position: absolute;
+                    height: 8.5rem;
+                    width: 8.5rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    right: 10%;
+                    top: 8%;
+
+                    @include responsive($xl) {
+                        right: 5%;
+                    }
+                }
+
+                & img:nth-child(3) {
+                    position: absolute;
+                    height: 8.75rem;
+                    width: 8.75rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    bottom: 0%;
+                    left: 10%;
+
+                    @include responsive($xl) {
+                        left: 5%;
+                    }
+                }
+
+                & img:nth-child(4) {
+                    position: absolute;
+                    height: 15rem;
+                    width: 15rem;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    object-position: left;
+                    top: 55%;
+                    transform: translateY(-55%);
+                    border: 2px solid var(--btn-bg);
+
+                    @include responsive($xl) {
+                        height: 13.75rem;
+                        width: 13.75rem;
+                    }
+                }
+            }
+
+        }
+
+    }
+}

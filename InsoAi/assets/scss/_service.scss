@@ -1,0 +1,72 @@
+.style-one{
+    .service {
+        &__box {
+            text-align: center;
+            &:hover{
+                & .service__icon{
+                    background: var(--g-1);
+                    outline-color: #CCC8DB;
+                }
+            }
+        }
+    
+        &__icon {
+            height: rem(60);
+            width: rem(60);
+            border-radius: 50%;
+            background: #3F3EED;
+            text-align: center;
+            display: grid;
+            place-items: center;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            top: rem(25);
+            outline: rem(10) solid var(--body-bg);
+            z-index: 2;
+            @include animation(transition, all .3s ease-in);
+            
+            i {
+                font-size: rem(20);
+                color: var(--pc);
+            }
+        }
+    
+        &__meta {
+            padding: 50px 20px 20px;
+            background: var(--g-1);
+            color: #fff;
+            border-radius: 10px;
+            position: relative;
+            z-index: 1;
+    
+            &::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: -1;
+                margin: 2px;
+                border-radius: inherit;
+                background: var(--body-bg);
+            }
+    
+            h4 {
+                font-size: rem(20);
+                font-weight: 600;
+                color: var(--pc);
+                margin-bottom: rem(15);
+            }
+    
+            p {
+                font-size: rem(14);
+                color: var(--btc);
+            }
+    
+        }
+    
+    }
+
+}

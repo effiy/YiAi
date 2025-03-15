@@ -1,0 +1,67 @@
+.login{
+    &__wrapper{
+        background: var(--body-bg);
+        border-radius: rem(10);
+        padding: rem(50) rem(30);
+        text-align: center;
+        font-weight: 600;
+        color: var(--pc);
+        h5{
+            margin-bottom: rem(20);
+            font-size: rem(20);
+        }
+        h2{
+            margin-bottom: rem(30);
+            font-size: rem(30);
+        }
+
+    }
+    &__google{
+        a{
+            font-size: rem(14);
+            font-weight: 600;
+            color: var(--pc);
+            padding: rem(15);
+            border: 1px solid var(--sc);
+            display: inline-block;
+            width: 100%;
+            border-radius: rem(10);
+            text-transform: capitalize;
+            @include animation(transition, all .3s ease-in);
+            span{
+                margin-right: 10px;
+            }
+            &:hover{
+                border-color: #ff0078;
+            }
+        }
+    }
+    &__form{
+        input{
+            padding: rem(18);
+            border-radius: rem(10);
+            outline: none;
+            border: 1px solid transparent;
+            background: var(--sc);
+            color: var(--pc);
+            width: 100%;
+            margin-bottom: rem(20);
+            @include animation(transition, all .3s ease-in);
+            &:focus {
+                border-color: #ff0078;
+            }
+        }
+    }
+}
+.register-button {
+	text-align: left;
+	margin-top: 15px;
+}
+.forgot-password a {
+	font-size: 14px;
+    font-weight: 400;
+}
+.register-button p {
+	font-size: 14px;
+    font-weight: 400;
+}
