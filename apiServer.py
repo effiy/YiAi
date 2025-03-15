@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers import base
 
 app = FastAPI(
     title="FastAPI Server",
@@ -16,9 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    return {"message": "欢迎使用 FastAPI!"}
+# 注册路由
+app.include_router(base.router)
 
 if __name__ == "__main__":
     import uvicorn
