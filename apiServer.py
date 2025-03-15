@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import base
+from routers import base, oss
 
 app = FastAPI(
     title="FastAPI Server",
@@ -19,6 +19,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(base.router)
+app.include_router(oss.router)
 
 if __name__ == "__main__":
     import uvicorn
