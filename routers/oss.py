@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
-import oss2
+import oss2 # type: ignore
 from typing import Optional
 import os
 from datetime import datetime
