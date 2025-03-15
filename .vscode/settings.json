@@ -1,9 +1,13 @@
 {
   "cSpell.words": [
+    "cursorclass",
+    "dotenv",
     "Embedder",
     "embedders",
     "endfor",
     "fastapi",
+    "maxcached",
+    "mincached",
     "Ollama",
     "termy",
     "uvicorn",
