@@ -27,6 +27,7 @@ class Database:
         
         # 初始化 MySQL 连接池
         self.mysql = MysqlDBUtil()
+        
         await self.mysql.initialize()
         
         self._initialized = True
