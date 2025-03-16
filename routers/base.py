@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import logging
 import time
-
+from database import db
 # 配置日志
 logger = logging.getLogger(__name__)
 
