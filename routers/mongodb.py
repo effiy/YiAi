@@ -106,10 +106,12 @@ async def update(post_data: Optional[Dict[str, Any]] = {}):
                 await collection.find_one_and_update(filter_dict, {"$set": post_data})
             else:
                 post_data['key'] = str(uuid.uuid4())
+                post_data['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
                 await collection.insert_one(post_data)
         
         else:
             post_data['key'] = str(uuid.uuid4())
+            post_data['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
             await collection.insert_one(post_data)
         
         return Resp_ok(data=post_data['key'])

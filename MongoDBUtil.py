@@ -40,14 +40,16 @@ class MongoDBUtil:
 
     async def insert_one(self, collection_name: str, document: Dict[str, Any]) -> str:
         """插入单个文档"""
-        document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        if 'createdTime' not in document:
+            document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         result = await self._db[collection_name].insert_one(document)
         return str(result.inserted_id)
 
     async def insert_many(self, collection_name: str, documents: List[Dict[str, Any]]) -> List[str]:
         """插入多个文档"""
         for document in documents:
-            document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            if 'createdTime' not in document:
+                document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         result = await self._db[collection_name].insert_many(documents)
         return [str(id) for id in result.inserted_ids]
 
