@@ -17,13 +17,10 @@ async def health_check():
         # 确保数据库已初始化
         if not hasattr(db, '_initialized') or not db._initialized:
             await db.initialize()
-
         # 测试 MySQL 连接
         mysql_status = "healthy"
         try:
-            async with db.mysql.get_connection() as conn:
-                async with conn.cursor() as cursor:
-                    await cursor.execute("SELECT 1")
+            await db.mysql.execute_one("SELECT 1")
         except Exception as e:
             mysql_status = f"unhealthy: {str(e)}"
             logger.error(f"MySQL health check failed: {str(e)}")
