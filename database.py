@@ -24,7 +24,6 @@ class Database:
             
         # 初始化 MongoDB
         self.mongodb = MongoDBUtil()
-        
         # 初始化 MySQL 连接池
         self.mysql = MysqlDBUtil()
         

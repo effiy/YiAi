@@ -2,7 +2,7 @@ import sys
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import base, oss, mysql
+from routers import base, oss, mysql, mongodb
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -30,6 +30,7 @@ app.add_middleware(
 app.include_router(base.router)
 app.include_router(oss.router)
 app.include_router(mysql.router)
+app.include_router(mongodb.router)
 
 def start():
     import uvicorn
