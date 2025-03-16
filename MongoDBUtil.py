@@ -1,7 +1,14 @@
-from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import ReturnDocument
 from typing import Any, Dict, List, Optional
 import os
+from datetime import datetime
 from dotenv import load_dotenv # type: ignore
+import logging
+from config import settings
+
+# 配置日志
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -17,10 +24,15 @@ class MongoDBUtil:
 
     def __init__(self):
         if not self._client:
-            mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-            database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
-            self._client = AsyncIOMotorClient(mongodb_url)
-            self._db = self._client[database_name]
+            try:
+                mongodb_url = settings.MONGODB_URL
+                database_name = settings.MONGODB_DATABASE
+                self._client = AsyncIOMotorClient(mongodb_url)
+                self._db = self._client[database_name]
+                logger.info(f"MongoDB 连接已初始化，数据库: {database_name}")
+            except Exception as e:
+                logger.error(f"MongoDB 连接初始化失败: {str(e)}")
+                raise
 
     @property
     def db(self):
@@ -28,11 +40,14 @@ class MongoDBUtil:
 
     async def insert_one(self, collection_name: str, document: Dict[str, Any]) -> str:
         """插入单个文档"""
+        document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         result = await self._db[collection_name].insert_one(document)
         return str(result.inserted_id)
 
     async def insert_many(self, collection_name: str, documents: List[Dict[str, Any]]) -> List[str]:
         """插入多个文档"""
+        for document in documents:
+            document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         result = await self._db[collection_name].insert_many(documents)
         return [str(id) for id in result.inserted_ids]
 
@@ -46,7 +61,7 @@ class MongoDBUtil:
         query: Dict[str, Any],
         skip: int = 0,
         limit: int = 100,
-        sort: List[tuple] = None
+        sort: Optional[List[tuple]] = None
     ) -> List[Dict[str, Any]]:
         """查找多个文档"""
         cursor = self._db[collection_name].find(query).skip(skip).limit(limit)
@@ -112,4 +127,25 @@ class MongoDBUtil:
     async def close(self):
         """关闭数据库连接"""
         if self._client:
-            self._client.close() 
+            self._client.close()
+            logger.info("MongoDB 连接已关闭")
+
+    async def find_one_and_delete(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """查找并删除单个文档"""
+        result = await self._db[collection_name].find_one_and_delete(query)
+        return result
+
+    async def find_one_and_update(
+        self,
+        collection_name: str,
+        query: Dict[str, Any],
+        update: Dict[str, Any],
+        return_document: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """查找并更新单个文档"""
+        result = await self._db[collection_name].find_one_and_update(
+            query,
+            {"$set": update},
+            return_document=ReturnDocument.AFTER if return_document else ReturnDocument.BEFORE
+        )
+        return result
