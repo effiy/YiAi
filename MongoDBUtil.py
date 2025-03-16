@@ -18,7 +18,7 @@ class MongoDBUtil:
     def __init__(self):
         if not self._client:
             mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-            database_name = os.getenv("MONGODB_DATABASE", "fastapi_db")
+            database_name = os.getenv("MONGODB_DATABASE", "db")
             self._client = AsyncIOMotorClient(mongodb_url)
             self._db = self._client[database_name]
 
