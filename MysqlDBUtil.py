@@ -1,8 +1,8 @@
-import pymysql
-from pymysql.cursors import DictCursor
-from dbutils.pooled_db import PooledDB
-from typing import List, Dict, Any, Optional, Union
+import aiomysql # type: ignore
+from typing import List, Dict, Any, Optional
 import logging
+from contextlib import asynccontextmanager
+from config import settings
 
 class MysqlDBUtil:
     _instance = None
@@ -13,101 +13,99 @@ class MysqlDBUtil:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, host: str = "localhost", 
-                 port: int = 3306,
-                 user: str = "root",
-                 password: str = "",
-                 database: str = "",
-                 charset: str = "utf8mb4",
-                 pool_size: int = 5):
+    async def initialize(self):
+        """初始化连接池"""
         if not self._pool:
-            self._pool = PooledDB(
-                creator=pymysql,
-                maxconnections=pool_size,
-                mincached=2,
-                maxcached=5,
-                blocking=True,
-                host=host,
-                port=port,
-                user=user,
-                password=password,
-                database=database,
-                charset=charset,
-                cursorclass=DictCursor
+            self._pool = await aiomysql.create_pool(
+                host=settings.MYSQL_HOST,
+                port=settings.MYSQL_PORT,
+                user=settings.MYSQL_USER,
+                password=settings.MYSQL_PASSWORD,
+                db=settings.MYSQL_DATABASE,
+                charset=settings.MYSQL_CHARSET,
+                maxsize=settings.MYSQL_POOL_SIZE,
+                minsize=2,
+                autocommit=True
             )
-            logging.info("MySQL connection pool initialized")
+            logging.info("MySQL 连接池已初始化")
 
-    def get_connection(self):
+    @asynccontextmanager
+    async def get_connection(self):
         """获取数据库连接"""
-        return self._pool.connection()
+        if not self._pool:
+            await self.initialize()
+        async with self._pool.acquire() as conn:
+            yield conn
 
-    def execute_query(self, sql: str, params: tuple = None) -> List[Dict[str, Any]]:
+    async def execute_query(self, sql: str, params: tuple = None) -> List[Dict[str, Any]]:
         """
         执行查询语句
         :param sql: SQL 查询语句
         :param params: 查询参数
         :return: 查询结果列表
         """
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(sql, params)
-                return cursor.fetchall()
+        async with self.get_connection() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cursor:
+                await cursor.execute(sql, params)
+                return await cursor.fetchall()
 
-    def execute_one(self, sql: str, params: tuple = None) -> Optional[Dict[str, Any]]:
+    async def execute_one(self, sql: str, params: tuple = None) -> Optional[Dict[str, Any]]:
         """
         执行查询语句并返回单条结果
         :param sql: SQL 查询语句
         :param params: 查询参数
         :return: 单条查询结果
         """
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(sql, params)
-                return cursor.fetchone()
+        async with self.get_connection() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cursor:
+                await cursor.execute(sql, params)
+                return await cursor.fetchone()
 
-    def execute_update(self, sql: str, params: tuple = None) -> int:
+    async def execute_update(self, sql: str, params: tuple = None) -> int:
         """
         执行更新语句（INSERT/UPDATE/DELETE）
         :param sql: SQL 更新语句
         :param params: 更新参数
         :return: 影响的行数
         """
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                rows = cursor.execute(sql, params)
-                conn.commit()
-                return rows
+        async with self.get_connection() as conn:
+            async with conn.cursor() as cursor:
+                return await cursor.execute(sql, params)
 
-    def batch_execute(self, sql: str, params_list: List[tuple]) -> int:
+    async def batch_execute(self, sql: str, params_list: List[tuple]) -> int:
         """
         批量执行 SQL 语句
         :param sql: SQL 语句
         :param params_list: 参数列表
         :return: 影响的行数
         """
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                rows = cursor.executemany(sql, params_list)
-                conn.commit()
-                return rows
+        async with self.get_connection() as conn:
+            async with conn.cursor() as cursor:
+                return await cursor.executemany(sql, params_list)
 
-    def execute_transaction(self, sql_list: List[str], params_list: List[tuple]) -> bool:
+    async def execute_transaction(self, sql_list: List[str], params_list: List[tuple]) -> bool:
         """
         执行事务
         :param sql_list: SQL 语句列表
         :param params_list: 参数列表
         :return: 事务是否成功
         """
-        conn = self.get_connection()
-        try:
-            with conn.cursor() as cursor:
-                for sql, params in zip(sql_list, params_list):
-                    cursor.execute(sql, params)
-                conn.commit()
+        async with self.get_connection() as conn:
+            try:
+                await conn.begin()
+                async with conn.cursor() as cursor:
+                    for sql, params in zip(sql_list, params_list):
+                        await cursor.execute(sql, params)
+                await conn.commit()
                 return True
-        except Exception as e:
-            conn.rollback()
-            logging.error(f"Transaction failed: {str(e)}")
-            return False
-        finally:
-            conn.close()
+            except Exception as e:
+                await conn.rollback()
+                logging.error(f"Transaction failed: {str(e)}")
+                return False
+
+    async def close(self):
+        """关闭连接池"""
+        if self._pool:
+            self._pool.close()
+            await self._pool.wait_closed()
+            self._pool = None
