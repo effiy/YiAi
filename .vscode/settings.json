@@ -10,6 +10,8 @@
     "maxconnections",
     "mincached",
     "Ollama",
+    "PYTHONDONTWRITEBYTECODE",
+    "ruiyi",
     "termy",
     "uvicorn",
     "yblog"

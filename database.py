@@ -50,35 +50,6 @@ class Database:
             charset=DatabaseConfig.MYSQL_CHARSET,
             pool_size=DatabaseConfig.MYSQL_POOL_SIZE
         )
-        
-        # 初始化 SQLAlchemy
-        self.engine = create_engine(
-            f"mysql+pymysql://{DatabaseConfig.MYSQL_USER}:{DatabaseConfig.MYSQL_PASSWORD}"
-            f"@{DatabaseConfig.MYSQL_HOST}:{DatabaseConfig.MYSQL_PORT}/{DatabaseConfig.MYSQL_DATABASE}",
-            pool_size=DatabaseConfig.MYSQL_POOL_SIZE,
-            pool_pre_ping=True
-        )
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        self.Base = declarative_base()
-
-    @contextmanager
-    def get_db(self) -> Generator[Session, None, None]:
-        """获取数据库会话的上下文管理器"""
-        db = self.SessionLocal()
-        try:
-            yield db
-        except SQLAlchemyError as e:
-            logger.error(f"Database error: {str(e)}")
-            db.rollback()
-            raise
-        finally:
-            db.close()
 
 # 创建全局数据库实例
 db = Database()
-
-# 导出常用组件
-mongodb=db.mongodb
-mysql=db.mysql
-Base = db.Base
-get_db = db.get_db 
