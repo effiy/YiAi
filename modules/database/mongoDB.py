@@ -290,10 +290,10 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     query = params.get("query", {"name": "张三"})
     
     # 创建MongoDB实例
-    mongodb = MongoDB()
+    mongo_client = MongoDB()
     try:
         # 查询文档
-        document = await mongodb.find_one(
+        document = await mongo_client.find_one(
             collection_name=cname, 
             query=query if query else {}
         )
@@ -314,7 +314,7 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         raise
     finally:
         # 确保关闭连接
-        await mongodb.close()
+        await mongo_client.close()
 
 async def update_one(params: Dict[str, Any] = None) -> int:
     """测试更新单个文档
