@@ -241,6 +241,9 @@ class MongoDB:
             logger.error(f"查找并更新文档失败: {str(e)}")
             raise
 
+# 创建全局单例MongoDB实例
+mongodb_instance = MongoDB()
+
 # 主函数，用于测试和演示MongoDB类的使用
 async def insert_one(params: Dict[str, Any] = None) -> str:
     """测试插入单个文档
@@ -259,16 +262,17 @@ async def insert_one(params: Dict[str, Any] = None) -> str:
     cname = params.get("cname", "test_collection")
     document = params.get("document", {"name": "张三", "age": 30, "email": "zhangsan@example.com"})
     
-    mongo_client = MongoDB()
+    # 使用全局单例
     try:
-        doc_id = await mongo_client.insert_one(
+        doc_id = await mongodb_instance.insert_one(
             cname,
             document
         )
         logger.info(f"插入文档ID: {doc_id}")
         return doc_id
-    finally:
-        await mongo_client.close()
+    except Exception as e:
+        logger.error(f"插入文档时出错: {e}")
+        raise
 
 async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     """测试查找单个文档
@@ -289,11 +293,9 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     cname = params.get("cname", "test_collection")
     query = params.get("query", {"name": "张三"})
     
-    # 创建MongoDB实例
-    mongo_client = MongoDB()
     try:
         # 查询文档
-        document = await mongo_client.find_one(
+        document = await mongodb_instance.find_one(
             collection_name=cname, 
             query=query if query else {}
         )
@@ -312,9 +314,6 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         logger.error(f"查找文档时出错: {e}")
         logger.exception("详细错误信息:")
         raise
-    finally:
-        # 确保关闭连接
-        await mongo_client.close()
 
 async def update_one(params: Dict[str, Any] = None) -> int:
     """测试更新单个文档
@@ -335,17 +334,17 @@ async def update_one(params: Dict[str, Any] = None) -> int:
     query = params.get("query", {"name": "张三"})
     update = params.get("update", {"age": 31, "updated": True})
     
-    mongodb = MongoDB()
     try:
-        modified_count = await mongodb.update_one(
+        modified_count = await mongodb_instance.update_one(
             cname,
             query,
             update
         )
         logger.info(f"更新的文档数: {modified_count}")
         return modified_count
-    finally:
-        await mongodb.close()
+    except Exception as e:
+        logger.error(f"更新文档时出错: {e}")
+        raise
 
 async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     """测试查找并更新文档
@@ -368,9 +367,8 @@ async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[st
     update = params.get("update", {"status": "active"})
     return_document = params.get("return_document", True)
     
-    mongodb = MongoDB()
     try:
-        updated_user = await mongodb.find_one_and_update(
+        updated_user = await mongodb_instance.find_one_and_update(
             cname,
             query,
             update,
@@ -379,8 +377,9 @@ async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[st
         if updated_user:
             logger.info(f"用户 {updated_user['name']} 状态已更新为: {updated_user.get('status')}")
         return updated_user
-    finally:
-        await mongodb.close()
+    except Exception as e:
+        logger.error(f"查找并更新文档时出错: {e}")
+        raise
 
 async def insert_many(params: Dict[str, Any] = None) -> List[str]:
     """测试插入多个文档
@@ -402,16 +401,16 @@ async def insert_many(params: Dict[str, Any] = None) -> List[str]:
         {"name": "王五", "age": 35, "email": "wangwu@example.com"}
     ])
     
-    mongodb = MongoDB()
     try:
-        batch_ids = await mongodb.insert_many(
+        batch_ids = await mongodb_instance.insert_many(
             cname,
             documents
         )
         logger.info(f"批量插入ID: {batch_ids}")
         return batch_ids
-    finally:
-        await mongodb.close()
+    except Exception as e:
+        logger.error(f"批量插入文档时出错: {e}")
+        raise
 
 async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     """测试查询多个文档
@@ -432,9 +431,8 @@ async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     query = params.get("query", {"age": {"$gt": 25}})
     sort = params.get("sort", [("age", -1)])
     
-    mongodb = MongoDB()
     try:
-        users = await mongodb.find_many(
+        users = await mongodb_instance.find_many(
             cname,
             query,
             sort=sort
@@ -443,8 +441,9 @@ async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         for user in users:
             logger.info(f"用户: {user['name']}, 年龄: {user['age']}")
         return users
-    finally:
-        await mongodb.close()
+    except Exception as e:
+        logger.error(f"查询多个文档时出错: {e}")
+        raise
 
 async def count_documents(params: Dict[str, Any] = None) -> int:
     """测试文档计数
@@ -463,13 +462,13 @@ async def count_documents(params: Dict[str, Any] = None) -> int:
     cname = params.get("cname", "test_collection")
     query = params.get("query", {})
     
-    mongodb = MongoDB()
     try:
-        count = await mongodb.count_documents(cname, query)
+        count = await mongodb_instance.count_documents(cname, query)
         logger.info(f"总文档数: {count}")
         return count
-    finally:
-        await mongodb.close()
+    except Exception as e:
+        logger.error(f"统计文档数量时出错: {e}")
+        raise
 
 async def delete_many(params: Dict[str, Any] = None) -> int:
     """测试删除多个文档
@@ -488,13 +487,13 @@ async def delete_many(params: Dict[str, Any] = None) -> int:
     cname = params.get("cname", "test_collection")
     query = params.get("query", {})
     
-    mongodb = MongoDB()
     try:
-        deleted = await mongodb.delete_many(cname, query)
+        deleted = await mongodb_instance.delete_many(cname, query)
         logger.info(f"清理测试数据，删除了 {deleted} 条记录")
         return deleted
-    finally:
-        await mongodb.close()
+    except Exception as e:
+        logger.error(f"删除多个文档时出错: {e}")
+        raise
 
 async def main(params: Dict[str, Any] = None):
     """MongoDB类使用示例
