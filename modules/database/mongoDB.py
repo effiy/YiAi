@@ -6,6 +6,7 @@ from datetime import datetime, UTC
 import logging
 from dotenv import load_dotenv # type: ignore
 from contextlib import asynccontextmanager
+import asyncio
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -24,43 +25,55 @@ class MongoDB:
     _db: Optional[AsyncIOMotorDatabase] = None
     _pool_size: int = 10
     _max_pool_size: int = 50
+    _lock = asyncio.Lock()
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(MongoDB, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    async def initialize(self):
+        """异步初始化数据库连接"""
         if self._client is None:
-            try:
-                mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-                database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
-                
-                # 配置连接池
-                self._client = AsyncIOMotorClient(
-                    mongodb_url,
-                    maxPoolSize=self._max_pool_size,
-                    minPoolSize=self._pool_size,
-                    maxIdleTimeMS=30000,
-                    waitQueueTimeoutMS=10000,
-                    retryWrites=True,
-                    retryReads=True
-                )
-                self._db = self._client[database_name]
-                logger.info(f"MongoDB 连接已初始化，数据库: {database_name}")
-            except Exception as e:
-                logger.error(f"MongoDB 连接初始化失败: {str(e)}")
-                raise
+            async with self._lock:
+                # 双重检查锁定模式，避免多次初始化
+                if self._client is None:
+                    try:
+                        mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+                        database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
+                        
+                        # 配置连接池
+                        self._client = AsyncIOMotorClient(
+                            mongodb_url,
+                            maxPoolSize=self._max_pool_size,
+                            minPoolSize=self._pool_size,
+                            maxIdleTimeMS=30000,
+                            waitQueueTimeoutMS=10000,
+                            retryWrites=True,
+                            retryReads=True
+                        )
+                        self._db = self._client[database_name]
+                        logger.info(f"MongoDB 连接已初始化，数据库: {database_name}")
+                    except Exception as e:
+                        logger.error(f"MongoDB 连接初始化失败: {str(e)}")
+                        raise
+
+    def __init__(self):
+        # 不再在同步初始化方法中创建连接
+        pass
 
     @property
     def db(self) -> AsyncIOMotorDatabase:
         if self._db is None:
-            raise RuntimeError("数据库连接未初始化")
+            raise RuntimeError("数据库连接未初始化，请先调用 await initialize()")
         return self._db
 
     @asynccontextmanager
     async def get_collection(self, collection_name: str):
         """获取集合对象的上下文管理器"""
+        # 确保数据库已初始化
+        await self.initialize()
+        
         try:
             collection = self.db[collection_name]
             yield collection
@@ -211,6 +224,8 @@ class MongoDB:
         """关闭数据库连接"""
         if self._client is not None:
             self._client.close()
+            self._client = None
+            self._db = None
             logger.info("MongoDB 连接已关闭")
 
     async def find_one_and_delete(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -241,11 +256,10 @@ class MongoDB:
             logger.error(f"查找并更新文档失败: {str(e)}")
             raise
 
-# 创建全局单例MongoDB实例
-mongodb_instance = MongoDB()
-
 # 主函数，用于测试和演示MongoDB类的使用
 async def insert_one(params: Dict[str, Any] = None) -> str:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试插入单个文档
     
     Args:
@@ -264,6 +278,9 @@ async def insert_one(params: Dict[str, Any] = None) -> str:
     
     # 使用全局单例
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         doc_id = await mongodb_instance.insert_one(
             cname,
             document
@@ -275,6 +292,8 @@ async def insert_one(params: Dict[str, Any] = None) -> str:
         raise
 
 async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试查找单个文档
     
     Args:
@@ -294,6 +313,9 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     query = params.get("query", {"name": "张三"})
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         # 查询文档
         document = await mongodb_instance.find_one(
             collection_name=cname, 
@@ -316,6 +338,8 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         raise
 
 async def update_one(params: Dict[str, Any] = None) -> int:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试更新单个文档
     
     Args:
@@ -335,6 +359,9 @@ async def update_one(params: Dict[str, Any] = None) -> int:
     update = params.get("update", {"age": 31, "updated": True})
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         modified_count = await mongodb_instance.update_one(
             cname,
             query,
@@ -347,6 +374,8 @@ async def update_one(params: Dict[str, Any] = None) -> int:
         raise
 
 async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试查找并更新文档
     
     Args:
@@ -368,6 +397,9 @@ async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[st
     return_document = params.get("return_document", True)
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         updated_user = await mongodb_instance.find_one_and_update(
             cname,
             query,
@@ -382,6 +414,8 @@ async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[st
         raise
 
 async def insert_many(params: Dict[str, Any] = None) -> List[str]:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试插入多个文档
     
     Args:
@@ -402,6 +436,9 @@ async def insert_many(params: Dict[str, Any] = None) -> List[str]:
     ])
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         batch_ids = await mongodb_instance.insert_many(
             cname,
             documents
@@ -413,6 +450,8 @@ async def insert_many(params: Dict[str, Any] = None) -> List[str]:
         raise
 
 async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试查询多个文档
     
     Args:
@@ -432,6 +471,9 @@ async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     sort = params.get("sort", [("age", -1)])
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         users = await mongodb_instance.find_many(
             cname,
             query,
@@ -446,6 +488,8 @@ async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         raise
 
 async def count_documents(params: Dict[str, Any] = None) -> int:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试文档计数
     
     Args:
@@ -463,6 +507,9 @@ async def count_documents(params: Dict[str, Any] = None) -> int:
     query = params.get("query", {})
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         count = await mongodb_instance.count_documents(cname, query)
         logger.info(f"总文档数: {count}")
         return count
@@ -471,6 +518,8 @@ async def count_documents(params: Dict[str, Any] = None) -> int:
         raise
 
 async def delete_many(params: Dict[str, Any] = None) -> int:
+    mongodb_instance = MongoDB()
+    await mongodb_instance.initialize()
     """测试删除多个文档
     
     Args:
@@ -488,6 +537,9 @@ async def delete_many(params: Dict[str, Any] = None) -> int:
     query = params.get("query", {})
     
     try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+        
         deleted = await mongodb_instance.delete_many(cname, query)
         logger.info(f"清理测试数据，删除了 {deleted} 条记录")
         return deleted
@@ -504,6 +556,9 @@ async def main(params: Dict[str, Any] = None):
     logger.info("开始MongoDB测试...")
     
     try:
+        # 初始化数据库连接
+        # await mongodb_instance.initialize()
+        
         # 执行各个测试函数
         # await insert_one(params)
         await find_one(params)
@@ -520,10 +575,23 @@ async def main(params: Dict[str, Any] = None):
         logger.error(f"测试过程中发生错误: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import asyncio
     print("开始执行MongoDB测试...")
-    result = asyncio.run(main())
+    # 修复 "RuntimeError: Event loop is closed" 错误
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    
+    # 创建新的事件循环并使用with语句确保正确关闭
+    async def run_main():
+        mongodb = MongoDB()
+        try:
+            await mongodb.initialize()
+            return await main()
+        finally:
+            # 确保关闭MongoDB连接
+            await mongodb.close()
+    
+    result = asyncio.run(run_main())
     print(f"MongoDB测试执行完成！结果: {result}")
