@@ -1,5 +1,11 @@
+import sys, os, json
 from fastapi import FastAPI, Query # type: ignore
-import json
+
+# 禁用 Python 字节码缓存
+sys.dont_write_bytecode = True
+
+# 确保子进程也不生成 __pycache__
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 # 创建FastAPI应用实例
 app = FastAPI()
