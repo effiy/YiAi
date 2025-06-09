@@ -54,6 +54,7 @@ if __name__ == '__main__':
 
     # 解析命令行参数
     args = parser.parse_args()
-    # 注意：这里直接传入args.url和args.min_title_length，与main函数期望的字典参数不匹配
-    # 应该修改为: asyncio.run(main({"url": args.url, "min_title_length": args.min_title_length}))
-    asyncio.run(main(args.url, args.min_title_length))
+    # 将参数转换为字典格式，与main函数期望的参数格式匹配
+    params = {"url": args.url, "min_title_length": args.min_title_length}
+    # 运行主函数
+    asyncio.run(main(params))
