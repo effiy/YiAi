@@ -533,18 +533,21 @@ def delete_many(params: Dict[str, Any] = None) -> int:
         logger.error(f"删除多个文档时出错: {e}")
         raise
 
-def main(params: Dict[str, Any] = None):
+async def main(params: Dict[str, Any] = None):
     """MongoDB类使用示例
     
     Args:
         params: 参数字典，可选
+        
+    Returns:
+        Dict[str, Any]: 测试结果
     """
     logger.info("开始MongoDB测试...")
     
     try:
         # 执行各个测试函数
         # insert_one(params)
-        find_one(params)
+        document = find_one(params)
         # update_one(params)
         # find_one_and_update(params)
         # insert_many(params)
@@ -553,11 +556,12 @@ def main(params: Dict[str, Any] = None):
         # delete_many(params)
         
         logger.info("MongoDB测试完成")
-        return {"status": "success", "message": "MongoDB测试完成"}
+        return {"status": "success", "message": "MongoDB测试完成", "document": document}
     except Exception as e:
         logger.error(f"测试过程中发生错误: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     print("开始执行MongoDB测试...")
@@ -565,7 +569,8 @@ if __name__ == "__main__":
     mongodb = MongoDB()
     try:
         mongodb.initialize()
-        result = main()
+        import asyncio
+        result = asyncio.run(main())
         print(f"MongoDB测试执行完成！结果: {result}")
     finally:
         # 确保关闭MongoDB连接
