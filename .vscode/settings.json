@@ -1,7 +1,13 @@
 {
   "cSpell.words": [
+    "aiofiles",
     "arun",
+    "asyncio",
+    "dotenv",
     "fastapi",
+    "levelname",
+    "pymongo",
+    "ruiyi",
     "uvicorn"
   ]
 }

@@ -1,12 +1,18 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo import ReturnDocument
+import os
+from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
+from pymongo import ReturnDocument # type: ignore
 from typing import Any, Dict, List, Optional
-from datetime import datetime
-from config import settings
+from datetime import datetime, UTC
+
 
 import logging
 # 配置日志
 logger = logging.getLogger(__name__)
+# 设置日志级别和格式
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 from dotenv import load_dotenv # type: ignore
 load_dotenv()
@@ -24,8 +30,8 @@ class MongoDB:
     def __init__(self):
         if not self._client:
             try:
-                mongodb_url = settings.MONGODB_URL
-                database_name = settings.MONGODB_DATABASE
+                mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+                database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
                 self._client = AsyncIOMotorClient(mongodb_url)
                 self._db = self._client[database_name]
                 logger.info(f"MongoDB 连接已初始化，数据库: {database_name}")
@@ -50,7 +56,7 @@ class MongoDB:
         ```
         """
         if 'createdTime' not in document:
-            document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
         result = await self._db[collection_name].insert_one(document)
         return str(result.inserted_id)
 
@@ -71,7 +77,7 @@ class MongoDB:
         """
         for document in documents:
             if 'createdTime' not in document:
-                document['createdTime'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
         result = await self._db[collection_name].insert_many(documents)
         return [str(id) for id in result.inserted_ids]
 
@@ -342,7 +348,7 @@ class MongoDB:
         updated_user = await mongodb.find_one_and_update(
             "users",
             {"name": "张三"},
-            {"status": "active", "lastLogin": datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')},
+            {"status": "active", "lastLogin": datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')},
             return_document=True
         )
         if updated_user:
@@ -440,6 +446,8 @@ async def main():
         logger.info("MongoDB测试完成")
     except Exception as e:
         logger.error(f"测试过程中发生错误: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
     finally:
         # 关闭连接
         await mongodb.close()
@@ -447,4 +455,6 @@ async def main():
 # 如果直接运行此模块，则执行main函数
 if __name__ == "__main__":
     import asyncio
+    print("开始执行MongoDB测试...")
     asyncio.run(main())
+    print("MongoDB测试执行完成！")
