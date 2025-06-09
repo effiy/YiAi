@@ -31,7 +31,7 @@ class MongoDB:
         return cls._instance
 
     def __init__(self):
-        if not self._client:
+        if self._client is None:
             try:
                 mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
                 database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
@@ -54,7 +54,7 @@ class MongoDB:
 
     @property
     def db(self) -> AsyncIOMotorDatabase:
-        if not self._db:
+        if self._db is None:
             raise RuntimeError("数据库连接未初始化")
         return self._db
 
@@ -209,7 +209,7 @@ class MongoDB:
 
     async def close(self):
         """关闭数据库连接"""
-        if self._client:
+        if self._client is not None:
             self._client.close()
             logger.info("MongoDB 连接已关闭")
 
@@ -242,85 +242,289 @@ class MongoDB:
             raise
 
 # 主函数，用于测试和演示MongoDB类的使用
-async def main():
-    """MongoDB类使用示例"""
-    mongodb = None
+async def insert_one(params: Dict[str, Any] = None) -> str:
+    """测试插入单个文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - document: 要插入的文档，默认为测试数据
+        
+    Returns:
+        str: 插入文档的ID
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    document = params.get("document", {"name": "张三", "age": 30, "email": "zhangsan@example.com"})
+    
+    mongo_client = MongoDB()
     try:
-        mongodb = MongoDB()
-        logger.info("开始MongoDB测试...")
-        
-        # 创建测试集合
-        test_collection = "test_collection"
-        
-        # 测试插入单个文档
-        user_id = await mongodb.insert_one(
-            test_collection,
-            {"name": "张三", "age": 30, "email": "zhangsan@example.com"}
+        doc_id = await mongo_client.insert_one(
+            cname,
+            document
         )
-        logger.info(f"插入用户ID: {user_id}")
+        logger.info(f"插入文档ID: {doc_id}")
+        return doc_id
+    finally:
+        await mongo_client.close()
+
+async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+    """测试查找单个文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - query: 查询条件，默认查询名为"张三"的文档
+            - projection: 指定返回的字段，默认为None（返回所有字段）
+    
+    Returns:
+        Optional[Dict[str, Any]]: 查找到的文档
+    """
+    # 使用空字典作为默认值
+    params = params or {}
+    
+    # 获取参数值
+    cname = params.get("cname", "test_collection")
+    query = params.get("query", {"name": "张三"})
+    
+    # 创建MongoDB实例
+    mongodb = MongoDB()
+    try:
+        # 查询文档
+        document = await mongodb.find_one(
+            collection_name=cname, 
+            query=query if query else {}
+        )
         
-        # 测试查找文档
-        user = await mongodb.find_one(test_collection, {"name": "张三"})
-        if user:
-            logger.info(f"找到用户: {user['name']}, 邮箱: {user['email']}")
+        # 增强日志输出
+        if document:
+            doc_id = document.get('_id', '未知ID')
+            fields_info = [f"{k}: {v}" for k, v in document.items() if k != '_id']
+            logger.info(f"查询成功: 文档ID[{doc_id}], "
+                       f"包含字段和值: {', '.join(fields_info)}")
+        else:
+            logger.warning(f"未找到符合条件的文档: {query}")
         
-        # 测试更新文档
+        return document
+    except Exception as e:
+        logger.error(f"查找文档时出错: {e}")
+        logger.exception("详细错误信息:")
+        raise
+    finally:
+        # 确保关闭连接
+        await mongodb.close()
+
+async def update_one(params: Dict[str, Any] = None) -> int:
+    """测试更新单个文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - query: 查询条件，默认查询名为"张三"的文档
+            - update: 更新内容，默认更新年龄和添加updated标记
+            
+    Returns:
+        int: 更新的文档数量
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    query = params.get("query", {"name": "张三"})
+    update = params.get("update", {"age": 31, "updated": True})
+    
+    mongodb = MongoDB()
+    try:
         modified_count = await mongodb.update_one(
-            test_collection,
-            {"name": "张三"},
-            {"age": 31, "updated": True}
+            cname,
+            query,
+            update
         )
         logger.info(f"更新的文档数: {modified_count}")
-        
-        # 测试查找并更新
+        return modified_count
+    finally:
+        await mongodb.close()
+
+async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+    """测试查找并更新文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - query: 查询条件，默认查询名为"张三"的文档
+            - update: 更新内容，默认添加status字段
+            - return_document: 是否返回更新后的文档，默认为True
+            
+    Returns:
+        Optional[Dict[str, Any]]: 更新前或更新后的文档
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    query = params.get("query", {"name": "张三"})
+    update = params.get("update", {"status": "active"})
+    return_document = params.get("return_document", True)
+    
+    mongodb = MongoDB()
+    try:
         updated_user = await mongodb.find_one_and_update(
-            test_collection,
-            {"name": "张三"},
-            {"status": "active"},
-            return_document=True
+            cname,
+            query,
+            update,
+            return_document=return_document
         )
         if updated_user:
             logger.info(f"用户 {updated_user['name']} 状态已更新为: {updated_user.get('status')}")
-        
-        # 测试插入多个文档
+        return updated_user
+    finally:
+        await mongodb.close()
+
+async def insert_many(params: Dict[str, Any] = None) -> List[str]:
+    """测试插入多个文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - documents: 要插入的文档列表，默认为测试数据
+            
+    Returns:
+        List[str]: 插入文档的ID列表
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    documents = params.get("documents", [
+        {"name": "李四", "age": 25, "email": "lisi@example.com"},
+        {"name": "王五", "age": 35, "email": "wangwu@example.com"}
+    ])
+    
+    mongodb = MongoDB()
+    try:
         batch_ids = await mongodb.insert_many(
-            test_collection,
-            [
-                {"name": "李四", "age": 25, "email": "lisi@example.com"},
-                {"name": "王五", "age": 35, "email": "wangwu@example.com"}
-            ]
+            cname,
+            documents
         )
         logger.info(f"批量插入ID: {batch_ids}")
-        
-        # 测试查询多个文档
+        return batch_ids
+    finally:
+        await mongodb.close()
+
+async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+    """测试查询多个文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - query: 查询条件，默认查询年龄大于25的文档
+            - sort: 排序条件，默认按年龄降序排列
+            
+    Returns:
+        List[Dict[str, Any]]: 查询到的文档列表
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    query = params.get("query", {"age": {"$gt": 25}})
+    sort = params.get("sort", [("age", -1)])
+    
+    mongodb = MongoDB()
+    try:
         users = await mongodb.find_many(
-            test_collection,
-            {"age": {"$gt": 25}},
-            sort=[("age", -1)]
+            cname,
+            query,
+            sort=sort
         )
-        logger.info(f"找到 {len(users)} 个年龄大于25的用户")
+        logger.info(f"找到 {len(users)} 个符合条件的用户")
         for user in users:
             logger.info(f"用户: {user['name']}, 年龄: {user['age']}")
-        
-        # 测试统计
-        count = await mongodb.count_documents(test_collection, {})
-        logger.info(f"总用户数: {count}")
-        
-        # 测试删除
-        deleted = await mongodb.delete_many(test_collection, {})
+        return users
+    finally:
+        await mongodb.close()
+
+async def count_documents(params: Dict[str, Any] = None) -> int:
+    """测试文档计数
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - query: 查询条件，默认查询所有文档
+            
+    Returns:
+        int: 文档数量
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    query = params.get("query", {})
+    
+    mongodb = MongoDB()
+    try:
+        count = await mongodb.count_documents(cname, query)
+        logger.info(f"总文档数: {count}")
+        return count
+    finally:
+        await mongodb.close()
+
+async def delete_many(params: Dict[str, Any] = None) -> int:
+    """测试删除多个文档
+    
+    Args:
+        params: 参数字典，可包含：
+            - cname: 集合名称，默认为"test_collection"
+            - query: 查询条件，默认删除所有文档
+            
+    Returns:
+        int: 删除的文档数量
+    """
+    if params is None:
+        params = {}
+    
+    cname = params.get("cname", "test_collection")
+    query = params.get("query", {})
+    
+    mongodb = MongoDB()
+    try:
+        deleted = await mongodb.delete_many(cname, query)
         logger.info(f"清理测试数据，删除了 {deleted} 条记录")
+        return deleted
+    finally:
+        await mongodb.close()
+
+async def main(params: Dict[str, Any] = None):
+    """MongoDB类使用示例
+    
+    Args:
+        params: 参数字典，可选
+    """
+    logger.info("开始MongoDB测试...")
+    
+    try:
+        # 执行各个测试函数
+        # await insert_one(params)
+        await find_one(params)
+        # await update_one(params)
+        # await find_one_and_update(params)
+        # await insert_many(params)
+        # await find_many(params)
+        # await count_documents(params)
+        # await delete_many(params)
         
         logger.info("MongoDB测试完成")
+        return {"status": "success", "message": "MongoDB测试完成"}
     except Exception as e:
         logger.error(f"测试过程中发生错误: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-    finally:
-        if mongodb:
-            await mongodb.close()
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import asyncio
     print("开始执行MongoDB测试...")
-    asyncio.run(main())
-    print("MongoDB测试执行完成！")
+    result = asyncio.run(main())
+    print(f"MongoDB测试执行完成！结果: {result}")

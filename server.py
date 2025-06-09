@@ -15,6 +15,8 @@ app = FastAPI()
 
 GET 请求:
 http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
+http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
+http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
 
 命令行示例:
 curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
