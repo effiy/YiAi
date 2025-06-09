@@ -1,26 +1,29 @@
 import os
-from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase # type: ignore
 from pymongo import ReturnDocument # type: ignore
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, TypeVar, Generic
 from datetime import datetime, UTC
-
-
 import logging
+from dotenv import load_dotenv # type: ignore
+from contextlib import asynccontextmanager
+
 # 配置日志
 logger = logging.getLogger(__name__)
-# 设置日志级别和格式
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-from dotenv import load_dotenv # type: ignore
 load_dotenv()
+
+T = TypeVar('T')
 
 class MongoDB:
     _instance = None
-    _client = None
-    _db = None
+    _client: Optional[AsyncIOMotorClient] = None
+    _db: Optional[AsyncIOMotorDatabase] = None
+    _pool_size: int = 10
+    _max_pool_size: int = 50
 
     def __new__(cls):
         if cls._instance is None:
@@ -32,7 +35,17 @@ class MongoDB:
             try:
                 mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
                 database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
-                self._client = AsyncIOMotorClient(mongodb_url)
+                
+                # 配置连接池
+                self._client = AsyncIOMotorClient(
+                    mongodb_url,
+                    maxPoolSize=self._max_pool_size,
+                    minPoolSize=self._pool_size,
+                    maxIdleTimeMS=30000,
+                    waitQueueTimeoutMS=10000,
+                    retryWrites=True,
+                    retryReads=True
+                )
                 self._db = self._client[database_name]
                 logger.info(f"MongoDB 连接已初始化，数据库: {database_name}")
             except Exception as e:
@@ -40,59 +53,54 @@ class MongoDB:
                 raise
 
     @property
-    def db(self):
+    def db(self) -> AsyncIOMotorDatabase:
+        if not self._db:
+            raise RuntimeError("数据库连接未初始化")
         return self._db
 
-    async def insert_one(self, collection_name: str, document: Dict[str, Any]) -> str:
-        """插入单个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        user_id = await mongodb.insert_one(
-            "users", 
-            {"name": "张三", "age": 30, "email": "zhangsan@example.com"}
-        )
-        ```
-        """
-        if 'createdTime' not in document:
-            document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
-        result = await self._db[collection_name].insert_one(document)
-        return str(result.inserted_id)
+    @asynccontextmanager
+    async def get_collection(self, collection_name: str):
+        """获取集合对象的上下文管理器"""
+        try:
+            collection = self.db[collection_name]
+            yield collection
+        except Exception as e:
+            logger.error(f"获取集合 {collection_name} 失败: {str(e)}")
+            raise
 
-    async def insert_many(self, collection_name: str, documents: List[Dict[str, Any]]) -> List[str]:
-        """插入多个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        user_ids = await mongodb.insert_many(
-            "users", 
-            [
-                {"name": "张三", "age": 30, "email": "zhangsan@example.com"},
-                {"name": "李四", "age": 25, "email": "lisi@example.com"}
-            ]
-        )
-        ```
-        """
-        for document in documents:
+    async def insert_one(self, collection_name: str, document: Dict[str, Any]) -> str:
+        """插入单个文档"""
+        try:
             if 'createdTime' not in document:
                 document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
-        result = await self._db[collection_name].insert_many(documents)
-        return [str(id) for id in result.inserted_ids]
+            async with self.get_collection(collection_name) as collection:
+                result = await collection.insert_one(document)
+                return str(result.inserted_id)
+        except Exception as e:
+            logger.error(f"插入文档失败: {str(e)}")
+            raise
+
+    async def insert_many(self, collection_name: str, documents: List[Dict[str, Any]]) -> List[str]:
+        """插入多个文档"""
+        try:
+            for document in documents:
+                if 'createdTime' not in document:
+                    document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
+            async with self.get_collection(collection_name) as collection:
+                result = await collection.insert_many(documents)
+                return [str(id) for id in result.inserted_ids]
+        except Exception as e:
+            logger.error(f"批量插入文档失败: {str(e)}")
+            raise
 
     async def find_one(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """查找单个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        user = await mongodb.find_one("users", {"name": "张三"})
-        if user:
-            print(f"找到用户: {user['name']}, 邮箱: {user['email']}")
-        ```
-        """
-        return await self._db[collection_name].find_one(query)
+        """查找单个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                return await collection.find_one(query)
+        except Exception as e:
+            logger.error(f"查找文档失败: {str(e)}")
+            raise
 
     async def find_many(
         self,
@@ -102,27 +110,16 @@ class MongoDB:
         limit: int = 100,
         sort: Optional[List[tuple]] = None
     ) -> List[Dict[str, Any]]:
-        """查找多个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 查找年龄大于25的用户，按年龄降序排列，跳过前5个，最多返回10个
-        users = await mongodb.find_many(
-            "users", 
-            {"age": {"$gt": 25}}, 
-            skip=5, 
-            limit=10, 
-            sort=[("age", -1)]
-        )
-        for user in users:
-            print(f"用户: {user['name']}, 年龄: {user['age']}")
-        ```
-        """
-        cursor = self._db[collection_name].find(query).skip(skip).limit(limit)
-        if sort:
-            cursor = cursor.sort(sort)
-        return await cursor.to_list(length=limit)
+        """查找多个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                cursor = collection.find(query).skip(skip).limit(limit)
+                if sort:
+                    cursor = cursor.sort(sort)
+                return await cursor.to_list(length=limit)
+        except Exception as e:
+            logger.error(f"查找多个文档失败: {str(e)}")
+            raise
 
     async def update_one(
         self,
@@ -130,22 +127,14 @@ class MongoDB:
         query: Dict[str, Any],
         update: Dict[str, Any]
     ) -> int:
-        """更新单个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 更新张三的年龄
-        modified_count = await mongodb.update_one(
-            "users", 
-            {"name": "张三"}, 
-            {"age": 31}
-        )
-        print(f"更新的文档数: {modified_count}")
-        ```
-        """
-        result = await self._db[collection_name].update_one(query, {"$set": update})
-        return result.modified_count
+        """更新单个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                result = await collection.update_one(query, {"$set": update})
+                return result.modified_count
+        except Exception as e:
+            logger.error(f"更新文档失败: {str(e)}")
+            raise
 
     async def update_many(
         self,
@@ -153,116 +142,56 @@ class MongoDB:
         query: Dict[str, Any],
         update: Dict[str, Any]
     ) -> int:
-        """更新多个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 将所有年龄小于18的用户标记为未成年
-        modified_count = await mongodb.update_many(
-            "users", 
-            {"age": {"$lt": 18}}, 
-            {"isAdult": False}
-        )
-        print(f"更新的文档数: {modified_count}")
-        ```
-        """
-        result = await self._db[collection_name].update_many(query, {"$set": update})
-        return result.modified_count
+        """更新多个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                result = await collection.update_many(query, {"$set": update})
+                return result.modified_count
+        except Exception as e:
+            logger.error(f"批量更新文档失败: {str(e)}")
+            raise
 
     async def delete_one(self, collection_name: str, query: Dict[str, Any]) -> int:
-        """删除单个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 删除名为张三的用户
-        deleted_count = await mongodb.delete_one("users", {"name": "张三"})
-        print(f"删除的文档数: {deleted_count}")
-        ```
-        """
-        result = await self._db[collection_name].delete_one(query)
-        return result.deleted_count
+        """删除单个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                result = await collection.delete_one(query)
+                return result.deleted_count
+        except Exception as e:
+            logger.error(f"删除文档失败: {str(e)}")
+            raise
 
     async def delete_many(self, collection_name: str, query: Dict[str, Any]) -> int:
-        """删除多个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 删除所有未激活的用户
-        deleted_count = await mongodb.delete_many("users", {"active": False})
-        print(f"删除的文档数: {deleted_count}")
-        ```
-        """
-        result = await self._db[collection_name].delete_many(query)
-        return result.deleted_count
+        """删除多个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                result = await collection.delete_many(query)
+                return result.deleted_count
+        except Exception as e:
+            logger.error(f"批量删除文档失败: {str(e)}")
+            raise
 
     async def count_documents(self, collection_name: str, query: Dict[str, Any]) -> int:
-        """统计文档数量
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 统计年龄大于30的用户数量
-        count = await mongodb.count_documents("users", {"age": {"$gt": 30}})
-        print(f"符合条件的用户数: {count}")
-        ```
-        """
-        return await self._db[collection_name].count_documents(query)
+        """统计文档数量"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                return await collection.count_documents(query)
+        except Exception as e:
+            logger.error(f"统计文档数量失败: {str(e)}")
+            raise
 
     async def aggregate(
         self,
         collection_name: str,
         pipeline: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """聚合查询
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 按年龄段统计用户数量
-        pipeline = [
-            {"$group": {"_id": {"$floor": {"$divide": ["$age", 10]}}, "count": {"$sum": 1}}},
-            {"$sort": {"_id": 1}}
-        ]
-        results = await mongodb.aggregate("users", pipeline)
-        for result in results:
-            age_group = f"{result['_id']*10}-{result['_id']*10+9}"
-            print(f"年龄段 {age_group}: {result['count']} 人")
-        ```
-        
-        # 按部门统计员工平均薪资
-        pipeline = [
-            {"$group": {"_id": "$department", "avg_salary": {"$avg": "$salary"}}},
-            {"$sort": {"avg_salary": -1}}
-        ]
-        results = await mongodb.aggregate("employees", pipeline)
-        for result in results:
-            print(f"部门: {result['_id']}, 平均薪资: {result['avg_salary']}")
-        ```
-        """
-        return await self._db[collection_name].aggregate(pipeline).to_list(None)
-
-    def get_collection(self, collection_name: str):
-        """获取集合对象
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        users_collection = mongodb.get_collection("users")
-        # 现在可以直接使用users_collection进行更复杂的操作
-        
-        # 例如，执行findAndModify操作
-        from pymongo import ReturnDocument
-        result = await users_collection.find_one_and_update(
-            {"_id": user_id},
-            {"$inc": {"login_count": 1}},
-            return_document=ReturnDocument.AFTER
-        )
-        ```
-        """
-        return self._db[collection_name]
+        """聚合查询"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                return await collection.aggregate(pipeline).to_list(None)
+        except Exception as e:
+            logger.error(f"聚合查询失败: {str(e)}")
+            raise
 
     async def create_index(
         self,
@@ -270,67 +199,28 @@ class MongoDB:
         keys: List[tuple],
         unique: bool = False
     ):
-        """创建索引
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 在users集合上创建email字段的唯一索引
-        await mongodb.create_index("users", [("email", 1)], unique=True)
-        # 在products集合上创建复合索引
-        await mongodb.create_index("products", [("category", 1), ("price", -1)])
-        
-        # 创建TTL索引，自动删除过期文档
-        await mongodb.create_index("sessions", [("last_activity", 1)], 
-                                  expireAfterSeconds=3600)  # 1小时后过期
-        ```
-        """
-        await self._db[collection_name].create_index(keys, unique=unique)
+        """创建索引"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                await collection.create_index(keys, unique=unique)
+        except Exception as e:
+            logger.error(f"创建索引失败: {str(e)}")
+            raise
 
     async def close(self):
-        """关闭数据库连接
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 数据库操作完成后关闭连接
-        await mongodb.close()
-        
-        # 在应用程序退出前关闭
-        async def shutdown_event():
-            mongodb = MongoDB()
-            await mongodb.close()
-            print("数据库连接已安全关闭")
-        ```
-        """
+        """关闭数据库连接"""
         if self._client:
             self._client.close()
             logger.info("MongoDB 连接已关闭")
 
     async def find_one_and_delete(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """查找并删除单个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 查找并删除最老的过期任务
-        expired_task = await mongodb.find_one_and_delete(
-            "tasks", 
-            {"status": "expired", "createdTime": {"$lt": "2023-01-01"}}
-        )
-        if expired_task:
-            print(f"已删除过期任务: {expired_task['name']}")
-            
-        # 删除并返回购物车中的第一个商品
-        removed_item = await mongodb.find_one_and_delete(
-            "shopping_cart",
-            {"user_id": user_id},
-            sort=[("added_time", 1)]  # 按添加时间升序，删除最早添加的
-        )
-        ```
-        """
-        result = await self._db[collection_name].find_one_and_delete(query)
-        return result
+        """查找并删除单个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                return await collection.find_one_and_delete(query)
+        except Exception as e:
+            logger.error(f"查找并删除文档失败: {str(e)}")
+            raise
 
     async def find_one_and_update(
         self,
@@ -339,46 +229,23 @@ class MongoDB:
         update: Dict[str, Any],
         return_document: bool = False
     ) -> Optional[Dict[str, Any]]:
-        """查找并更新单个文档
-        
-        示例:
-        ```python
-        mongodb = MongoDB()
-        # 查找名为"张三"的用户并将其状态更新为"active"，返回更新后的文档
-        updated_user = await mongodb.find_one_and_update(
-            "users",
-            {"name": "张三"},
-            {"status": "active", "lastLogin": datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')},
-            return_document=True
-        )
-        if updated_user:
-            print(f"用户 {updated_user['name']} 状态已更新为: {updated_user['status']}")
-            
-        # 查找商品并减少库存，同时确保库存不会变为负数
-        updated_product = await mongodb.find_one_and_update(
-            "products",
-            {"_id": product_id, "stock": {"$gte": quantity}},
-            {"$inc": {"stock": -quantity}},
-            return_document=True
-        )
-        if updated_product:
-            print(f"商品 {updated_product['name']} 库存更新为: {updated_product['stock']}")
-        else:
-            print("库存不足，无法完成操作")
-        ```
-        """
-        result = await self._db[collection_name].find_one_and_update(
-            query,
-            {"$set": update},
-            return_document=ReturnDocument.AFTER if return_document else ReturnDocument.BEFORE
-        )
-        return result
+        """查找并更新单个文档"""
+        try:
+            async with self.get_collection(collection_name) as collection:
+                return await collection.find_one_and_update(
+                    query,
+                    {"$set": update},
+                    return_document=ReturnDocument.AFTER if return_document else ReturnDocument.BEFORE
+                )
+        except Exception as e:
+            logger.error(f"查找并更新文档失败: {str(e)}")
+            raise
 
 # 主函数，用于测试和演示MongoDB类的使用
 async def main():
     """MongoDB类使用示例"""
+    mongodb = None
     try:
-        # 初始化MongoDB连接
         mongodb = MongoDB()
         logger.info("开始MongoDB测试...")
         
@@ -449,10 +316,9 @@ async def main():
         import traceback
         logger.error(traceback.format_exc())
     finally:
-        # 关闭连接
-        await mongodb.close()
+        if mongodb:
+            await mongodb.close()
 
-# 如果直接运行此模块，则执行main函数
 if __name__ == "__main__":
     import asyncio
     print("开始执行MongoDB测试...")
