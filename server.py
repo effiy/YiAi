@@ -8,27 +8,32 @@ app = FastAPI()
 使用示例:
 
 GET 请求:
-http://localhost:8000/?module_name=modules.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
-curl -X GET "http://localhost:8000/?module_name=modules.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
+http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
+
+命令行示例:
+curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
 
 POST 请求:
 curl -X POST http://localhost:8000/ \
   -H "Content-Type: application/json" \
   -d '{
-    "module_name": "modules.crawler",
+    "module_name": "modules.crawler.crawler",
     "method_name": "main", 
     "params": {
       "url": "https://www.qbitai.com/",
       "min_title_length": 24
     }
   }'
+
+浏览器直接访问(默认参数):
+http://localhost:8000/
 """
 # 同时支持GET和POST两种HTTP请求方法的路由
 @app.get("/")
 @app.post("/")
 def read_module_to_execute(
     # 设置默认模块名为modules.crawler
-    module_name: str = "modules.crawler",
+    module_name: str = "modules.crawler.crawler",
     # 设置默认方法名为main
     method_name: str = "main",
     # 使用Query参数处理params，默认值为爬取启智AI网站且最小标题长度为24
