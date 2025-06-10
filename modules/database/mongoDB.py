@@ -252,30 +252,38 @@ class MongoDB:
             logger.error(f"查找并更新文档失败: {str(e)}")
             raise
 
-# 主函数，用于测试和演示MongoDB类的使用
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22document%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A30%2C%22email%22%3A%22zhangsan%40example.com%22%7D%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - document: 要插入的文档
 def insert_one(params: Dict[str, Any] = None) -> str:
     """测试插入单个文档
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - document: 要插入的文档，默认为测试数据
-        
+
     Returns:
         str: 插入文档的ID
     """
     if params is None:
         params = {}
-    
+
     cname = params.get("cname", "test_collection")
     document = params.get("document", {"name": "张三", "age": 30, "email": "zhangsan@example.com"})
-    
+
     # 使用全局单例
     mongodb_instance = MongoDB()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
-        
+
         doc_id = mongodb_instance.insert_one(
             cname,
             document
@@ -286,34 +294,44 @@ def insert_one(params: Dict[str, Any] = None) -> str:
         logger.error(f"插入文档时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - query: 查询条件
+# - projection: 指定返回的字段（可选）
 def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     """测试查找单个文档
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - query: 查询条件，默认查询名为"张三"的文档
             - projection: 指定返回的字段，默认为None（返回所有字段）
-    
+
     Returns:
         Optional[Dict[str, Any]]: 查找到的文档
     """
     # 使用空字典作为默认值
     params = params or {}
-    
+
     # 获取参数值
     cname = params.get("cname", "test_collection")
     query = params.get("query", {"name": "张三"})
-    
+
     try:
         mongodb_instance = MongoDB()
         mongodb_instance.initialize()
-        
+
         document = mongodb_instance.find_one(
-            collection_name=cname, 
+            collection_name=cname,
             query=query if query else {}
         )
-        
+
         # 增强日志输出
         if document:
             # 将 ObjectId 转换为字符串
@@ -325,37 +343,48 @@ def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
                        f"包含字段和值: {', '.join(fields_info)}")
         else:
             logger.warning(f"未找到符合条件的文档: {query}")
-        
+
+        logger.info(f"查询结果: {document}")
         return document
     except Exception as e:
         logger.error(f"查找文档时出错: {e}")
         logger.exception("详细错误信息:")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=update_one&params={"cname":"test_collection","query":{"name": "张三"},"update":{"age": 31, "updated": true}}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=update_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22age%22%3A31%2C%22updated%22%3Atrue%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - query: 查询条件
+# - update: 更新内容
 def update_one(params: Dict[str, Any] = None) -> int:
     """测试更新单个文档
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - query: 查询条件，默认查询名为"张三"的文档
             - update: 更新内容，默认更新年龄和添加updated标记
-            
+
     Returns:
         int: 更新的文档数量
     """
     if params is None:
         params = {}
-    
+
     cname = params.get("cname", "test_collection")
     query = params.get("query", {"name": "张三"})
     update = params.get("update", {"age": 31, "updated": True})
-    
+
     mongodb_instance = MongoDB()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
-        
+
         modified_count = mongodb_instance.update_one(
             cname,
             query,
@@ -367,32 +396,43 @@ def update_one(params: Dict[str, Any] = None) -> int:
         logger.error(f"更新文档时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one_and_update&params={"cname":"test_collection","query":{"name": "张三"},"update":{"status": "active"},"return_document": true}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one_and_update&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22status%22%3A%22active%22%7D%2C%22return_document%22%3Atrue%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - query: 查询条件
+# - update: 更新内容
+# - return_document: 是否返回更新后的文档
 def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     """测试查找并更新文档
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - query: 查询条件，默认查询名为"张三"的文档
             - update: 更新内容，默认添加status字段
             - return_document: 是否返回更新后的文档，默认为True
-            
+
     Returns:
         Optional[Dict[str, Any]]: 更新前或更新后的文档
     """
     if params is None:
         params = {}
-    
+
     cname = params.get("cname", "test_collection")
     query = params.get("query", {"name": "张三"})
     update = params.get("update", {"status": "active"})
     return_document = params.get("return_document", True)
-    
+
     mongodb_instance = MongoDB()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
-        
+
         updated_user = mongodb_instance.find_one_and_update(
             cname,
             query,
@@ -406,31 +446,40 @@ def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any
         logger.error(f"查找并更新文档时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_many&params={"cname":"test_collection","documents":[{"name":"李四","age":25,"email":"lisi@example.com"},{"name":"王五","age":35,"email":"wangwu@example.com"}]}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22documents%22%3A%5B%7B%22name%22%3A%22%E6%9D%8E%E5%9B%9B%22%2C%22age%22%3A25%2C%22email%22%3A%22lisi%40example.com%22%7D%2C%7B%22name%22%3A%22%E7%8E%8B%E4%BA%94%22%2C%22age%22%3A35%2C%22email%22%3A%22wangwu%40example.com%22%7D%5D%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - documents: 要插入的文档列表，每个文档是一个字典
 def insert_many(params: Dict[str, Any] = None) -> List[str]:
     """测试插入多个文档
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - documents: 要插入的文档列表，默认为测试数据
-            
+
     Returns:
         List[str]: 插入文档的ID列表
     """
     if params is None:
         params = {}
-    
+
     cname = params.get("cname", "test_collection")
     documents = params.get("documents", [
         {"name": "李四", "age": 25, "email": "lisi@example.com"},
         {"name": "王五", "age": 35, "email": "wangwu@example.com"}
     ])
-    
+
     mongodb_instance = MongoDB()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
-        
+
         batch_ids = mongodb_instance.insert_many(
             cname,
             documents
@@ -441,65 +490,93 @@ def insert_many(params: Dict[str, Any] = None) -> List[str]:
         logger.error(f"批量插入文档时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_many&params={"collection_name":"test_collection","filter_query":{"age":{"$gt":25}},"sort_criteria":[["age",-1]]}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_many&params=%7B%22collection_name%22%3A%22test_collection%22%2C%22filter_query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D%2C%22sort_criteria%22%3A%5B%5B%22age%22%2C-1%5D%5D%7D"
+#
+# 参数说明:
+# - collection_name: 集合名称
+# - filter_query: 查询条件，支持MongoDB查询操作符
+# - sort_criteria: 排序条件，格式为[["字段名", 1/-1]]，1表示升序，-1表示降序
 def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
-    """测试查询多个文档
-    
+    """查询多个文档
+
     Args:
         params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - query: 查询条件，默认查询年龄大于25的文档
-            - sort: 排序条件，默认按年龄降序排列
-            
+            - collection_name: 集合名称，默认为"test_collection"
+            - filter_query: 查询条件，默认查询年龄大于25的文档
+            - sort_criteria: 排序条件，默认按年龄降序排列
+
     Returns:
         List[Dict[str, Any]]: 查询到的文档列表
     """
     if params is None:
         params = {}
-    
-    cname = params.get("cname", "test_collection")
-    query = params.get("query", {"age": {"$gt": 25}})
-    sort = params.get("sort", [("age", -1)])
-    
-    mongodb_instance = MongoDB()
+
+    collection_name = params.get("collection_name", "test_collection")
+    filter_query = params.get("filter_query", {"age": {"$gt": 25}})
+    sort_criteria = params.get("sort_criteria", [["age", -1]])
+
+    # 将列表格式的排序条件转换为元组格式
+    sort_criteria = [tuple(criteria) for criteria in sort_criteria]
+
+    db_instance = MongoDB()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
-        
-        users = mongodb_instance.find_many(
-            cname,
-            query,
-            sort=sort
+        db_instance.initialize()
+
+        documents = db_instance.find_many(
+            collection_name,
+            filter_query,
+            sort=sort_criteria
         )
-        logger.info(f"找到 {len(users)} 个符合条件的用户")
-        for user in users:
-            logger.info(f"用户: {user['name']}, 年龄: {user['age']}")
-        return users
+
+        # 将 ObjectId 转换为字符串
+        for doc in documents:
+            if '_id' in doc:
+                doc['_id'] = str(doc['_id'])
+
+        logger.info(f"找到 {len(documents)} 个符合条件的文档")
+        for doc in documents:
+            logger.info(f"文档: {doc['name']}, 年龄: {doc['age']}")
+        return documents
     except Exception as e:
         logger.error(f"查询多个文档时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=count_documents&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=count_documents&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - query: 查询条件，支持MongoDB查询操作符
 def count_documents(params: Dict[str, Any] = None) -> int:
     """测试文档计数
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - query: 查询条件，默认查询所有文档
-            
+
     Returns:
         int: 文档数量
     """
     if params is None:
         params = {}
-    
+
     cname = params.get("cname", "test_collection")
     query = params.get("query", {})
-    
+
     mongodb_instance = MongoDB()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
-        
+
         count = mongodb_instance.count_documents(cname, query)
         logger.info(f"总文档数: {count}")
         return count
@@ -507,28 +584,37 @@ def count_documents(params: Dict[str, Any] = None) -> int:
         logger.error(f"统计文档数量时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=delete_many&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=delete_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - query: 查询条件，支持MongoDB查询操作符
 def delete_many(params: Dict[str, Any] = None) -> int:
     """测试删除多个文档
-    
+
     Args:
         params: 参数字典，可包含：
             - cname: 集合名称，默认为"test_collection"
             - query: 查询条件，默认删除所有文档
-            
+
     Returns:
         int: 删除的文档数量
     """
     if params is None:
         params = {}
-    
+
     cname = params.get("cname", "test_collection")
     query = params.get("query", {})
-    
+
     mongodb_instance = MongoDB()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
-        
+
         deleted = mongodb_instance.delete_many(cname, query)
         logger.info(f"清理测试数据，删除了 {deleted} 条记录")
         return deleted
