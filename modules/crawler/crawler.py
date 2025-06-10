@@ -35,13 +35,31 @@ class LinkExtractor:
             if len(link['title']) > self.min_title_length
         ]
 
+"""
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params={"url":"https://www.qbitai.com/"}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%7D"
+#
+# 参数说明:
+# - url: 要爬取的网页URL
+"""
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
     reraise=True
 )
-async def fetch_page_content(url: str) -> Optional[str]:
-    """获取页面内容，带重试机制"""
+async def fetch_page_content(params: Dict[str, any]) -> str:
+    """获取页面内容，带重试机制
+    
+    参数:
+        params (dict): 包含url的参数字典
+    
+    返回:
+        str: 页面的markdown内容
+    """
+    url = params.get("url")
     try:
         async with AsyncWebCrawler() as crawler:
             result = await crawler.arun(url=url)
@@ -51,26 +69,15 @@ async def fetch_page_content(url: str) -> Optional[str]:
         raise
 
 """
-示例请求:
-GET http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
-
-命令行示例:
-curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
-
-POST 请求:
-curl -X POST http://localhost:8000/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "module_name": "modules.crawler.crawler",
-    "method_name": "main", 
-    "params": {
-      "url": "https://www.qbitai.com/",
-      "min_title_length": 24
-    }
-  }'
-
-浏览器直接访问(默认参数):
-http://localhost:8000/
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
+#
+# 参数说明:
+# - url: 要爬取的网页URL
+# - min_title_length: 最小标题长度，默认为24
 """
 async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
     """
@@ -89,14 +96,14 @@ async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
 
     try:
         # 获取页面内容
-        markdown_content = await fetch_page_content(url)
-        if not markdown_content:
+        content = await fetch_page_content({"url": url})
+        if not content:
             logger.error("未能获取到页面内容")
             return []
 
         # 提取链接
         extractor = LinkExtractor(min_title_length)
-        long_titles = extractor.extract_links(markdown_content)
+        long_titles = extractor.extract_links(content)
         
         # 打印结果
         for i, link in enumerate(long_titles):
@@ -121,3 +128,4 @@ if __name__ == '__main__':
     print(f"开始爬取 URL: {args.url}, 最小标题长度: {args.min_title_length}")
     results = asyncio.run(main(params))
     print(f"爬取完成，共获取到 {len(results)} 个符合条件的链接")
+
