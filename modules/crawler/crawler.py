@@ -50,6 +50,28 @@ async def fetch_page_content(url: str) -> Optional[str]:
         logger.error(f"爬取页面失败: {str(e)}")
         raise
 
+"""
+示例请求:
+GET http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
+
+命令行示例:
+curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
+
+POST 请求:
+curl -X POST http://localhost:8000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "module_name": "modules.crawler.crawler",
+    "method_name": "main", 
+    "params": {
+      "url": "https://www.qbitai.com/",
+      "min_title_length": 24
+    }
+  }'
+
+浏览器直接访问(默认参数):
+http://localhost:8000/
+"""
 async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
     """
     主函数：从指定URL爬取网页内容，提取并过滤链接标题
