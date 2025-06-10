@@ -622,6 +622,35 @@ def delete_many(params: Dict[str, Any] = None) -> int:
         logger.error(f"删除多个文档时出错: {e}")
         raise
 
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=list_collections&params={}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=list_collections&params=%7B%7D"
+def list_collections(params: Dict[str, Any] = None) -> List[str]:
+    """获取数据库中的所有集合列表
+
+    Args:
+        params: 参数字典，可选
+
+    Returns:
+        List[str]: 集合名称列表
+    """
+    if params is None:
+        params = {}
+
+    mongodb_instance = MongoDB()
+    try:
+        # 确保数据库已初始化
+        mongodb_instance.initialize()
+
+        collections = mongodb_instance._db.list_collection_names()
+        logger.info(f"获取到 {len(collections)} 个集合")
+        return collections
+    except Exception as e:
+        logger.error(f"获取集合列表时出错: {e}")
+        raise
+
 async def main(params: Dict[str, Any] = None):
     """MongoDB类使用示例
     
