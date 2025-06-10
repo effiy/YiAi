@@ -6,8 +6,11 @@
     "dotenv",
     "fastapi",
     "levelname",
+    "matplotlib",
     "pymongo",
     "ruiyi",
+    "Subgoal",
+    "Synergizing",
     "uvicorn"
   ]
 }
