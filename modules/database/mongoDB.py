@@ -1,7 +1,7 @@
 import os
 from pymongo import MongoClient, ReturnDocument # type: ignore
 from typing import Any, Dict, List, Optional, Union, TypeVar, Generic
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import logging
 from dotenv import load_dotenv # type: ignore
 from contextlib import contextmanager
@@ -81,7 +81,7 @@ class MongoDB:
         """插入单个文档"""
         try:
             if 'createdTime' not in document:
-                document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
+                document['createdTime'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             with self.get_collection(collection_name) as collection:
                 result = collection.insert_one(document)
                 return str(result.inserted_id)
@@ -94,7 +94,7 @@ class MongoDB:
         try:
             for document in documents:
                 if 'createdTime' not in document:
-                    document['createdTime'] = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
+                    document['createdTime'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             with self.get_collection(collection_name) as collection:
                 result = collection.insert_many(documents)
                 return [str(id) for id in result.inserted_ids]
@@ -316,6 +316,9 @@ def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         
         # 增强日志输出
         if document:
+            # 将 ObjectId 转换为字符串
+            if '_id' in document:
+                document['_id'] = str(document['_id'])
             doc_id = document.get('_id', '未知ID')
             fields_info = [f"{k}: {v}" for k, v in document.items() if k != '_id']
             logger.info(f"查询成功: 文档ID[{doc_id}], "
