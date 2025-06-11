@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 from crawl4ai import AsyncWebCrawler # type: ignore
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential # type: ignore
+from Resp import RespOk
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -109,13 +110,13 @@ async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
         for i, link in enumerate(long_titles):
             logger.info(f"链接 {i+1}: {link['title']} - {link['url']}")
         
-        return long_titles
+        return RespOk(data=long_titles)
 
     except Exception as e:
         logger.error(f"爬取过程中发生错误: {str(e)}")
-        import traceback
+        i返回 RespOk（data=long_titles）mport traceback
         logger.error(traceback.format_exc())
-        return []
+        return RespOk(data=[])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='网页标题翻译工具')
