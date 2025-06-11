@@ -20,13 +20,19 @@ Manus 核心能力就是基于 LLM 的**自主任务分解与执行**。他有�
 
 ## 认识
 
-结合 Agent 相关的几篇关键文章和论文，梳理下基于 LLM 的 AI Agent 的设计模式以及一些原理性的概念。ATA 上关于 LLM 和 Agent 的原理性的优质文章太多，这里主要涉及 Manus 或 OpenManus 用到的部分。
+结合 Agent 相关的几篇关键文章和论文，梳理下基于 LLM 的 AI Agent 的设计模式以及一些原理性的概念。
+
+ATA 上关于 LLM 和 Agent 的原理性的优质文章太多，这里主要涉及 Manus 或 OpenManus 用到的部分。
 
 ### AI Agent 正在重新定义软件服务
 
 #### 你只需要告诉我你要什么，不要告诉我怎么做
 
-AI Agent 将使软件架构的范式从面向过程迁移到面向目标，就像传统面向过程的工作流和 K8S 的声明式设计模式一样。当然这两种解决的问题是不一样的：K8s 通过定义期望状态而非具体步骤来管理集群，降低集群状态管理的复杂度，确保集群的稳定性和容错性。Agent 之前，传统的软件架构只能解决有限范围的任务，而基于 Agent 的架构可以解决无限域的任务，实现真正意义上的个性化服务。
+AI Agent 将使软件架构的范式从面向过程迁移到面向目标，就像传统面向过程的工作流和 K8S 的声明式设计模式一样。
+
+当然这两种解决的问题是不一样的：K8s 通过定义期望状态而非具体步骤来管理集群，降低集群状态管理的复杂度，确保集群的稳定性和容错性。
+
+Agent 之前，传统的软件架构只能解决有限范围的任务，而基于 Agent 的架构可以解决无限域的任务，实现真正意义上的个性化服务。
 
 ![ProAgent: From Robotic Process Automation to Agentic Process Automation](https://mmbiz.qpic.cn/mmbiz_png/Z6bicxIx5naJnZenEDVcrQTPhxVAGuSwoXHZIhTzIodFjTO89Mq2xXG6leCvmVjTJGkVdYAhkLIwbohlsopC37w/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1)
 
@@ -57,7 +63,9 @@ AI Agent 将使软件架构的范式从面向过程迁移到面向目标，就�
 
 <div style="text-align: center;margin: -16px 0 16px 0;">_内容来源：华泰证券研究所_</div>
 
-Lilian Weng（翁荔）的《LLM Powered Autonomous Agents》这篇博客被广泛认为是"AI Agent 领域最权威的结构化综述之一"，为开发者提供了技术框架参考。作者将 AI Agent 定义为"规划 + 记忆 + 工具调用"的组合，强调 LLM 作为系统的核心控制器：
+Lilian Weng（翁荔）的《LLM Powered Autonomous Agents》这篇博客被广泛认为是"AI Agent 领域最权威的结构化综述之一"，为开发者提供了技术框架参考。
+
+作者将 AI Agent 定义为"规划 + 记忆 + 工具调用"的组合，强调 LLM 作为系统的核心控制器：
 
 - **规划（Planning）**：任务分解、子任务生成及自我反思
 - **记忆（Memory）**：长期记忆存储与上下文管理，用于处理复杂任务
@@ -73,11 +81,21 @@ Lilian Weng（翁荔）的《LLM Powered Autonomous Agents》这篇博客被广�
 
 在这之前概括下 LLM 的一些基本的原理，关于 LLM 的原理性文章已经很多了，这里只对 LLM 的推理原理做个简单回顾。
 
-当下的 LLM 的核心依然是基于神经网络，相比传统的神经网络 CNN/RNN 等，Transformer 架构通过自注意力机制允许模型直接计算任意两个位置之间的关系，从而更高效捕捉长距离依赖，使得 LLM 有更强大的多层叠加能力。Transformer 的并行计算能力（如自注意力的矩阵运算）同时加速了训练速度，支持更大的模型规模。另外通过多层非线性激活函数（如 ReLU、GeLU）可学习更加复杂模式，随着参数规模和训练数据增加，LLM 会突现传统神经网络难以实现的能力（如逻辑推理、代码生成），LLM 具备了涌现能力！（也许这就是量变产生了质变吧）
+当下的 LLM 的核心依然是基于神经网络，相比传统的神经网络 CNN/RNN 等，Transformer 架构通过自注意力机制允许模型直接计算任意两个位置之间的关系，从而更高效捕捉长距离依赖，使得 LLM 有更强大的多层叠加能力。
 
-LLM 的推理简单理解为是一个"模式匹配 + 概率计算"的过程，通过 Transformer 架构和自回归生成，基于海量文本学习到的统计规律，逐步生成符合语言习惯的输出。其效果依赖于训练数据的质量、模型规模以及生成策略的选择。每一步生成都依赖于已生成的上下文，即通过已知的前序词预测下一个词，当前 LLM 具备上下文学习（In-Context Learning）能力，LLM 通过 Prompt 中提供的示例或指令，无需参数更新即可适应新任务，依然是在于利用模型的模式匹配能力和统计规律，Transformer 架构中，Prompt 的 token 位置靠前，权重更高，对后续生成的影响更大。
+Transformer 的并行计算能力（如自注意力的矩阵运算）同时加速了训练速度，支持更大的模型规模。
 
-LLM 的涌现能力使其具备复杂任务处理能力，但同时也因训练数据的噪声和统计生成特性，容易产生幻觉。RAG 通过引入外部知识减少幻觉，SFT 微调通过高质量数据优化输出，Agent 通过工具调用增强交互能力。这些方法可在一定程度上缓解幻觉，增强可解释性，但可解释性仍受限于 LLM 的黑箱特性。Agent 设计中，Prompt 是核心组件之一，所有的设计都是围绕构建和管理 Prompt，需结合工具调用、记忆管理等模块设计。为适应不同任务，Prompt 需精细化设计并管理多个版本。
+另外通过多层非线性激活函数（如 ReLU、GeLU）可学习更加复杂模式，随着参数规模和训练数据增加，LLM 会突现传统神经网络难以实现的能力（如逻辑推理、代码生成），LLM 具备了涌现能力！（也许这就是量变产生了质变吧）
+
+LLM 的推理简单理解为是一个"模式匹配 + 概率计算"的过程，通过 Transformer 架构和自回归生成，基于海量文本学习到的统计规律，逐步生成符合语言习惯的输出。其效果依赖于训练数据的质量、模型规模以及生成策略的选择。
+
+每一步生成都依赖于已生成的上下文，即通过已知的前序词预测下一个词，当前 LLM 具备上下文学习（In-Context Learning）能力，LLM 通过 Prompt 中提供的示例或指令，无需参数更新即可适应新任务，依然是在于利用模型的模式匹配能力和统计规律，Transformer 架构中，Prompt 的 token 位置靠前，权重更高，对后续生成的影响更大。
+
+LLM 的涌现能力使其具备复杂任务处理能力，但同时也因训练数据的噪声和统计生成特性，容易产生幻觉。
+
+RAG 通过引入外部知识减少幻觉，SFT 微调通过高质量数据优化输出，Agent 通过工具调用增强交互能力。这些方法可在一定程度上缓解幻觉，增强可解释性，但可解释性仍受限于 LLM 的黑箱特性。
+
+Agent 设计中，Prompt 是核心组件之一，所有的设计都是围绕构建和管理 Prompt，需结合工具调用、记忆管理等模块设计。为适应不同任务，Prompt 需精细化设计并管理多个版本。
 
 ### Memory
 
@@ -85,79 +103,21 @@ LLM 的涌现能力使其具备复杂任务处理能力，但同时也因训练�
 
 ![LLM无状态函数示意图](https://mmbiz.qpic.cn/mmbiz_png/Z6bicxIx5naJnZenEDVcrQTPhxVAGuSwoJTlvvM05gdlaP9pevC0vSMq7ib9BbkJo8Jk7mB356SvicYJ5U27GucLg/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1)
 
-LLM 就像一个失忆的绝世高手一样，虽然没有记忆，但可以武功还在，LLM 回复完全基于输入的提示（prompt）和训练数据中的模式，通常我们所说的记忆是指的是用户输入提示，分为短期记忆和长期记忆。
+**LLM 就像一个失忆的绝世高手一样，虽然没有记忆，但可以武功还在，LLM 回复完全基于输入的提示（prompt）和训练数据中的模式，通常我们所说的记忆是指的是用户输入提示，分为短期记忆和长期记忆。**
 
-LLM 的"短期记忆"通常依赖于其上下文窗口（最大 Token 限制），通过在输入中包含当前对话或任务的相关信息来维持连贯性。LLM 的一些生产参数比如 Temperature，Top-P 可以影响其基于上下文生成文本内容。Temperature 主要是影响生成的确定性，是通过控制 Temperature 实现生成内容的准确性与创造性二者之间的权衡。Top-P 主要是发散程度，在聚焦和多样性之间的平衡。
+LLM 的"短期记忆"通常依赖于其上下文窗口（最大 Token 限制），通过在输入中包含当前对话或任务的相关信息来维持连贯性。
+
+LLM 的一些生产参数比如 Temperature，Top-P 可以影响其基于上下文生成文本内容。
+
+1. Temperature 主要是影响生成的确定性，是通过控制 Temperature 实现生成内容的准确性与创造性二者之间的权衡。
+
+2. Top-P 主要是发散程度，在聚焦和多样性之间的平衡。
 
 长期记忆依赖于外部组件，虽然 LLM 的预训练参数"存储"了知识，通常已经过时，特定领域的知识，需外部技术（如 RAG）补充长期依赖关系。短期记忆也可以转变为长期记忆，这个对 Agent 的自主进化很有帮助。
 
-我们设计一个简单的短期记忆模块，记录推理和外部感知的结果信息，每次调用 LLM 时都会带上（受限于 LLM 的最大 Token），这样 LLM 就会在每次推理时"记住"之前的推理过程，以及外部工具感知的结论。相当于：每次你问问题，都要讲一遍前面的交流内容。定义 Memory 类，记录每次的 Message 内容。
+我们设计一个简单的短期记忆模块，记录推理和外部感知的结果信息，每次调用 LLM 时都会带上（受限于 LLM 的最大 Token），这样 LLM 就会在每次推理时"记住"之前的推理过程，以及外部工具感知的结论。
 
-```python
-class Memory(BaseModel):
-    messages: List[Message] = Field(default_factory=list)
-    max_messages: int = Field(default=100)
-```
-
-以下是 Memory 内容例子
-
-```python
-{
-  "messages": [
-    {
-      "role": "user",
-      "content": "\n        CURRENT PLAN STATUS:\n        Plan: QuickSort Implementation Plan (ID: plan_1742277313)\n==========================================================\n\nSteps:\n1. [→] {'step_name': 'Research and understand the QuickSort algorithm', 'status': 'in_progress', 'notes': ''}\n2. ...",
-      "tool_calls": null,
-      "name": null,
-      "tool_call_id": null
-    },
-    {
-      "role": "user",
-      "content": "You can interact with the computer using PythonExecute, save important content and information files through FileSaver, open browsers with BrowserUseTool, and retrieve information using GoogleSearch.\n\nPythonExecute: ...",
-      "tool_calls": null,
-      "name": null,
-      "tool_call_id": null
-    },
-    {
-      "role": "assistant",
-      "content": "",
-      "tool_calls": [
-        {
-          "id": "call_294a4ff7396f4c91813990",
-          "type": "function",
-          "function": {
-            "name": "google_search",
-            "arguments": "{\"query\": \"QuickSort algorithm explained\"}"
-          }
-        }
-      ],
-      "name": null,
-      "tool_call_id": null
-    },
-    {
-      "role": "tool",
-      "content": "Observed output of cmd `google_search` executed:\n['https://www.w3schools.com/dsa/dsa_algo_quicksort.php']...",
-      "tool_calls": null,
-      "name": "google_search",
-      "tool_call_id": "call_294a4ff7396f4c91813990"
-    },
-    {
-      "role": "user",
-      "content": "You can interact with the computer using PythonExecute...",
-      "tool_calls": null,
-      "name": null,
-      "tool_call_id": null
-    },
-    {
-      "role": "assistant",
-      "content": "I have researched the QuickSort algorithm using a Google search. Here are some resources that can help us understand how it works...",
-      "tool_calls": null,
-      "name": null,
-      "tool_call_id": null
-    }
-  ]
-}
-```
+相当于：每次你问问题，都要讲一遍前面的交流内容。定义 Memory 类，记录每次的 Message 内容。
 
 ### Tools
 
@@ -181,7 +141,7 @@ Agent 的工具调用，实际上是借助 LLM 的能力，LLM 需要先理解�
 
 #### 1. Planning 的核心组件
 
-Lilian Weng 在其博文中将 Planning 分为四个关键子模块：
+Lilian Weng（翁荔） 在其博文中将 Planning 分为四个关键子模块：
 
 - **Reflection（反思）**：评估执行结果并调整策略
 - **Self-critics（自我批评）**：对决策进行自我评估
@@ -214,55 +174,21 @@ ReAct 通过 LLM 交替执行推理和行动，实现了推理与外界感知的
 ReActAgent 实现了重复的 Thought-Action-Observation 循环，其退出机制有两种：
 
 1. **最大步数限制**：当执行步骤超过预设的最大步数时退出
-2. **终止工具调用**：当 LLM 调用终止工具时退出循环
-   - 终止工具描述："When you have finished all the tasks, call this tool to end the work"
+2. **终止工具调用**：当 LLM 调用终止工具时退出循环 - 终止工具描述："When you have finished all the tasks, call this tool to end the work"
 
 ![ReActAgent 流程](https://mmbiz.qpic.cn/mmbiz_png/Z6bicxIx5naJnZenEDVcrQTPhxVAGuSwoWNZNEqWib1r7d7sFEqnzbbdoV0CgZbvEkvxZFLL322aHKWla8dw8C5w/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1)
 
-设计 ReAct 抽象类，由主体的 Agent 继承， 包含 llm 和 memory，同时有 think 和 act 两个阶段的操作，think 通过调用 LLM 进行推理， act 主要是调用工具获取额外的信息。 通过 step 串联， step 由 Agent 重复调用，每次都会通过 LLM 的推理判断是否需要调用工具。
+设计 ReAct 抽象类，由主体的 Agent 继承， 包含 llm 和 memory，同时有 think 和 act 两个阶段的操作，think 通过调用 LLM 进行推理， act 主要是调用工具获取额外的信息。
 
-```python
-class ReActAgent(BaseModel, ABC):
-    name: str = Field(..., description="Unique name of the agent")
-    description: Optional[str] = Field(None, description="Optional agent description")
-    # Prompts
-    system_prompt: Optional[str] = Field(
-        None, description="System-level instruction prompt"
-    )
-    next_step_prompt: Optional[str] = Field(
-        None, description="Prompt for determining next action"
-    )
-    # Dependencies
-    llm: LLM = Field(default_factory=LLM, description="Language model instance")
-    memory: Memory = Field(default_factory=Memory, description="Agent's memory store")
-
-    @abstractmethod
-    async def think(self) -> bool:
-        """Process current state and decide next action"""
-
-    @abstractmethod
-    async def act(self) -> str:
-        """Execute decided actions"""
-
-    async def step(self) -> str:
-        """Execute a single step: think and act.
-            Thought: ...
-            Action: ...
-            Observation: ...
-            ... (Repeated many times)
-        """
-        should_act = await self.think()
-        # 判断是否使用工具
-        if not should_act:
-            return "Thinking complete - no action needed"
-        return await self.act()
-```
+通过 step 串联， step 由 Agent 重复调用，每次都会通过 LLM 的推理判断是否需要调用工具。
 
 **`Plan-and-Solve`**
 
-Chain-of-Thought（CoT）使 LLMs 能够明确地生成推理步骤并提高它们在推理任务中的准确性。比如 Zero-short-CoT 将目标问题陈述结合"让我们逐步思考"这样的提示词，作为 LLM 的输入。这是一种隐式生成推理链，具有一定的模糊性，存在语义理解错误，无法生成合理的计划等问题。
+Chain-of-Thought（CoT）使 LLMs 能够明确地生成推理步骤并提高它们在推理任务中的准确性。
 
-Plan-and-Solve 是一种改进的 CoT 提示方法，通过显式分解任务为子目标并分步执行，提升复杂任务的推理能力。Plan-and-Solve 将传统的"黑箱"推理操作，进一步转化为结构化流程，使得 Agent 的可解释性增强，而且还可以动态调整和反思。是 Agent 实现 Planning 能力的很好的技术支撑。
+比如 Zero-short-CoT 将目标问题陈述结合"让我们逐步思考"这样的提示词，作为 LLM 的输入。这是一种隐式生成推理链，具有一定的模糊性，存在语义理解错误，无法生成合理的计划等问题。
+
+Plan-and-Solve 是一种改进的 CoT 提示方法，通过显式分解任务为子目标并分步执行，提升复杂任务的推理能力。它将传统的"黑箱"推理操作，进一步转化为结构化流程，使得 Agent 的可解释性增强，而且还可以动态调整和反思。是 Agent 实现 Planning 能力的很好的技术支撑。
 
 ![Plan-and-Solve流程图](https://mmbiz.qpic.cn/mmbiz_png/Z6bicxIx5naJnZenEDVcrQTPhxVAGuSwogX2R35icI0LicObT1583jqOLicY99icfjAqLOVEmr6onlzPnWic64Er32uw/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1)
 
@@ -310,9 +236,11 @@ Plan-and-Solve 是一种改进的 CoT 提示方法，通过显式分解任务为
 
 到这里， 你会发现前面的 Memory，Tools，Planning 每一部分，其实都是在解决最核心的问题：如何在正确阶段构建最佳的 Prompt，印证了 LLM 部分描述提示词的重要性。 所以 Prompt 非常重要， 如果你发现 Agent 效果不好， 可以先从优化提示词开始。
 
-系统的提示词，某种程度上决定了 LLM 对 Agent 的特质和能力判断， 比如借助 LLM 生成计划，如果没有设计系统的提示词，LLM 根据用户的输入，会生成完全无关的计划，思考的域越大，效果会越差。 Openmanus 里面的计划系统提示词，就很明确地告知 LLM 的如何执行计划，如何使用工具等。
+系统的提示词，某种程度上决定了 LLM 对 Agent 的特质和能力判断， 比如借助 LLM 生成计划，如果没有设计系统的提示词，LLM 根据用户的输入，会生成完全无关的计划，思考的域越大，效果会越差。
 
-每一步的提示词，决定 LLM 如何使用工具， 比如我希望 LLM 优先使用 RemoteJupyterClient，可以重点强调其作用，尤其是加了 You Can also use pip install packages when package not found 这一句，LLM 可以生成 pip 命令，自动安装包。
+Openmanus 里面的计划系统提示词，就很明确地告知 LLM 的如何执行计划，如何使用工具等。
+
+每一步的提示词，决定 LLM 如何使用工具， 比如我希望 LLM 优先使用 RemoteJupyterClient，可以重点强调其作用，尤其是加了 **You Can also use pip install packages when package not found** 这一句，LLM 可以生成 pip 命令，自动安装包。
 
 Planning
 
@@ -621,9 +549,13 @@ MCP 通过标准化工具集成流程，云厂商无需再为每个客户或场�
 
 ## 争议与展望
 
-也有反对使用 MCP 的声音，比如 LangChain 发起了讨论，并对 MCP 是否是昙花一现发起了投票，有 40%的人认为是个未来的标准，20%的认为是昙花一现。具体讨论可以看[MCP: Flash in the Pan or Future Standard?](https://blog.langchain.dev/mcp-fad-or-fixture/)。
+也有反对使用 MCP 的声音，比如 LangChain 发起了讨论，并对 MCP 是否是昙花一现发起了投票，有 40%的人认为是个未来的标准，20%的认为是昙花一现。
 
-当下不能过于神化任何 AI 相关东西，MCP 解决不了 LLM 很多时候无法正确地使用工具问题，但还是值得投入研究的，"人们总是高估一项科技所带来的短期效益，却又低估它的长期影响"。AI 最大的机会可能在于改变现有的业务流程和产品，专注特定的小规模的业务场景，深入解决具体问题，而不是追求建立大型平台。
+具体讨论可以看[MCP: Flash in the Pan or Future Standard?](https://blog.langchain.dev/mcp-fad-or-fixture/)。
+
+当下不能过于神化任何 AI 相关东西，MCP 解决不了 LLM 很多时候无法正确地使用工具问题，但还是值得投入研究的，"人们总是高估一项科技所带来的短期效益，却又低估它的长期影响"。
+
+**AI 最大的机会可能在于改变现有的业务流程和产品，专注特定的小规模的业务场景，深入解决具体问题，而不是追求建立大型平台。**
 
 ## 结语
 
@@ -639,6 +571,5 @@ Agent 相关的研究领域仍有广阔的发展空间，希望本文能为读�
 4. [ChatDev: Communicative Agents for Software Development](https://arxiv.org/abs/2307.07924)
 5. [Scaling Large-Language-Model-based Multi-Agent Collaboration](https://arxiv.org/abs/2406.07155)
 6. [PlanGEN: A Multi-Agent Framework for Generating Planning and Reasoning Trajectories for Complex Problem Solving](https://arxiv.org/abs/2502.16111)
-7. [A Survey on the Memory Mechanism of Large Language Model based Agents]
-8. [Lost in the Middle: How Language Models Use Long Contexts](https://cs.stanford.edu/~nfliu/papers/lost-in-the-middle.arxiv2023.pdf)
-9. [LLM Agents Use Cases & Risks](https://www.holisticai.com/blog/llm-agents-use-cases-risks)
+7. [Lost in the Middle: How Language Models Use Long Contexts](https://cs.stanford.edu/~nfliu/papers/lost-in-the-middle.arxiv2023.pdf)
+8. [LLM Agents Use Cases & Risks](https://www.holisticai.com/blog/llm-agents-use-cases-risks)

@@ -7,10 +7,14 @@
     "fastapi",
     "levelname",
     "matplotlib",
+    "Openmanus",
     "pymongo",
+    "Qszou",
     "ruiyi",
     "Subgoal",
     "Synergizing",
-    "uvicorn"
+    "uvicorn",
+    "wechat",
+    "Weng"
   ]
 }
