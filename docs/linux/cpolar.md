@@ -1,7 +1,7 @@
 # Cpolar 内网穿透工具使用指南
 
 > 作者：YiAi  
-> 日期：2024年6月
+> 日期：2024 年 6 月
 
 ## 简介
 
@@ -155,6 +155,7 @@ cpolar tcp 8080
 ### 6.1 连接失败
 
 可能的原因：
+
 - authtoken 配置错误
 - 网络连接问题
 - 端口被占用
@@ -162,6 +163,7 @@ cpolar tcp 8080
 ### 6.2 速度慢
 
 可能的解决方案：
+
 - 选择更近的服务器节点
 - 检查本地网络状况
 - 升级到付费版本
@@ -171,4 +173,3 @@ cpolar tcp 8080
 - [Cpolar 官方网站](https://www.cpolar.com)
 - [Cpolar 文档中心](https://www.cpolar.com/docs)
 - [Cpolar GitHub 仓库](https://github.com/cpolar/cpolar)
-

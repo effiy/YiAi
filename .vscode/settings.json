@@ -3,6 +3,7 @@
     "aiofiles",
     "arun",
     "asyncio",
+    "Cpolar",
     "dotenv",
     "fastapi",
     "levelname",
