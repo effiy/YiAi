@@ -3,6 +3,7 @@
     "aiofiles",
     "arun",
     "asyncio",
+    "authtoken",
     "Cpolar",
     "dotenv",
     "fastapi",
