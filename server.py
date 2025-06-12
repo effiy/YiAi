@@ -1,6 +1,8 @@
 import sys, os, json
 from fastapi import FastAPI, Query # type: ignore
 
+from routers import base, oss, mongodb
+
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
 
@@ -69,6 +71,9 @@ def read_module_to_execute(
     # 异步执行获取的方法，并传入参数字典，返回执行结果
     return result
 
+app.include_router(base.router)
+app.include_router(oss.router)
+app.include_router(mongodb.router)
 # 当直接运行此脚本时执行以下代码
 if __name__ == "__main__":
     # 导入uvicorn服务器

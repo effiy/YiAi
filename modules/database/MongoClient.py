@@ -17,7 +17,7 @@ load_dotenv()
 
 T = TypeVar('T')
 
-class MongoDB:
+class MongoClient:
     _instance = None
     _client: Optional[MongoClient] = None
     _db = None
@@ -26,7 +26,7 @@ class MongoDB:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(MongoDB, cls).__new__(cls)
+            cls._instance = super(MongoClient, cls).__new__(cls)
         return cls._instance
 
     def initialize(self):
@@ -49,9 +49,9 @@ class MongoDB:
                         retryReads=True
                     )
                     self._db = self._client[database_name]
-                    logger.info(f"MongoDB 连接已初始化，数据库: {database_name}")
+                    logger.info(f"MongoClient 连接已初始化，数据库: {database_name}")
                 except Exception as e:
-                    logger.error(f"MongoDB 连接初始化失败: {str(e)}")
+                    logger.error(f"MongoClient 连接初始化失败: {str(e)}")
                     raise
 
     def __init__(self):
@@ -222,7 +222,7 @@ class MongoDB:
             self._client.close()
             self._client = None
             self._db = None
-            logger.info("MongoDB 连接已关闭")
+            logger.info("MongoClient 连接已关闭")
 
     def find_one_and_delete(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """查找并删除单个文档"""
@@ -279,7 +279,7 @@ def insert_one(params: Dict[str, Any] = None) -> str:
     document = params.get("document", {"name": "张三", "age": 30, "email": "zhangsan@example.com"})
 
     # 使用全局单例
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -324,7 +324,7 @@ def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     query = params.get("query", {"name": "张三"})
 
     try:
-        mongodb_instance = MongoDB()
+        mongodb_instance = MongoClient()
         mongodb_instance.initialize()
 
         document = mongodb_instance.find_one(
@@ -380,7 +380,7 @@ def update_one(params: Dict[str, Any] = None) -> int:
     query = params.get("query", {"name": "张三"})
     update = params.get("update", {"age": 31, "updated": True})
 
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -428,7 +428,7 @@ def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any
     update = params.get("update", {"status": "active"})
     return_document = params.get("return_document", True)
 
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -475,7 +475,7 @@ def insert_many(params: Dict[str, Any] = None) -> List[str]:
         {"name": "王五", "age": 35, "email": "wangwu@example.com"}
     ])
 
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -522,7 +522,7 @@ def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     # 将列表格式的排序条件转换为元组格式
     sort_criteria = [tuple(criteria) for criteria in sort_criteria]
 
-    db_instance = MongoDB()
+    db_instance = MongoClient()
     try:
         # 确保数据库已初始化
         db_instance.initialize()
@@ -572,7 +572,7 @@ def count_documents(params: Dict[str, Any] = None) -> int:
     cname = params.get("cname", "test_collection")
     query = params.get("query", {})
 
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -610,7 +610,7 @@ def delete_many(params: Dict[str, Any] = None) -> int:
     cname = params.get("cname", "test_collection")
     query = params.get("query", {})
 
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -639,7 +639,7 @@ def list_collections(params: Dict[str, Any] = None) -> List[str]:
     if params is None:
         params = {}
 
-    mongodb_instance = MongoDB()
+    mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
         mongodb_instance.initialize()
@@ -660,7 +660,7 @@ async def main(params: Dict[str, Any] = None):
     Returns:
         Dict[str, Any]: 测试结果
     """
-    logger.info("开始MongoDB测试...")
+    logger.info("开始MongoClient测试...")
     
     try:
         # 执行各个测试函数
@@ -673,8 +673,8 @@ async def main(params: Dict[str, Any] = None):
         # count_documents(params)
         # delete_many(params)
         
-        logger.info("MongoDB测试完成")
-        return {"status": "success", "message": "MongoDB测试完成", "document": document}
+        logger.info("MongoClient测试完成")
+        return {"status": "success", "message": "MongoClient测试完成", "document": document}
     except Exception as e:
         logger.error(f"测试过程中发生错误: {str(e)}")
         import traceback
@@ -682,14 +682,14 @@ async def main(params: Dict[str, Any] = None):
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
-    print("开始执行MongoDB测试...")
+    print("开始执行MongoClient测试...")
     
-    mongodb = MongoDB()
+    mongodb = MongoClient()
     try:
         mongodb.initialize()
         import asyncio
         result = asyncio.run(main())
-        print(f"MongoDB测试执行完成！结果: {result}")
+        print(f"MongoClient测试执行完成！结果: {result}")
     finally:
-        # 确保关闭MongoDB连接
+        # 确保关闭MongoClient连接
         mongodb.close()
