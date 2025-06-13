@@ -38,7 +38,7 @@ http://localhost:8000/api/
 # 同时支持GET和POST两种HTTP请求方法的路由
 @router.get("/")
 @router.post("/")
-def read_module_to_execute(
+async def read_module_to_execute(
     # 设置默认模块名为modules.crawler
     module_name: str = "modules.crawler.crawler",
     # 设置默认方法名为main
@@ -60,10 +60,10 @@ def read_module_to_execute(
     main_func = getattr(module, method_name)
     # 检查函数是否为协程函数
     if asyncio.iscoroutinefunction(main_func):
-        # 如果是协程函数，使用asyncio.run运行
-        result = asyncio.run(main_func(params_dict))
+        # 如果是协程函数，直接await
+        result = await main_func(params_dict)
     else:
         # 如果是普通函数，直接调用
         result = main_func(params_dict)
-    # 异步执行获取的方法，并传入参数字典，返回执行结果
+    # 返回执行结果
     return result

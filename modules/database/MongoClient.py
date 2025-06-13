@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import logging
 from dotenv import load_dotenv # type: ignore
 from contextlib import contextmanager
+import asyncio
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -305,7 +306,7 @@ def insert_one(params: Dict[str, Any] = None) -> str:
 # - cname: 集合名称
 # - query: 查询条件
 # - projection: 指定返回的字段（可选）
-def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     """测试查找单个文档
 
     Args:
@@ -326,9 +327,9 @@ def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
 
     try:
         mongodb_instance = MongoClient()
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        document = mongodb_instance.find_one(
+        document = await mongodb_instance.find_one(
             collection_name=cname,
             query=query if query else {}
         )
@@ -362,7 +363,7 @@ def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
 # - cname: 集合名称
 # - query: 查询条件
 # - update: 更新内容
-def update_one(params: Dict[str, Any] = None) -> int:
+async def update_one(params: Dict[str, Any] = None) -> int:
     """测试更新单个文档
 
     Args:
@@ -384,9 +385,9 @@ def update_one(params: Dict[str, Any] = None) -> int:
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        modified_count = mongodb_instance.update_one(
+        modified_count = await mongodb_instance.update_one(
             cname,
             query,
             update
@@ -408,7 +409,7 @@ def update_one(params: Dict[str, Any] = None) -> int:
 # - query: 查询条件
 # - update: 更新内容
 # - return_document: 是否返回更新后的文档
-def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
+async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     """测试查找并更新文档
 
     Args:
@@ -432,9 +433,9 @@ def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        updated_user = mongodb_instance.find_one_and_update(
+        updated_user = await mongodb_instance.find_one_and_update(
             cname,
             query,
             update,
@@ -456,7 +457,7 @@ def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any
 # 参数说明:
 # - cname: 集合名称
 # - documents: 要插入的文档列表，每个文档是一个字典
-def insert_many(params: Dict[str, Any] = None) -> List[str]:
+async def insert_many(params: Dict[str, Any] = None) -> List[str]:
     """测试插入多个文档
 
     Args:
@@ -479,9 +480,9 @@ def insert_many(params: Dict[str, Any] = None) -> List[str]:
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        batch_ids = mongodb_instance.insert_many(
+        batch_ids = await mongodb_instance.insert_many(
             cname,
             documents
         )
@@ -501,7 +502,7 @@ def insert_many(params: Dict[str, Any] = None) -> List[str]:
 # - collection_name: 集合名称
 # - filter_query: 查询条件，支持MongoDB查询操作符
 # - sort_criteria: 排序条件，格式为[["字段名", 1/-1]]，1表示升序，-1表示降序
-def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     """查询多个文档
 
     Args:
@@ -526,9 +527,9 @@ def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     db_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        db_instance.initialize()
+        await db_instance.initialize()
 
-        documents = db_instance.find_many(
+        documents = await db_instance.find_many(
             collection_name,
             filter_query,
             sort=sort_criteria
@@ -556,7 +557,7 @@ def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
 # 参数说明:
 # - cname: 集合名称
 # - query: 查询条件，支持MongoDB查询操作符
-def count_documents(params: Dict[str, Any] = None) -> int:
+async def count_documents(params: Dict[str, Any] = None) -> int:
     """测试文档计数
 
     Args:
@@ -576,9 +577,9 @@ def count_documents(params: Dict[str, Any] = None) -> int:
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        count = mongodb_instance.count_documents(cname, query)
+        count = await mongodb_instance.count_documents(cname, query)
         logger.info(f"总文档数: {count}")
         return count
     except Exception as e:
@@ -594,7 +595,7 @@ def count_documents(params: Dict[str, Any] = None) -> int:
 # 参数说明:
 # - cname: 集合名称
 # - query: 查询条件，支持MongoDB查询操作符
-def delete_many(params: Dict[str, Any] = None) -> int:
+async def delete_many(params: Dict[str, Any] = None) -> int:
     """测试删除多个文档
 
     Args:
@@ -614,9 +615,9 @@ def delete_many(params: Dict[str, Any] = None) -> int:
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        deleted = mongodb_instance.delete_many(cname, query)
+        deleted = await mongodb_instance.delete_many(cname, query)
         logger.info(f"清理测试数据，删除了 {deleted} 条记录")
         return deleted
     except Exception as e:
@@ -628,7 +629,7 @@ def delete_many(params: Dict[str, Any] = None) -> int:
 #
 # curl 示例:
 # curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=list_collections&params=%7B%7D"
-def list_collections(params: Dict[str, Any] = None) -> List[str]:
+async def list_collections(params: Dict[str, Any] = None) -> List[str]:
     """获取数据库中的所有集合列表
 
     Args:
@@ -643,9 +644,9 @@ def list_collections(params: Dict[str, Any] = None) -> List[str]:
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        collections = mongodb_instance._db.list_collection_names()
+        collections = await mongodb_instance._db.list_collection_names()
         logger.info(f"获取到 {len(collections)} 个集合")
         return collections
     except Exception as e:
@@ -666,7 +667,7 @@ async def main(params: Dict[str, Any] = None):
     try:
         # 执行各个测试函数
         # insert_one(params)
-        document = find_one(params)
+        document = await find_one(params)
         # update_one(params)
         # find_one_and_update(params)
         # insert_many(params)
@@ -687,10 +688,10 @@ if __name__ == "__main__":
     
     mongodb = MongoClient()
     try:
-        mongodb.initialize()
+        asyncio.run(mongodb.initialize())
         import asyncio
         result = asyncio.run(main())
         print(f"MongoClient测试执行完成！结果: {result}")
     finally:
         # 确保关闭MongoClient连接
-        mongodb.close()
+        asyncio.run(mongodb.close())
