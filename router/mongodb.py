@@ -1,6 +1,6 @@
 from functools import wraps
 from fastapi import APIRouter, Request, Body # type: ignore
-from typing import Dict, Any
+from typing import Dict, Any, List, Union
 import re
 from datetime import datetime
 import uuid
@@ -9,6 +9,7 @@ import asyncio
 from bson import ObjectId # type: ignore
 from Resp import RespOk
 from pymongo import UpdateOne, ReturnDocument # type: ignore
+from motor.motor_asyncio import AsyncIOMotorCursor # type: ignore
 
 from database import db
 
@@ -149,17 +150,19 @@ async def query(request: Request):
         if sort_param != 'createdTime':
             sort_list.append(('createdTime', -1))
         
-        # 并行执行查询和计数以提高性能
+        # 执行查询
         cursor = collection.find(filter_dict, projection) \
             .sort(sort_list) \
             .skip((page_num - 1) * page_size) \
             .limit(page_size)
         
-        # 同时获取数据和总数
-        data, total = await asyncio.gather(
-            cursor.to_list(length=page_size),
-            collection.count_documents(filter_dict)
-        )
+        # 获取数据
+        data = []
+        async for doc in cursor:
+            data.append(doc)
+            
+        # 获取总数
+        total = await collection.count_documents(filter_dict)
         
         # 计算总页数
         total_pages = (total + page_size - 1) // page_size

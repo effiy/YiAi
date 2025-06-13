@@ -1,5 +1,5 @@
 import os
-from pymongo import MongoClient as PyMongoClient, ReturnDocument # type: ignore
+from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
 from typing import Any, Dict, List, Optional, TypeVar
 from datetime import datetime, timezone
 import logging
@@ -19,7 +19,7 @@ T = TypeVar('T')
 
 class MongoClient:
     _instance = None
-    _client: Optional[PyMongoClient] = None
+    _client: Optional[AsyncIOMotorClient] = None
     _db = None
     _pool_size: int = 10
     _max_pool_size: int = 50
@@ -29,7 +29,7 @@ class MongoClient:
             cls._instance = super(MongoClient, cls).__new__(cls)
         return cls._instance
 
-    def initialize(self):
+    async def initialize(self):
         """初始化数据库连接"""
         if self._client is None:
             # 双重检查锁定模式，避免多次初始化
@@ -39,7 +39,7 @@ class MongoClient:
                     database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
                     
                     # 配置连接池
-                    self._client = PyMongoClient(
+                    self._client = AsyncIOMotorClient(
                         mongodb_url,
                         maxPoolSize=self._max_pool_size,
                         minPoolSize=self._pool_size,
@@ -77,41 +77,41 @@ class MongoClient:
             logger.error(f"获取集合 {collection_name} 失败: {str(e)}")
             raise
 
-    def insert_one(self, collection_name: str, document: Dict[str, Any]) -> str:
+    async def insert_one(self, collection_name: str, document: Dict[str, Any]) -> str:
         """插入单个文档"""
         try:
             if 'createdTime' not in document:
                 document['createdTime'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-            with self.get_collection(collection_name) as collection:
-                result = collection.insert_one(document)
-                return str(result.inserted_id)
+            collection = self.db[collection_name]
+            result = await collection.insert_one(document)
+            return str(result.inserted_id)
         except Exception as e:
             logger.error(f"插入文档失败: {str(e)}")
             raise
 
-    def insert_many(self, collection_name: str, documents: List[Dict[str, Any]]) -> List[str]:
+    async def insert_many(self, collection_name: str, documents: List[Dict[str, Any]]) -> List[str]:
         """插入多个文档"""
         try:
             for document in documents:
                 if 'createdTime' not in document:
                     document['createdTime'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-            with self.get_collection(collection_name) as collection:
-                result = collection.insert_many(documents)
-                return [str(id) for id in result.inserted_ids]
+            collection = self.db[collection_name]
+            result = await collection.insert_many(documents)
+            return [str(id) for id in result.inserted_ids]
         except Exception as e:
             logger.error(f"批量插入文档失败: {str(e)}")
             raise
 
-    def find_one(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def find_one(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """查找单个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                return collection.find_one(query)
+            collection = self.db[collection_name]
+            return await collection.find_one(query)
         except Exception as e:
             logger.error(f"查找文档失败: {str(e)}")
             raise
 
-    def find_many(
+    async def find_many(
         self,
         collection_name: str,
         query: Dict[str, Any],
@@ -121,16 +121,16 @@ class MongoClient:
     ) -> List[Dict[str, Any]]:
         """查找多个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                cursor = collection.find(query).skip(skip).limit(limit)
-                if sort:
-                    cursor = cursor.sort(sort)
-                return list(cursor)
+            collection = self.db[collection_name]
+            cursor = collection.find(query).skip(skip).limit(limit)
+            if sort:
+                cursor = cursor.sort(sort)
+            return await cursor.to_list(length=limit)
         except Exception as e:
             logger.error(f"查找多个文档失败: {str(e)}")
             raise
 
-    def update_one(
+    async def update_one(
         self,
         collection_name: str,
         query: Dict[str, Any],
@@ -138,14 +138,14 @@ class MongoClient:
     ) -> int:
         """更新单个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                result = collection.update_one(query, {"$set": update})
-                return result.modified_count
+            collection = self.db[collection_name]
+            result = await collection.update_one(query, {"$set": update})
+            return result.modified_count
         except Exception as e:
             logger.error(f"更新文档失败: {str(e)}")
             raise
 
-    def update_many(
+    async def update_many(
         self,
         collection_name: str,
         query: Dict[str, Any],
@@ -153,56 +153,57 @@ class MongoClient:
     ) -> int:
         """更新多个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                result = collection.update_many(query, {"$set": update})
-                return result.modified_count
+            collection = self.db[collection_name]
+            result = await collection.update_many(query, {"$set": update})
+            return result.modified_count
         except Exception as e:
             logger.error(f"批量更新文档失败: {str(e)}")
             raise
 
-    def delete_one(self, collection_name: str, query: Dict[str, Any]) -> int:
+    async def delete_one(self, collection_name: str, query: Dict[str, Any]) -> int:
         """删除单个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                result = collection.delete_one(query)
-                return result.deleted_count
+            collection = self.db[collection_name]
+            result = await collection.delete_one(query)
+            return result.deleted_count
         except Exception as e:
             logger.error(f"删除文档失败: {str(e)}")
             raise
 
-    def delete_many(self, collection_name: str, query: Dict[str, Any]) -> int:
+    async def delete_many(self, collection_name: str, query: Dict[str, Any]) -> int:
         """删除多个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                result = collection.delete_many(query)
-                return result.deleted_count
+            collection = self.db[collection_name]
+            result = await collection.delete_many(query)
+            return result.deleted_count
         except Exception as e:
             logger.error(f"批量删除文档失败: {str(e)}")
             raise
 
-    def count_documents(self, collection_name: str, query: Dict[str, Any]) -> int:
+    async def count_documents(self, collection_name: str, query: Dict[str, Any]) -> int:
         """统计文档数量"""
         try:
-            with self.get_collection(collection_name) as collection:
-                return collection.count_documents(query)
+            collection = self.db[collection_name]
+            return await collection.count_documents(query)
         except Exception as e:
             logger.error(f"统计文档数量失败: {str(e)}")
             raise
 
-    def aggregate(
+    async def aggregate(
         self,
         collection_name: str,
         pipeline: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """聚合查询"""
         try:
-            with self.get_collection(collection_name) as collection:
-                return list(collection.aggregate(pipeline))
+            collection = self.db[collection_name]
+            cursor = collection.aggregate(pipeline)
+            return await cursor.to_list(length=None)
         except Exception as e:
             logger.error(f"聚合查询失败: {str(e)}")
             raise
 
-    def create_index(
+    async def create_index(
         self,
         collection_name: str,
         keys: List[tuple],
@@ -210,13 +211,13 @@ class MongoClient:
     ):
         """创建索引"""
         try:
-            with self.get_collection(collection_name) as collection:
-                collection.create_index(keys, unique=unique)
+            collection = self.db[collection_name]
+            await collection.create_index(keys, unique=unique)
         except Exception as e:
             logger.error(f"创建索引失败: {str(e)}")
             raise
 
-    def close(self):
+    async def close(self):
         """关闭数据库连接"""
         if self._client is not None:
             self._client.close()
@@ -224,16 +225,16 @@ class MongoClient:
             self._db = None
             logger.info("MongoClient 连接已关闭")
 
-    def find_one_and_delete(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def find_one_and_delete(self, collection_name: str, query: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """查找并删除单个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                return collection.find_one_and_delete(query)
+            collection = self.db[collection_name]
+            return await collection.find_one_and_delete(query)
         except Exception as e:
             logger.error(f"查找并删除文档失败: {str(e)}")
             raise
 
-    def find_one_and_update(
+    async def find_one_and_update(
         self,
         collection_name: str,
         query: Dict[str, Any],
@@ -242,12 +243,12 @@ class MongoClient:
     ) -> Optional[Dict[str, Any]]:
         """查找并更新单个文档"""
         try:
-            with self.get_collection(collection_name) as collection:
-                return collection.find_one_and_update(
-                    query,
-                    {"$set": update},
-                    return_document=ReturnDocument.AFTER if return_document else ReturnDocument.BEFORE
-                )
+            collection = self.db[collection_name]
+            return await collection.find_one_and_update(
+                query,
+                {"$set": update},
+                return_document=ReturnDocument.AFTER if return_document else ReturnDocument.BEFORE
+            )
         except Exception as e:
             logger.error(f"查找并更新文档失败: {str(e)}")
             raise
