@@ -79,7 +79,7 @@ def create_pipeline(text_embedder, retriever, prompt_builder, llm):
     return pipeline
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.rag.local&method_name=main&params={"question":"孙悟空是谁","model":"qwen3:0.6b","data_files":{"train":["docs/**/*.md"]}}
+# GET http://localhost:8000/api/?module_name=modules.rag.local&method_name=main&params={"question":"孙悟空是谁","model":"qwen3:0.6b","data_files":{"train":["docs/**/*.md"]}}
 #
 # 参数说明:
 # - question: 要查询的问题

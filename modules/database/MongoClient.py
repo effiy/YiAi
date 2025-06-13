@@ -1,5 +1,5 @@
 import os
-from pymongo import MongoClient, ReturnDocument # type: ignore
+from pymongo import MongoClient as PyMongoClient, ReturnDocument # type: ignore
 from typing import Any, Dict, List, Optional, TypeVar
 from datetime import datetime, timezone
 import logging
@@ -19,7 +19,7 @@ T = TypeVar('T')
 
 class MongoClient:
     _instance = None
-    _client: Optional[MongoClient] = None
+    _client: Optional[PyMongoClient] = None
     _db = None
     _pool_size: int = 10
     _max_pool_size: int = 50
@@ -39,7 +39,7 @@ class MongoClient:
                     database_name = os.getenv("MONGODB_DATABASE", "ruiyi")
                     
                     # 配置连接池
-                    self._client = MongoClient(
+                    self._client = PyMongoClient(
                         mongodb_url,
                         maxPoolSize=self._max_pool_size,
                         minPoolSize=self._pool_size,
@@ -253,10 +253,10 @@ class MongoClient:
             raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22document%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A30%2C%22email%22%3A%22zhangsan%40example.com%22%7D%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22document%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A30%2C%22email%22%3A%22zhangsan%40example.com%22%7D%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -295,10 +295,10 @@ def insert_one(params: Dict[str, Any] = None) -> str:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -352,10 +352,10 @@ def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=update_one&params={"cname":"test_collection","query":{"name": "张三"},"update":{"age": 31, "updated": true}}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=update_one&params={"cname":"test_collection","query":{"name": "张三"},"update":{"age": 31, "updated": true}}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=update_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22age%22%3A31%2C%22updated%22%3Atrue%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=update_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22age%22%3A31%2C%22updated%22%3Atrue%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -397,10 +397,10 @@ def update_one(params: Dict[str, Any] = None) -> int:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one_and_update&params={"cname":"test_collection","query":{"name": "张三"},"update":{"status": "active"},"return_document": true}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one_and_update&params={"cname":"test_collection","query":{"name": "张三"},"update":{"status": "active"},"return_document": true}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_one_and_update&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22status%22%3A%22active%22%7D%2C%22return_document%22%3Atrue%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one_and_update&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22status%22%3A%22active%22%7D%2C%22return_document%22%3Atrue%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -447,10 +447,10 @@ def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_many&params={"cname":"test_collection","documents":[{"name":"李四","age":25,"email":"lisi@example.com"},{"name":"王五","age":35,"email":"wangwu@example.com"}]}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_many&params={"cname":"test_collection","documents":[{"name":"李四","age":25,"email":"lisi@example.com"},{"name":"王五","age":35,"email":"wangwu@example.com"}]}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=insert_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22documents%22%3A%5B%7B%22name%22%3A%22%E6%9D%8E%E5%9B%9B%22%2C%22age%22%3A25%2C%22email%22%3A%22lisi%40example.com%22%7D%2C%7B%22name%22%3A%22%E7%8E%8B%E4%BA%94%22%2C%22age%22%3A35%2C%22email%22%3A%22wangwu%40example.com%22%7D%5D%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22documents%22%3A%5B%7B%22name%22%3A%22%E6%9D%8E%E5%9B%9B%22%2C%22age%22%3A25%2C%22email%22%3A%22lisi%40example.com%22%7D%2C%7B%22name%22%3A%22%E7%8E%8B%E4%BA%94%22%2C%22age%22%3A35%2C%22email%22%3A%22wangwu%40example.com%22%7D%5D%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -491,10 +491,10 @@ def insert_many(params: Dict[str, Any] = None) -> List[str]:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_many&params={"collection_name":"test_collection","filter_query":{"age":{"$gt":25}},"sort_criteria":[["age",-1]]}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"test_collection","filter_query":{"age":{"$gt":25}},"sort_criteria":[["age",-1]]}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=find_many&params=%7B%22collection_name%22%3A%22test_collection%22%2C%22filter_query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D%2C%22sort_criteria%22%3A%5B%5B%22age%22%2C-1%5D%5D%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_many&params=%7B%22collection_name%22%3A%22test_collection%22%2C%22filter_query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D%2C%22sort_criteria%22%3A%5B%5B%22age%22%2C-1%5D%5D%7D"
 #
 # 参数说明:
 # - collection_name: 集合名称
@@ -547,10 +547,10 @@ def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=count_documents&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=count_documents&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=count_documents&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=count_documents&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -585,10 +585,10 @@ def count_documents(params: Dict[str, Any] = None) -> int:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=delete_many&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=delete_many&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=delete_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=delete_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
 #
 # 参数说明:
 # - cname: 集合名称
@@ -623,10 +623,10 @@ def delete_many(params: Dict[str, Any] = None) -> int:
         raise
 
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=list_collections&params={}
+# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=list_collections&params={}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=list_collections&params=%7B%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=list_collections&params=%7B%7D"
 def list_collections(params: Dict[str, Any] = None) -> List[str]:
     """获取数据库中的所有集合列表
 

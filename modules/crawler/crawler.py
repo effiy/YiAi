@@ -38,10 +38,10 @@ class LinkExtractor:
 
 """
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params={"url":"https://www.qbitai.com/"}
+# GET http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params={"url":"https://www.qbitai.com/"}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%7D"
 #
 # 参数说明:
 # - url: 要爬取的网页URL
@@ -71,10 +71,10 @@ async def fetch_page_content(params: Dict[str, any]) -> str:
 
 """
 # 示例请求:
-# GET http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
+# GET http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
 #
 # curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
+# curl -X GET "http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
 #
 # 参数说明:
 # - url: 要爬取的网页URL

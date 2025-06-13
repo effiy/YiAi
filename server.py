@@ -1,7 +1,9 @@
-import sys, os, json
-from fastapi import FastAPI # type: ignore
+import sys, os
 
-from router import base, oss, mongo
+from fastapi import FastAPI # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
+
+from router import base, mongodb, oss
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -12,9 +14,17 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 # 创建FastAPI应用实例
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
+
 app.include_router(oss.router)
 app.include_router(base.router)
-app.include_router(mongo.router)
+app.include_router(mongodb.router)
 
 # 当直接运行此脚本时执行以下代码
 if __name__ == "__main__":

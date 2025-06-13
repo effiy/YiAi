@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from modules.database.MongoClient import MongoClient
+from modules.database.mongoClient import MongoClient
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
