@@ -1,6 +1,6 @@
 import os
 from pymongo import MongoClient, ReturnDocument # type: ignore
-from typing import Any, Dict, List, Optional, Union, TypeVar, Generic
+from typing import Any, Dict, List, Optional, TypeVar
 from datetime import datetime, timezone
 import logging
 from dotenv import load_dotenv # type: ignore

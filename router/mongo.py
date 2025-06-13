@@ -7,10 +7,10 @@ import uuid
 import logging
 import asyncio
 from bson import ObjectId # type: ignore
-from Resp import Resp_ok
+from Resp import RespOk
 from pymongo import UpdateOne, ReturnDocument # type: ignore
 
-from modules.database.MongoClient import db
+from database import db
 
 router = APIRouter(
     prefix="/mongodb",
@@ -165,7 +165,7 @@ async def query(request: Request):
         total_pages = (total + page_size - 1) // page_size
         
         # 返回结果
-        return Resp_ok(
+        return RespOk(
             data={
                 'list': data,
                 'total': total,
@@ -194,7 +194,7 @@ async def get_detail(cname: str, id: str):
         if not document:
             raise ValueError(f"未找到ID为 {id} 的数据")
             
-        return Resp_ok(data=document)
+        return RespOk(data=document)
     except ValueError as e:
         logger.warning(f"获取详情失败: {str(e)}")
         return handle_error(e)
@@ -255,7 +255,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
             raise ValueError(f"数据插入失败: {str(e)}")
         
         # 返回结果
-        return Resp_ok(data={'key': data_copy['key']})
+        return RespOk(data={'key': data_copy['key']})
     except ValueError as e:
         logger.warning(f"数据验证失败: {str(e)}")
         return handle_error(e)
@@ -302,7 +302,7 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
         if not result:
             raise ValueError(f"未找到key为 {key} 的数据")
             
-        return Resp_ok(data={"key": key, "updated": True})
+        return RespOk(data={"key": key, "updated": True})
     except ValueError as e:
         logger.warning(f"数据验证失败: {str(e)}")
         return handle_error(e)
@@ -334,7 +334,7 @@ async def delete(request: Request):
                 if keys_list:
                     filter_dict = {'key': {'$in': keys_list}}
                     result = await collection.delete_many(filter_dict)
-                    return Resp_ok(data={"deleted_count": result.deleted_count})
+                    return RespOk(data={"deleted_count": result.deleted_count})
                 else:
                     raise ValueError("keys参数不能为空")
             except Exception as e:
@@ -346,7 +346,7 @@ async def delete(request: Request):
             result = await collection.delete_one(filter_dict)
             if result.deleted_count == 0:
                 raise ValueError(f"未找到key为 {key} 的数据")
-            return Resp_ok(data={"deleted_count": result.deleted_count})
+            return RespOk(data={"deleted_count": result.deleted_count})
         
         else:
             raise ValueError("删除操作必须提供有效的key或keys参数")
@@ -412,12 +412,12 @@ async def batch_order(request: Request, data: Dict[str, Any] = Body(...)):
             result = await collection.bulk_write(operations)
             
             # 返回结果
-            return Resp_ok(data={
+            return RespOk(data={
                 "updated_count": result.modified_count,
                 "total_count": len(operations)
             })
         else:
-            return Resp_ok(data={"updated_count": 0, "total_count": 0})
+            return RespOk(data={"updated_count": 0, "total_count": 0})
             
     except ValueError as e:
         logger.warning(f"批量排序数据验证失败: {str(e)}")

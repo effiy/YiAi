@@ -12,6 +12,7 @@
     "levelname",
     "matplotlib",
     "Openmanus",
+    "osspath",
     "pymongo",
     "Qszou",
     "ruiyi",
