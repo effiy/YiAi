@@ -86,14 +86,6 @@ def create_pipeline(text_embedder, retriever, prompt_builder, llm):
 # - model: 要使用的模型名称
 # - data_files: 数据文件配置
 async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
-    """主函数
-    
-    Args:
-        params (Dict[str, any]): 参数字典，包含:
-            - question (str): 要查询的问题
-            - model (str): 要使用的模型名称
-            - data_files (dict): 数据文件配置
-    """
     # 从参数字典中获取配置
     question = params.get("question", "孙悟空是谁")
     model = params.get("model", "qwen3:0.6b")
