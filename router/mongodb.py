@@ -1,15 +1,13 @@
 from functools import wraps
 from fastapi import APIRouter, Request, Body # type: ignore
-from typing import Dict, Any, List, Union
+from typing import Dict, Any
 import re
 from datetime import datetime
 import uuid
 import logging
-import asyncio
 from bson import ObjectId # type: ignore
 from Resp import RespOk
 from pymongo import UpdateOne, ReturnDocument # type: ignore
-from motor.motor_asyncio import AsyncIOMotorCursor # type: ignore
 
 from database import db
 
