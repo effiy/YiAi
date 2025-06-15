@@ -1,7 +1,6 @@
 import sys, os
 
 from fastapi import FastAPI # type: ignore
-from fastapi.middleware.cors import CORSMiddleware # type: ignore
 
 from router import base, mongodb, oss
 
@@ -13,15 +12,6 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 # 创建FastAPI应用实例
 app = FastAPI()
-
-# 添加CORS中间件，允许所有域名跨域访问
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 允许所有域名跨域
-    allow_credentials=True,
-    allow_methods=["*"],  # 允许所有HTTP方法
-    allow_headers=["*"]   # 允许所有HTTP头
-)
 
 app.include_router(oss.router)
 app.include_router(base.router)
