@@ -114,7 +114,6 @@ async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
 
     except Exception as e:
         logger.error(f"爬取过程中发生错误: {str(e)}")
-        i返回 RespOk（data=long_titles）mport traceback
         logger.error(traceback.format_exc())
         return RespOk(data=[])
 

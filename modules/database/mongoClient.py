@@ -596,16 +596,6 @@ async def count_documents(params: Dict[str, Any] = None) -> int:
 # - cname: 集合名称
 # - query: 查询条件，支持MongoDB查询操作符
 async def delete_many(params: Dict[str, Any] = None) -> int:
-    """测试删除多个文档
-
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - query: 查询条件，默认删除所有文档
-
-    Returns:
-        int: 删除的文档数量
-    """
     if params is None:
         params = {}
 
@@ -622,6 +612,142 @@ async def delete_many(params: Dict[str, Any] = None) -> int:
         return deleted
     except Exception as e:
         logger.error(f"删除多个文档时出错: {e}")
+        raise
+
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert&params={"cname":"test_collection","document":{"name":"张三","age":31,"email":"zhangsan_new@example.com"},"query_fields":["name"]}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert&params=%7B%22cname%22%3A%22test_collection%22%2C%22document%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A31%2C%22email%22%3A%22zhangsan_new%40example.com%22%7D%2C%22query_fields%22%3A%5B%22name%22%5D%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - document: 文档对象，包含查询条件和更新内容
+# - query_fields: 用作查询条件的字段名数组，默认为["name"]
+async def upsert(params: Dict[str, Any] = None) -> Dict[str, Any]:
+    params = params or {}
+
+    cname = params.get("cname", "test_collection")
+    document = params.get("document", {"name": "张三", "age": 31, "email": "zhangsan_new@example.com"})
+    query_fields = params.get("query_fields", ["name"])
+
+    # 从文档中提取查询条件
+    query = {}
+    for field in query_fields:
+        if field in document:
+            query[field] = document[field]
+
+    # 如果没有找到任何查询字段，则使用整个文档作为查询条件
+    if not query:
+        query = document
+
+    # 更新内容就是整个文档
+    update = {"$set": document}
+
+    mongodb_instance = MongoClient()
+    try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+
+        # 获取集合对象
+        collection = mongodb_instance._db[cname]
+
+        # 执行upsert操作
+        result = await collection.update_one(
+            query,
+            update,
+            upsert=True
+        )
+
+        response = {
+            "matched_count": result.matched_count,
+            "modified_count": result.modified_count,
+            "upserted_id": str(result.upserted_id) if result.upserted_id else None,
+            "is_new": result.upserted_id is not None
+        }
+
+        if result.upserted_id:
+            logger.info(f"文档已插入，ID: {result.upserted_id}")
+        else:
+            logger.info(f"文档已更新，匹配数: {result.matched_count}, 修改数: {result.modified_count}")
+
+        return response
+    except Exception as e:
+        logger.error(f"upsert操作时出错: {e}")
+        logger.exception("详细错误信息:")
+        raise
+
+# 示例请求:
+# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert_many&params={"cname":"test_collection","documents":[{"name":"张三","age":31},{"name":"李四","email":"lisi_new@example.com"}],"query_fields":["name"]}
+#
+# curl 示例:
+# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22documents%22%3A%5B%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A31%7D%2C%7B%22name%22%3A%22%E6%9D%8E%E5%9B%9B%22%2C%22email%22%3A%22lisi_new%40example.com%22%7D%5D%2C%22query_fields%22%3A%5B%22name%22%5D%7D"
+#
+# 参数说明:
+# - cname: 集合名称
+# - documents: 文档列表，每个文档包含查询条件和更新内容
+# - query_fields: 用作查询条件的字段名数组，默认为["name"]
+async def upsert_many(params: Dict[str, Any] = None) -> Dict[str, Any]:
+    params = params or {}
+
+    cname = params.get("cname", "test_collection")
+    documents = params.get("documents", [
+        {"name": "张三", "age": 31},
+        {"name": "李四", "email": "lisi_new@example.com"}
+    ])
+    query_fields = params.get("query_fields", ["name"])
+
+    mongodb_instance = MongoClient()
+    try:
+        # 确保数据库已初始化
+        await mongodb_instance.initialize()
+
+        # 获取集合对象
+        collection = mongodb_instance._db[cname]
+
+        results = {
+            "matched_count": 0,
+            "modified_count": 0,
+            "upserted_ids": [],
+            "new_count": 0
+        }
+
+        # 执行批量upsert操作
+        for doc in documents:
+            # 从文档中提取查询条件
+            query = {}
+            for field in query_fields:
+                if field in doc:
+                    query[field] = doc[field]
+
+            # 如果没有找到任何查询字段，则使用整个文档作为查询条件
+            if not query:
+                query = doc
+
+            # 更新内容就是整个文档
+            update = {"$set": doc}
+
+            result = await collection.update_one(
+                query,
+                update,
+                upsert=True
+            )
+
+            results["matched_count"] += result.matched_count
+            results["modified_count"] += result.modified_count
+
+            if result.upserted_id:
+                results["upserted_ids"].append(str(result.upserted_id))
+                results["new_count"] += 1
+
+        logger.info(f"批量upsert完成: 匹配数: {results['matched_count']}, "
+                   f"修改数: {results['modified_count']}, "
+                   f"新插入数: {results['new_count']}")
+
+        return results
+    except Exception as e:
+        logger.error(f"批量upsert操作时出错: {e}")
+        logger.exception("详细错误信息:")
         raise
 
 # 示例请求:
@@ -682,6 +808,7 @@ async def main(params: Dict[str, Any] = None):
         import traceback
         logger.error(traceback.format_exc())
         return {"status": "error", "message": str(e)}
+
 
 if __name__ == "__main__":
     print("开始执行MongoClient测试...")
