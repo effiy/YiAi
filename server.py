@@ -2,7 +2,7 @@ import sys, os
 
 from fastapi import FastAPI # type: ignore
 
-from router import base, mongodb, oss
+from router import base, mongodb, oss, docs
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -14,6 +14,7 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 app = FastAPI()
 
 app.include_router(oss.router)
+app.include_router(docs.router)
 app.include_router(base.router)
 app.include_router(mongodb.router)
 
