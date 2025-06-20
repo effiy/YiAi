@@ -1,6 +1,7 @@
 import sys, os
 
 from fastapi import FastAPI # type: ignore
+from fastapi.staticfiles import StaticFiles # type: ignore
 
 from router import base, mongodb, oss, docs
 
@@ -12,6 +13,9 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 # 创建FastAPI应用实例
 app = FastAPI()
+
+# 挂载 docs 目录为静态文件目录
+app.mount("/static/docs", StaticFiles(directory="docs"), name="static_docs")
 
 app.include_router(oss.router)
 app.include_router(docs.router)
