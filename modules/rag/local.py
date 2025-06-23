@@ -10,6 +10,7 @@ from haystack_integrations.components.generators.ollama import OllamaChatGenerat
 from haystack_integrations.components.embedders.ollama.text_embedder import OllamaTextEmbedder # type: ignore
 from haystack_integrations.components.embedders.ollama.document_embedder import OllamaDocumentEmbedder # type: ignore
 from typing import Dict, List
+import os
 
 def init_document_store():
     """初始化文档存储"""
@@ -26,7 +27,8 @@ def load_documents(data_files: dict = {"train": ["../../docs/**/*.md"]}):
 
 def create_embeddings(docs):
     """为文档创建嵌入向量"""
-    doc_embedder = OllamaDocumentEmbedder()
+    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    doc_embedder = OllamaDocumentEmbedder(url=ollama_url)
     return doc_embedder.run(docs)["documents"]
 
 def init_retriever(docs_store):
@@ -56,9 +58,10 @@ def init_components(model: str):
     Args:
         model (str): 要使用的模型名称
     """
+    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
     return (
-        OllamaChatGenerator(model=model),
-        OllamaTextEmbedder()
+        OllamaChatGenerator(model=model, url=ollama_url),
+        OllamaTextEmbedder(url=ollama_url)
     )
 
 def create_pipeline(text_embedder, retriever, prompt_builder, llm):
@@ -88,7 +91,7 @@ def create_pipeline(text_embedder, retriever, prompt_builder, llm):
 async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
     # 从参数字典中获取配置
     question = params.get("question", "孙悟空是谁")
-    model = params.get("model", "qwen3:0.6b")
+    model = params.get("model", "qwq")
     data_files = params.get("data_files", {"train": ["docs/**/*.md"]})
     
     # 初始化文档存储
@@ -127,7 +130,7 @@ if __name__ == "__main__":
     import asyncio
     params = {
         "question": "孙悟空是谁",
-        "model": "qwen3:0.6b",
+        "model": "qwq",
         "data_files": {"train": ["../../docs/**/*.md"]}
     }
     answer = asyncio.run(main(params))
