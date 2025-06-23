@@ -12,6 +12,7 @@
     "jsonable",
     "levelname",
     "matplotlib",
+    "nomic",
     "Ollama",
     "Openmanus",
     "osspath",
