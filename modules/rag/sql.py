@@ -185,7 +185,7 @@ def create_sql_pipeline() -> Pipeline:
 async def main(params: Dict[str, Any]) -> List[Dict[str, str]]:
     """运行SQL查询管道的主函数"""
     question = params.get("question", "有多少行数据?")
-    columns = params.get("columns", "ID, Reason for absence, Month of absence, Day of the week")
+    columns = params.get("columns", "ID, Reason_for_absence, Month_of_absence, Day_of_the_week, Seasons, Transportation_expense, Distance_from_Residence_to_Work, Service_time, Age, Work_load_Average_day_, Hit_target, Disciplinary_failure, Education, Son, Social_drinker, Social_smoker, Pet, Weight, Height, Body_mass_index, Absenteeism_time_in_hours")
     
     try:
         pipeline = create_sql_pipeline()
@@ -218,7 +218,7 @@ if __name__ == "__main__":
         
         # 执行测试查询
         test_question = "On which days of the week does the average absenteeism time exceed 4 hours?"
-        test_columns = "ID, Reason for absence, Month of absence, Day of the week, Distance from Residence to Work"
+        test_columns = "ID, Reason_for_absence, Month_of_absence, Day_of_the_week, Seasons, Transportation_expense, Distance_from_Residence_to_Work, Service_time, Age, Work_load_Average_day_, Hit_target, Disciplinary_failure, Education, Son, Social_drinker, Social_smoker, Pet, Weight, Height, Body_mass_index, Absenteeism_time_in_hours"
         
         print(f"执行测试查询: {test_question}")
         result = sql_pipeline.run({
