@@ -10,7 +10,6 @@ router = APIRouter(prefix="/api", tags=["base"])
 
 # 同时支持GET和POST两种HTTP请求方法的路由
 @router.get("/")
-@router.post("/")
 async def read_module_to_execute(
     # 设置默认模块名为modules.crawler
     module_name: str = "modules.crawler.crawler",
