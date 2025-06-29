@@ -39,18 +39,6 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=u
 - query: 查询条件
 - update: 更新内容
 
-## upsert_mane
-
-### GET 请求:
-
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=upsert_many&params={"cname":"test_collection","documents":[{"name":"张三","age":31},{"name":"李四","email":"lisi_new@example.com"}],"query_fields":["name"]}
-
-### 参数说明:
-
-- cname: 集合名称
-- documents: 文档列表，每个文档包含查询条件和更新内容
-- query_fields: 用作查询条件的字段名数组，默认为["name"]
-
 ## find_one_and_update
 
 ### GET 请求:
@@ -79,7 +67,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=i
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"test_collection","filter_query":{"age":{"$gt":25}},"sort_criteria":[["age",-1]]}
+https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"test_collection","filter_query":{},"sort_criteria":[]}
 
 ### 参数说明:
 
@@ -126,3 +114,15 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoDB&method_name=upser
 ### GET 请求:
 
 https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=list_collections&params={}
+
+## upsert_many
+
+### GET 请求:
+
+https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=upsert_many&params={"cname":"test_collection","documents":[],"query_fields":["title"]}
+
+### 参数说明:
+
+- cname: 集合名称
+- documents: 文档列表，每个文档包含查询条件和更新内容
+- query_fields: 用作查询条件的字段名数组，默认为["name"]
