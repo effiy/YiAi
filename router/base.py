@@ -1,7 +1,7 @@
 import logging, json
 from fastapi import APIRouter, Query, Body, HTTPException # type: ignore
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from Resp import RespOk
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api", tags=["base"])
 class ExecuteRequest(BaseModel):
     module_name: str = "modules.crawler.crawler"
     method_name: str = "main"
-    params: dict = {"url": "https://www.qbitai.com/"}
+    params: Dict[str, Any] = {"url": "https://www.qbitai.com/"}
 
 # 同时支持GET和POST两种HTTP请求方法的路由
 @router.get("/")
@@ -66,6 +66,10 @@ async def post_module_to_execute(request: ExecuteRequest):
     import asyncio
     
     try:
+        # 验证请求数据
+        if not request.module_name or not request.method_name:
+            raise HTTPException(status_code=422, detail="模块名和方法名不能为空")
+        
         # 动态导入指定的模块
         module = importlib.import_module(request.module_name)
         # 从模块中获取指定的方法
