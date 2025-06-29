@@ -489,7 +489,7 @@ async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
 
         logger.info(f"找到 {len(documents)} 个符合条件的文档")
         for doc in documents:
-            logger.info(f"文档: {doc['name']}, 年龄: {doc['age']}")
+            logger.info(f"文档: {doc}")
         return documents
     except Exception as e:
         logger.error(f"查询多个文档时出错: {e}")
