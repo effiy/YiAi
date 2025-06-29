@@ -1,7 +1,7 @@
 import logging, json
 from fastapi import APIRouter, Query, Body, HTTPException # type: ignore
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Union
 
 from Resp import RespOk
 
@@ -15,6 +15,10 @@ class ExecuteRequest(BaseModel):
     module_name: str = "modules.crawler.crawler"
     method_name: str = "main"
     params: Dict[str, Any] = {"url": "https://www.qbitai.com/"}
+    
+    class Config:
+        # 允许任意类型的字段值
+        arbitrary_types_allowed = True
 
 # 同时支持GET和POST两种HTTP请求方法的路由
 @router.get("/")
@@ -34,8 +38,9 @@ async def read_module_to_execute(
     try:
         # 将字符串转换为字典
         params_dict = json.loads(params)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=422, detail="参数格式错误，请提供有效的JSON字符串")
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON解析错误: {str(e)}")
+        raise HTTPException(status_code=422, detail=f"参数格式错误，请提供有效的JSON字符串: {str(e)}")
     
     try:
         # 动态导入指定的模块
@@ -43,6 +48,7 @@ async def read_module_to_execute(
         # 从模块中获取指定的方法
         main_func = getattr(module, method_name)
     except (ImportError, AttributeError) as e:
+        logger.error(f"模块导入错误: {str(e)}")
         raise HTTPException(status_code=422, detail=f"模块或方法不存在: {str(e)}")
     
     try:
@@ -56,6 +62,7 @@ async def read_module_to_execute(
         # 返回执行结果
         return result
     except Exception as e:
+        logger.error(f"函数执行错误: {str(e)}")
         raise HTTPException(status_code=500, detail=f"执行函数时发生错误: {str(e)}")
 
 @router.post("/")
@@ -70,11 +77,16 @@ async def post_module_to_execute(request: ExecuteRequest):
         if not request.module_name or not request.method_name:
             raise HTTPException(status_code=422, detail="模块名和方法名不能为空")
         
+        # 记录请求信息用于调试
+        logger.info(f"执行模块: {request.module_name}, 方法: {request.method_name}")
+        logger.info(f"参数: {request.params}")
+        
         # 动态导入指定的模块
         module = importlib.import_module(request.module_name)
         # 从模块中获取指定的方法
         main_func = getattr(module, request.method_name)
     except (ImportError, AttributeError) as e:
+        logger.error(f"模块导入错误: {str(e)}")
         raise HTTPException(status_code=422, detail=f"模块或方法不存在: {str(e)}")
     
     try:
@@ -88,4 +100,5 @@ async def post_module_to_execute(request: ExecuteRequest):
         # 返回执行结果
         return result
     except Exception as e:
+        logger.error(f"函数执行错误: {str(e)}")
         raise HTTPException(status_code=500, detail=f"执行函数时发生错误: {str(e)}")
