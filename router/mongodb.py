@@ -1,6 +1,6 @@
 from functools import wraps
 from fastapi import APIRouter, Request, Body # type: ignore
-from typing import Dict, Any
+from typing import Dict, Any, List
 import re
 from datetime import datetime
 import uuid
@@ -72,12 +72,16 @@ def build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
         if not value:  # 跳过空值
             continue
             
-        if isinstance(value, list):
-            if not value:  # 跳过空列表
+        # 检查是否为列表类型（包括FastAPI的QueryParams列表）
+        if hasattr(value, '__iter__') and not isinstance(value, (str, bytes, dict)):
+            # 转换为真正的列表
+            value_list = list(value) if not isinstance(value, list) else value
+            
+            if not value_list:  # 跳过空列表
                 continue
                 
-            if len(value) == 2:  # 范围查询
-                start, end = value
+            if len(value_list) == 2:  # 范围查询
+                start, end = value_list
                 if is_valid_date(start) and is_valid_date(end):
                     filter_dict[key] = {'$gte': start, '$lt': end}
                 elif is_number(start) or is_number(end):
@@ -85,7 +89,7 @@ def build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
                     end_val = 9223372036854775806 if not is_number(end) else float(end)
                     filter_dict[key] = {'$gte': start_val, '$lt': end_val}
             else:  # 多值查询
-                filter_dict[key] = {'$in': value}
+                filter_dict[key] = {'$in': value_list}
                 
         elif isinstance(value, str):
             if ',' in value:  # 多条件模糊查询
