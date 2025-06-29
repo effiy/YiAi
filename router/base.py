@@ -8,33 +8,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["base"])
 
-
-"""
-使用示例:
-
-GET 请求:
-http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
-http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
-http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
-
-命令行示例:
-curl -X GET "http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
-
-POST 请求:
-curl -X POST http://localhost:8000/api/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "module_name": "modules.crawler.crawler",
-    "method_name": "main", 
-    "params": {
-      "url": "https://www.qbitai.com/",
-      "min_title_length": 24
-    }
-  }'
-
-浏览器直接访问(默认参数):
-http://localhost:8000/api/
-"""
 # 同时支持GET和POST两种HTTP请求方法的路由
 @router.get("/")
 @router.post("/")

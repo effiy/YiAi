@@ -1,10 +1,11 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
+from pymongo import ReturnDocument # type: ignore
 from typing import Any, Dict, List, Optional, TypeVar
 from datetime import datetime, timezone
 import logging
 from dotenv import load_dotenv # type: ignore
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 import asyncio
 
 # 配置日志
@@ -65,11 +66,11 @@ class MongoClient:
             raise RuntimeError("数据库连接未初始化，请先调用 initialize()")
         return self._db
 
-    @contextmanager
-    def get_collection(self, collection_name: str):
-        """获取集合对象的上下文管理器"""
+    @asynccontextmanager
+    async def get_collection(self, collection_name: str):
+        """获取集合对象的异步上下文管理器"""
         # 确保数据库已初始化
-        self.initialize()
+        await self.initialize()
         
         try:
             collection = self.db[collection_name]
@@ -254,26 +255,18 @@ class MongoClient:
             logger.error(f"查找并更新文档失败: {str(e)}")
             raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22document%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A30%2C%22email%22%3A%22zhangsan%40example.com%22%7D%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - document: 要插入的文档
-def insert_one(params: Dict[str, Any] = None) -> str:
-    """测试插入单个文档
+"""测试插入单个文档
 
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - document: 要插入的文档，默认为测试数据
+Args:
+    params: 参数字典，可包含：
+        - cname: 集合名称，默认为"test_collection"
+        - document: 要插入的文档，默认为测试数据
 
-    Returns:
-        str: 插入文档的ID
-    """
+Returns:
+    str: 插入文档的ID
+"""
+async def insert_one(params: Dict[str, Any] = None) -> str:
+
     if params is None:
         params = {}
 
@@ -284,9 +277,9 @@ def insert_one(params: Dict[str, Any] = None) -> str:
     mongodb_instance = MongoClient()
     try:
         # 确保数据库已初始化
-        mongodb_instance.initialize()
+        await mongodb_instance.initialize()
 
-        doc_id = mongodb_instance.insert_one(
+        doc_id = await mongodb_instance.insert_one(
             cname,
             document
         )
@@ -296,28 +289,17 @@ def insert_one(params: Dict[str, Any] = None) -> str:
         logger.error(f"插入文档时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - query: 查询条件
-# - projection: 指定返回的字段（可选）
+"""测试查找单个文档
+Args:
+    params: 参数字典，可包含：
+        - cname: 集合名称，默认为"test_collection"
+        - query: 查询条件，默认查询名为"张三"的文档
+        - projection: 指定返回的字段，默认为None（返回所有字段）
+
+Returns:
+    Optional[Dict[str, Any]]: 查找到的文档
+"""
 async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
-    """测试查找单个文档
-
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - query: 查询条件，默认查询名为"张三"的文档
-            - projection: 指定返回的字段，默认为None（返回所有字段）
-
-    Returns:
-        Optional[Dict[str, Any]]: 查找到的文档
-    """
     # 使用空字典作为默认值
     params = params or {}
 
@@ -353,28 +335,19 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         logger.exception("详细错误信息:")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=update_one&params={"cname":"test_collection","query":{"name": "张三"},"update":{"age": 31, "updated": true}}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=update_one&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22age%22%3A31%2C%22updated%22%3Atrue%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - query: 查询条件
-# - update: 更新内容
+"""测试更新单个文档
+
+Args:
+    params: 参数字典，可包含：
+        - cname: 集合名称，默认为"test_collection"
+        - query: 查询条件，默认查询名为"张三"的文档
+        - update: 更新内容，默认更新年龄和添加updated标记
+
+Returns:
+    int: 更新的文档数量
+"""
 async def update_one(params: Dict[str, Any] = None) -> int:
-    """测试更新单个文档
 
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - query: 查询条件，默认查询名为"张三"的文档
-            - update: 更新内容，默认更新年龄和添加updated标记
-
-    Returns:
-        int: 更新的文档数量
-    """
     if params is None:
         params = {}
 
@@ -398,30 +371,21 @@ async def update_one(params: Dict[str, Any] = None) -> int:
         logger.error(f"更新文档时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one_and_update&params={"cname":"test_collection","query":{"name": "张三"},"update":{"status": "active"},"return_document": true}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_one_and_update&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%7D%2C%22update%22%3A%7B%22status%22%3A%22active%22%7D%2C%22return_document%22%3Atrue%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - query: 查询条件
-# - update: 更新内容
-# - return_document: 是否返回更新后的文档
+
+"""测试查找并更新文档
+
+Args:
+    params: 参数字典，可包含：
+        - cname: 集合名称，默认为"test_collection"
+        - query: 查询条件，默认查询名为"张三"的文档
+        - update: 更新内容，默认添加status字段
+        - return_document: 是否返回更新后的文档，默认为True
+
+Returns:
+    Optional[Dict[str, Any]]: 更新前或更新后的文档
+"""
 async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
-    """测试查找并更新文档
 
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - query: 查询条件，默认查询名为"张三"的文档
-            - update: 更新内容，默认添加status字段
-            - return_document: 是否返回更新后的文档，默认为True
-
-    Returns:
-        Optional[Dict[str, Any]]: 更新前或更新后的文档
-    """
     if params is None:
         params = {}
 
@@ -448,26 +412,19 @@ async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[st
         logger.error(f"查找并更新文档时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_many&params={"cname":"test_collection","documents":[{"name":"李四","age":25,"email":"lisi@example.com"},{"name":"王五","age":35,"email":"wangwu@example.com"}]}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=insert_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22documents%22%3A%5B%7B%22name%22%3A%22%E6%9D%8E%E5%9B%9B%22%2C%22age%22%3A25%2C%22email%22%3A%22lisi%40example.com%22%7D%2C%7B%22name%22%3A%22%E7%8E%8B%E4%BA%94%22%2C%22age%22%3A35%2C%22email%22%3A%22wangwu%40example.com%22%7D%5D%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - documents: 要插入的文档列表，每个文档是一个字典
+
+"""测试插入多个文档
+
+Args:
+    params: 参数字典，可包含：
+        - cname: 集合名称，默认为"test_collection"
+        - documents: 要插入的文档列表，默认为测试数据
+
+Returns:
+    List[str]: 插入文档的ID列表
+"""
 async def insert_many(params: Dict[str, Any] = None) -> List[str]:
-    """测试插入多个文档
 
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - documents: 要插入的文档列表，默认为测试数据
-
-    Returns:
-        List[str]: 插入文档的ID列表
-    """
     if params is None:
         params = {}
 
@@ -492,28 +449,18 @@ async def insert_many(params: Dict[str, Any] = None) -> List[str]:
         logger.error(f"批量插入文档时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"test_collection","filter_query":{"age":{"$gt":25}},"sort_criteria":[["age",-1]]}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=find_many&params=%7B%22collection_name%22%3A%22test_collection%22%2C%22filter_query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D%2C%22sort_criteria%22%3A%5B%5B%22age%22%2C-1%5D%5D%7D"
-#
-# 参数说明:
-# - collection_name: 集合名称
-# - filter_query: 查询条件，支持MongoDB查询操作符
-# - sort_criteria: 排序条件，格式为[["字段名", 1/-1]]，1表示升序，-1表示降序
+"""查询多个文档
+Args:
+    params: 参数字典，可包含：
+        - collection_name: 集合名称，默认为"test_collection"
+        - filter_query: 查询条件，默认查询年龄大于25的文档
+        - sort_criteria: 排序条件，默认按年龄降序排列
+
+Returns:
+    List[Dict[str, Any]]: 查询到的文档列表
+"""
 async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
-    """查询多个文档
-
-    Args:
-        params: 参数字典，可包含：
-            - collection_name: 集合名称，默认为"test_collection"
-            - filter_query: 查询条件，默认查询年龄大于25的文档
-            - sort_criteria: 排序条件，默认按年龄降序排列
-
-    Returns:
-        List[Dict[str, Any]]: 查询到的文档列表
-    """
+    
     if params is None:
         params = {}
 
@@ -548,26 +495,18 @@ async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         logger.error(f"查询多个文档时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=count_documents&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=count_documents&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - query: 查询条件，支持MongoDB查询操作符
+"""测试文档计数
+
+Args:
+    params: 参数字典，可包含：
+        - cname: 集合名称，默认为"test_collection"
+        - query: 查询条件，默认查询所有文档
+
+Returns:
+    int: 文档数量
+"""
 async def count_documents(params: Dict[str, Any] = None) -> int:
-    """测试文档计数
 
-    Args:
-        params: 参数字典，可包含：
-            - cname: 集合名称，默认为"test_collection"
-            - query: 查询条件，默认查询所有文档
-
-    Returns:
-        int: 文档数量
-    """
     if params is None:
         params = {}
 
@@ -586,15 +525,7 @@ async def count_documents(params: Dict[str, Any] = None) -> int:
         logger.error(f"统计文档数量时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=delete_many&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=delete_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22query%22%3A%7B%22age%22%3A%7B%22%24gt%22%3A25%7D%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - query: 查询条件，支持MongoDB查询操作符
+
 async def delete_many(params: Dict[str, Any] = None) -> int:
     if params is None:
         params = {}
@@ -614,16 +545,6 @@ async def delete_many(params: Dict[str, Any] = None) -> int:
         logger.error(f"删除多个文档时出错: {e}")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert&params={"cname":"test_collection","document":{"name":"张三","age":31,"email":"zhangsan_new@example.com"},"query_fields":["name"]}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert&params=%7B%22cname%22%3A%22test_collection%22%2C%22document%22%3A%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A31%2C%22email%22%3A%22zhangsan_new%40example.com%22%7D%2C%22query_fields%22%3A%5B%22name%22%5D%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - document: 文档对象，包含查询条件和更新内容
-# - query_fields: 用作查询条件的字段名数组，默认为["name"]
 async def upsert(params: Dict[str, Any] = None) -> Dict[str, Any]:
     params = params or {}
 
@@ -677,16 +598,6 @@ async def upsert(params: Dict[str, Any] = None) -> Dict[str, Any]:
         logger.exception("详细错误信息:")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert_many&params={"cname":"test_collection","documents":[{"name":"张三","age":31},{"name":"李四","email":"lisi_new@example.com"}],"query_fields":["name"]}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/?module_name=modules.database.mongoDB&method_name=upsert_many&params=%7B%22cname%22%3A%22test_collection%22%2C%22documents%22%3A%5B%7B%22name%22%3A%22%E5%BC%A0%E4%B8%89%22%2C%22age%22%3A31%7D%2C%7B%22name%22%3A%22%E6%9D%8E%E5%9B%9B%22%2C%22email%22%3A%22lisi_new%40example.com%22%7D%5D%2C%22query_fields%22%3A%5B%22name%22%5D%7D"
-#
-# 参数说明:
-# - cname: 集合名称
-# - documents: 文档列表，每个文档包含查询条件和更新内容
-# - query_fields: 用作查询条件的字段名数组，默认为["name"]
 async def upsert_many(params: Dict[str, Any] = None) -> Dict[str, Any]:
     params = params or {}
 
@@ -750,11 +661,6 @@ async def upsert_many(params: Dict[str, Any] = None) -> Dict[str, Any]:
         logger.exception("详细错误信息:")
         raise
 
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=list_collections&params={}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.database.mongoClient&method_name=list_collections&params=%7B%7D"
 async def list_collections(params: Dict[str, Any] = None) -> List[str]:
     """获取数据库中的所有集合列表
 
@@ -792,14 +698,14 @@ async def main(params: Dict[str, Any] = None):
     
     try:
         # 执行各个测试函数
-        # insert_one(params)
+        # await insert_one(params)
         document = await find_one(params)
-        # update_one(params)
-        # find_one_and_update(params)
-        # insert_many(params)
-        # find_many(params)
-        # count_documents(params)
-        # delete_many(params)
+        # await update_one(params)
+        # await find_one_and_update(params)
+        # await insert_many(params)
+        # await find_many(params)
+        # await count_documents(params)
+        # await delete_many(params)
         
         logger.info("MongoClient测试完成")
         return {"status": "success", "message": "MongoClient测试完成", "document": document}
@@ -816,7 +722,6 @@ if __name__ == "__main__":
     mongodb = MongoClient()
     try:
         asyncio.run(mongodb.initialize())
-        import asyncio
         result = asyncio.run(main())
         print(f"MongoClient测试执行完成！结果: {result}")
     finally:
