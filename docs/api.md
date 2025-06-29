@@ -2,13 +2,13 @@
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
+https://api.effiy.cn/module/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
 
 ## insert_one
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=insert_one&params={"cname":"test_collection","document":{"name": "张三", "age": 30, "email": "zhangsan@example.com"}}
 
 ### 参数说明:
 
@@ -19,7 +19,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=i
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=find_one&params={"cname":"test_collection","query":{"name": "张三"}}
 
 ### 参数说明:
 
@@ -31,7 +31,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=f
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=update_one&params={"cname":"test_collection","query":{"name": "张三"},"update":{"age": 31, "updated": true}}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=update_one&params={"cname":"test_collection","query":{"name": "张三"},"update":{"age": 31, "updated": true}}
 
 ### 参数说明:
 
@@ -43,7 +43,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=u
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_one_and_update&params={"cname":"test_collection","query":{"name": "张三"},"update":{"status": "active"},"return_document": true}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=find_one_and_update&params={"cname":"test_collection","query":{"name": "张三"},"update":{"status": "active"},"return_document": true}
 
 ### 参数说明:
 
@@ -56,7 +56,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=f
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=insert_many&params={"cname":"test_collection","documents":[{"name":"李四","age":25,"email":"lisi@example.com"},{"name":"王五","age":35,"email":"wangwu@example.com"}]}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=insert_many&params={"cname":"test_collection","documents":[{"name":"李四","age":25,"email":"lisi@example.com"},{"name":"王五","age":35,"email":"wangwu@example.com"}]}
 
 ### 参数说明:
 
@@ -67,7 +67,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=i
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"rss","filter_query":{},"sort_criteria":[]}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"rss","filter_query":{},"sort_criteria":[]}
 
 ### 参数说明:
 
@@ -79,7 +79,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=f
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=count_documents&params={"cname":"rss","query":{}}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=count_documents&params={"cname":"rss","query":{}}
 
 ## 参数说明:
 
@@ -90,7 +90,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=c
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=delete_many&params={"cname":"rss","query":{}}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=delete_many&params={"cname":"rss","query":{}}
 
 ### 参数说明:
 
@@ -101,7 +101,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=d
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoDB&method_name=upsert&params={"cname":"test_collection","document":{"name":"张三","age":31,"email":"zhangsan_new@example.com"},"query_fields":["name"]}
+https://api.effiy.cn/module/?module_name=modules.database.mongoDB&method_name=upsert&params={"cname":"test_collection","document":{"name":"张三","age":31,"email":"zhangsan_new@example.com"},"query_fields":["name"]}
 
 ### 参数说明:
 
@@ -113,13 +113,13 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoDB&method_name=upser
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=list_collections&params={}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=list_collections&params={}
 
 ## upsert_many
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=upsert_many&params={"cname":"test_collection","documents":[],"query_fields":["title"]}
+https://api.effiy.cn/module/?module_name=modules.database.mongoClient&method_name=upsert_many&params={"cname":"test_collection","documents":[],"query_fields":["title"]}
 
 ### 参数说明:
 

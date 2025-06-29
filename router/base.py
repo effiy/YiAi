@@ -6,7 +6,7 @@ from typing import Dict, Any, Union
 # 配置日志
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["base"])
+router = APIRouter(prefix="/module", tags=["base"])
 
 # 定义POST请求的数据模型
 class ExecuteRequest(BaseModel):
