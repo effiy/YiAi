@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api", tags=["base"])
 class ExecuteRequest(BaseModel):
     module_name: str = "modules.crawler.crawler"
     method_name: str = "main"
-    params: Dict[str, Any] = {"url": "https://www.qbitai.com/"}
+    params: Union[Dict[str, Any], str] = {"url": "https://www.qbitai.com/"}
     
     class Config:
         # 允许任意类型的字段值
@@ -77,9 +77,19 @@ async def post_module_to_execute(request: ExecuteRequest):
         if not request.module_name or not request.method_name:
             raise HTTPException(status_code=422, detail="模块名和方法名不能为空")
         
+        # 处理params参数，支持字符串和字典两种格式
+        if isinstance(request.params, str):
+            try:
+                params_dict = json.loads(request.params)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON解析错误: {str(e)}")
+                raise HTTPException(status_code=422, detail=f"参数格式错误，请提供有效的JSON字符串: {str(e)}")
+        else:
+            params_dict = request.params
+        
         # 记录请求信息用于调试
         logger.info(f"执行模块: {request.module_name}, 方法: {request.method_name}")
-        logger.info(f"参数: {request.params}")
+        logger.info(f"参数: {params_dict}")
         
         # 动态导入指定的模块
         module = importlib.import_module(request.module_name)
@@ -93,10 +103,10 @@ async def post_module_to_execute(request: ExecuteRequest):
         # 检查函数是否为协程函数
         if asyncio.iscoroutinefunction(main_func):
             # 如果是协程函数，直接await
-            result = await main_func(request.params)
+            result = await main_func(params_dict)
         else:
             # 如果是普通函数，直接调用
-            result = main_func(request.params)
+            result = main_func(params_dict)
         # 返回执行结果
         return result
     except Exception as e:
