@@ -67,7 +67,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=i
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"test_collection","filter_query":{},"sort_criteria":[]}
+https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=find_many&params={"collection_name":"rss","filter_query":{},"sort_criteria":[]}
 
 ### 参数说明:
 
@@ -79,7 +79,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=f
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=count_documents&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
+https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=count_documents&params={"cname":"rss","query":{}}
 
 ## 参数说明:
 
@@ -90,7 +90,7 @@ https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=c
 
 ### GET 请求:
 
-https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=delete_many&params={"cname":"test_collection","query":{"age":{"$gt":25}}}
+https://api.effiy.cn/api/?module_name=modules.database.mongoClient&method_name=delete_many&params={"cname":"rss","query":{}}
 
 ### 参数说明:
 
