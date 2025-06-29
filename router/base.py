@@ -1,9 +1,7 @@
 import logging, json
-from fastapi import APIRouter, Query, Body, HTTPException # type: ignore
+from fastapi import APIRouter, Query, HTTPException # type: ignore
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List, Union
-
-from Resp import RespOk
+from typing import Dict, Any, Union
 
 # 配置日志
 logger = logging.getLogger(__name__)
