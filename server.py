@@ -15,9 +15,17 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 # 创建FastAPI应用实例
 app = FastAPI()
 
+# 中间件开关，通过环境变量控制
+ENABLE_MIDDLEWARE = os.getenv("ENABLE_MIDDLEWARE", "true").lower() == "true"
+
 # 中间件拦截器
 @app.middleware("http")
 async def header_verification_middleware(request: Request, call_next):
+    # 如果中间件被禁用，直接通过
+    if not ENABLE_MIDDLEWARE:
+        response = await call_next(request)
+        return response
+    
     x_token = request.headers.get("X-Token")
     x_client = request.headers.get("X-Client")
 
