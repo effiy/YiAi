@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
-from router import base, mongodb, oss, docs
+from router import base, mongodb, oss
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -39,11 +39,7 @@ async def header_verification_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# 挂载 docs 目录为静态文件目录
-app.mount("/static/docs", StaticFiles(directory="docs"), name="static_docs")
-
 app.include_router(oss.router)
-app.include_router(docs.router)
 app.include_router(base.router)
 app.include_router(mongodb.router)
 
