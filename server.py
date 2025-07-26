@@ -16,23 +16,28 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 # 创建FastAPI应用实例
 app = FastAPI()
 
-# 添加CORS中间件配置
+# 添加CORS中间件，允许本地开发常用端口跨域访问
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源，生产环境中应该指定具体的域名
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # 允许所有HTTP方法
-    allow_headers=["*"],  # 允许所有请求头
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = True
+ENABLE_MIDDLEWARE = False
 
 # 中间件拦截器
 @app.middleware("http")
 async def header_verification_middleware(request: Request, call_next):
     # 如果中间件被禁用，直接通过
     if not ENABLE_MIDDLEWARE:
+        response = await call_next(request)
+        return response
+
+    # 对于CORS预检请求，直接放行
+    if request.method == "OPTIONS":
         response = await call_next(request)
         return response
 
