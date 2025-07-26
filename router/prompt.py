@@ -47,7 +47,8 @@ async def generate_role_ai_json(request: ContentRequest):
 
         # 创建LLM管道，支持自定义模型参数
         prompt_builder = ChatPromptBuilder(template=template)
-        llm = OllamaChatGenerator(model=request.model if request.model else "qwq", url="https://yiai.cpolar.io")
+        ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        llm = OllamaChatGenerator(model=request.model if request.model else "qwq", url=ollama_url)
 
         pipeline = Pipeline()
         pipeline.add_component("prompt_builder", prompt_builder)
