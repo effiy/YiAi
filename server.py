@@ -45,7 +45,7 @@ async def cors_middleware(request: Request, call_next):
     return response
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = False
+ENABLE_MIDDLEWARE = True
 
 # 中间件拦截器
 @app.middleware("http")
