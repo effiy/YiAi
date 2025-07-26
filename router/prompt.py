@@ -1,4 +1,4 @@
-import logging, json, re
+import logging, json, re, os
 
 from pydantic import BaseModel
 
@@ -57,15 +57,32 @@ async def generate_role_ai_json(request: ContentRequest):
 
         # 运行管道生成指标建议
         result = pipeline.run(data={"prompt_builder": {}})
-        result_text = result["llm"]["replies"][0].text # type: ignore
+        # 修复返回结果为 null 的问题
+        replies = result.get("llm", {}).get("replies", [])
+        if not replies or not hasattr(replies[0], "text"):
+            logger.error("LLM返回内容为空或格式不正确")
+            return RespOk(data="AI未返回有效内容")
+        result_text = replies[0].text # type: ignore
         try:
             json_text = extract_json_from_text(result_text)
-            result = json.loads(json_text)
+            # 先尝试解析为JSON对象
+            parsed_result = None
+            if json_text:
+                try:
+                    parsed_result = json.loads(json_text)
+                except Exception as e:
+                    logger.warning(f"内容不是有效JSON，返回原始文本: {str(e)}")
+                    parsed_result = json_text
+            else:
+                parsed_result = result_text
+            # 如果解析后为None或空，返回原始文本
+            if parsed_result is None or parsed_result == "" or parsed_result == {} or parsed_result == []:
+                parsed_result = result_text
+            return RespOk(data=parsed_result)
         except Exception as e:
             logger.error(f"提取JSON失败: {str(e)}", exc_info=True)
-            result = result_text
-
-        return RespOk(data=result)
+            return RespOk(data=result_text)
 
     except Exception as e:
         logger.error(f"生成角色信息JSON失败: {str(e)}", exc_info=True)
+        return RespOk(data="AI生成失败，请稍后重试")

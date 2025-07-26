@@ -3,6 +3,7 @@ import sys, os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from router import base, mongodb, oss, prompt
 
@@ -15,8 +16,17 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 # 创建FastAPI应用实例
 app = FastAPI()
 
+# 添加CORS中间件配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，生产环境中应该指定具体的域名
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有HTTP方法
+    allow_headers=["*"],  # 允许所有请求头
+)
+
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = True
+ENABLE_MIDDLEWARE = False
 
 # 中间件拦截器
 @app.middleware("http")
