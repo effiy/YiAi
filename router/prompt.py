@@ -88,7 +88,6 @@ async def generate_role_ai_json_internal(request: ContentRequest):
             # 如果解析后为None或空，返回原始文本
             if parsed_result is None or parsed_result == "" or parsed_result == {} or parsed_result == []:
                 parsed_result = result_text
-            logger.info(f"parsed_result: {parsed_result}")
             return RespOk(data=parsed_result)
         except Exception as e:
             logger.error(f"提取JSON失败: {str(e)}", exc_info=True)
