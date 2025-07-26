@@ -1,7 +1,7 @@
-from fastapi.responses import JSONResponse # type: ignore
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends # type: ignore
+from fastapi.responses import JSONResponse
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 
-import oss2, os, logging # type: ignore
+import oss2, os, logging
 from datetime import datetime
 from typing import Optional, Any
 from functools import lru_cache, wraps
@@ -47,7 +47,7 @@ def handle_error(e: Exception, status_code: int = 500) -> dict:
         code=status_code,
         message=str(e),
         data=None
-    ) 
+    )
 
 router = APIRouter(
     prefix="/oss",
@@ -65,7 +65,7 @@ class OSSConfig:
         self.access_key_secret = os.getenv("OSS_ACCESS_KEY_SECRET")
         self.endpoint = os.getenv("OSS_ENDPOINT")
         self.bucket_name = os.getenv("OSS_BUCKET_NAME")
-        
+
         if not all([self.access_key_id, self.access_key_secret, self.endpoint, self.bucket_name]):
             raise ValueError("OSS配置不完整，请检查环境变量")
 
@@ -80,7 +80,7 @@ def get_bucket(config: OSSConfig = Depends(get_oss_config)):
 
 def validate_file(file: UploadFile) -> None:
     """验证文件大小和类型"""
-    file_ext = os.path.splitext(file.filename)[1].lower() # type: ignore
+    file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file_ext}")
 
@@ -105,18 +105,18 @@ async def upload_file(
     """上传单个文件到OSS"""
     try:
         validate_file(file)
-        
+
         content = await file.read()
         if len(content) > MAX_FILE_SIZE:
             return create_response(code=400, message=f"文件大小超过限制: {MAX_FILE_SIZE/1024/1024}MB")
-        
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_ext = os.path.splitext(file.filename)[1] # type: ignore
+        file_ext = os.path.splitext(file.filename)[1]
         object_name = f"{directory + '/' if directory else ''}{timestamp}{file_ext}"
-        
+
         bucket.put_object(object_name, content)
         file_url = f"https://{config.bucket_name}.{config.endpoint}/{object_name}"
-        
+
         logger.info(f"文件上传成功: {object_name}")
         return create_response(
             code=200,
@@ -140,10 +140,10 @@ async def list_files(
     try:
         if max_keys > 1000:
             return create_response(code=400, message="max_keys不能超过1000")
-        
+
         prefix = f"{directory}/" if directory else ""
         files = []
-        
+
         for obj in oss2.ObjectIterator(bucket, prefix=prefix, max_keys=max_keys):
             files.append({
                 "name": obj.key,
@@ -152,7 +152,7 @@ async def list_files(
                 "last_modified": obj.last_modified,
                 "url": f"https://{bucket.bucket_name}.{bucket.endpoint}/{obj.key}"
             })
-        
+
         logger.info(f"成功获取文件列表，共{len(files)}个文件")
         return create_response(code=200, message="获取成功", data=files)
     except Exception as e:
@@ -168,14 +168,14 @@ async def delete_file(
         exists = bucket.object_exists(object_name)
         if not exists:
             return create_response(code=404, message="文件不存在")
-        
+
         bucket.delete_object(object_name)
         logger.info(f"文件删除成功: {object_name}")
-        
+
         return create_response(
             code=200,
             message="删除成功",
             data={"object_name": object_name}
         )
     except Exception as e:
-        return handle_error(e) 
+        return handle_error(e)

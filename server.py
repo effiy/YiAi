@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
-from router import base, mongodb, oss
+from router import base, mongodb, oss, prompt
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -25,7 +25,7 @@ async def header_verification_middleware(request: Request, call_next):
     if not ENABLE_MIDDLEWARE:
         response = await call_next(request)
         return response
-    
+
     x_token = request.headers.get("X-Token")
     x_client = request.headers.get("X-Client")
 
@@ -41,6 +41,7 @@ async def header_verification_middleware(request: Request, call_next):
 
 app.include_router(oss.router)
 app.include_router(base.router)
+app.include_router(prompt.router)
 app.include_router(mongodb.router)
 
 # 当直接运行此脚本时执行以下代码
