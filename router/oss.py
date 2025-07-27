@@ -80,20 +80,32 @@ def get_bucket(config: OSSConfig = Depends(get_oss_config)):
 
 def validate_file(file: UploadFile) -> None:
     """验证文件大小和类型"""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="文件名不能为空")
+    
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file_ext}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"不支持的文件类型: {file_ext}，支持的类型: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
 
 @router.delete("/")
 @ensure_initialized()
 async def delete(osspath: str):
     """删除OSS文件"""
     try:
+        if not osspath:
+            raise HTTPException(status_code=400, detail="文件路径不能为空")
+        
         bucket = get_bucket()
         bucket.delete_object(osspath)
         return RespOk()
+    except HTTPException:
+        raise
     except Exception as e:
-        return handle_error(e)
+        logger.error(f"删除OSS文件失败: {str(e)}")
+        return handle_error(e, 500)
 
 @router.post("/upload")
 async def upload_file(
@@ -104,11 +116,15 @@ async def upload_file(
 ) -> JSONResponse:
     """上传单个文件到OSS"""
     try:
+        # 验证文件
         validate_file(file)
 
         content = await file.read()
         if len(content) > MAX_FILE_SIZE:
-            return create_response(code=400, message=f"文件大小超过限制: {MAX_FILE_SIZE/1024/1024}MB")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"文件大小超过限制: {MAX_FILE_SIZE/1024/1024}MB"
+            )
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_ext = os.path.splitext(file.filename)[1]
@@ -127,8 +143,11 @@ async def upload_file(
                 "object_name": object_name
             }
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        return handle_error(e)
+        logger.error(f"文件上传失败: {str(e)}")
+        return handle_error(e, 500)
 
 @router.get("/files")
 async def list_files(
@@ -139,7 +158,10 @@ async def list_files(
     """列出OSS中的文件"""
     try:
         if max_keys > 1000:
-            return create_response(code=400, message="max_keys不能超过1000")
+            raise HTTPException(status_code=400, detail="max_keys不能超过1000")
+        
+        if max_keys < 1:
+            raise HTTPException(status_code=400, detail="max_keys必须大于0")
 
         prefix = f"{directory}/" if directory else ""
         files = []
@@ -155,8 +177,11 @@ async def list_files(
 
         logger.info(f"成功获取文件列表，共{len(files)}个文件")
         return create_response(code=200, message="获取成功", data=files)
+    except HTTPException:
+        raise
     except Exception as e:
-        return handle_error(e)
+        logger.error(f"获取文件列表失败: {str(e)}")
+        return handle_error(e, 500)
 
 @router.delete("/delete/{object_name:path}")
 async def delete_file(
@@ -165,9 +190,12 @@ async def delete_file(
 ) -> JSONResponse:
     """删除OSS中的单个文件"""
     try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件名不能为空")
+        
         exists = bucket.object_exists(object_name)
         if not exists:
-            return create_response(code=404, message="文件不存在")
+            raise HTTPException(status_code=404, detail="文件不存在")
 
         bucket.delete_object(object_name)
         logger.info(f"文件删除成功: {object_name}")
@@ -177,5 +205,8 @@ async def delete_file(
             message="删除成功",
             data={"object_name": object_name}
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        return handle_error(e)
+        logger.error(f"删除文件失败: {str(e)}")
+        return handle_error(e, 500)

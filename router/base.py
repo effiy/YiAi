@@ -34,11 +34,24 @@ async def read_module_to_execute(
     import asyncio
     
     try:
+        # 参数验证
+        if not module_name or not method_name:
+            raise HTTPException(status_code=400, detail="模块名和方法名不能为空")
+        
         # 将字符串转换为字典
-        params_dict = json.loads(params)
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON解析错误: {str(e)}")
-        raise HTTPException(status_code=422, detail=f"参数格式错误，请提供有效的JSON字符串: {str(e)}")
+        try:
+            params_dict = json.loads(params)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON解析错误: {str(e)}")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"参数格式错误，请提供有效的JSON字符串: {str(e)}"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"参数验证错误: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"参数验证失败: {str(e)}")
     
     try:
         # 动态导入指定的模块
@@ -73,7 +86,7 @@ async def post_module_to_execute(request: ExecuteRequest):
     try:
         # 验证请求数据
         if not request.module_name or not request.method_name:
-            raise HTTPException(status_code=422, detail="模块名和方法名不能为空")
+            raise HTTPException(status_code=400, detail="模块名和方法名不能为空")
         
         # 处理params参数，支持字符串和字典两种格式
         if isinstance(request.params, str):
@@ -81,7 +94,10 @@ async def post_module_to_execute(request: ExecuteRequest):
                 params_dict = json.loads(request.params)
             except json.JSONDecodeError as e:
                 logger.error(f"JSON解析错误: {str(e)}")
-                raise HTTPException(status_code=422, detail=f"参数格式错误，请提供有效的JSON字符串: {str(e)}")
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"参数格式错误，请提供有效的JSON字符串: {str(e)}"
+                )
         else:
             params_dict = request.params
         
@@ -93,9 +109,14 @@ async def post_module_to_execute(request: ExecuteRequest):
         module = importlib.import_module(request.module_name)
         # 从模块中获取指定的方法
         main_func = getattr(module, request.method_name)
+    except HTTPException:
+        raise
     except (ImportError, AttributeError) as e:
         logger.error(f"模块导入错误: {str(e)}")
         raise HTTPException(status_code=422, detail=f"模块或方法不存在: {str(e)}")
+    except Exception as e:
+        logger.error(f"请求处理错误: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"请求处理失败: {str(e)}")
     
     try:
         # 检查函数是否为协程函数

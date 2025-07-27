@@ -2,7 +2,7 @@ import logging, json, re, os
 
 from pydantic import BaseModel
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException
 from typing import Dict, Any, List, Optional
 
 from haystack import Pipeline
@@ -40,7 +40,20 @@ def extract_json_from_text(text: str) -> str:
 @router.post("/")
 async def generate_role_ai_json(request: ContentRequest):
     """处理 /prompt/ 路由"""
-    return await generate_role_ai_json_internal(request)
+    try:
+        # 参数验证
+        if not request.fromSystem or not request.fromUser:
+            raise HTTPException(
+                status_code=400, 
+                detail="fromSystem和fromUser参数不能为空"
+            )
+        
+        return await generate_role_ai_json_internal(request)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"请求处理错误: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"请求处理失败: {str(e)}")
 
 async def generate_role_ai_json_internal(request: ContentRequest):
     """内部处理函数，避免代码重复"""
@@ -53,7 +66,16 @@ async def generate_role_ai_json_internal(request: ContentRequest):
         # 创建LLM管道，支持自定义模型参数
         prompt_builder = ChatPromptBuilder(template=template)
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-        llm = OllamaChatGenerator(model=request.model if request.model else "qwq", url=ollama_url)
+        model_name = request.model if request.model else "qwq"
+        
+        try:
+            llm = OllamaChatGenerator(model=model_name, url=ollama_url)
+        except Exception as e:
+            logger.error(f"Ollama连接失败: {str(e)}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"AI服务连接失败: {str(e)}"
+            )
 
         pipeline = Pipeline()
         pipeline.add_component("prompt_builder", prompt_builder)
@@ -88,6 +110,11 @@ async def generate_role_ai_json_internal(request: ContentRequest):
             logger.error(f"提取JSON失败: {str(e)}", exc_info=True)
             return RespOk(data=result_text)
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"生成角色信息JSON失败: {str(e)}", exc_info=True)
-        return RespOk(data="AI生成失败，请稍后重试")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"AI生成失败: {str(e)}"
+        )

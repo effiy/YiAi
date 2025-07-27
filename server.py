@@ -37,7 +37,7 @@ app.add_middleware(
 )
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = True
+ENABLE_MIDDLEWARE = os.getenv("ENABLE_MIDDLEWARE", "true").lower() == "true"
 
 # 中间件拦截器
 @app.middleware("http")
@@ -51,15 +51,31 @@ async def header_verification_middleware(request: Request, call_next):
             response = await call_next(request)
             return response
 
-        x_token = request.headers.get("X-Token")
-        x_client = request.headers.get("X-Client")
+        # 获取环境变量中的配置
+        required_token = os.getenv("API_X_TOKEN", "")
+        required_client = os.getenv("API_X_CLIENT", "")
+        
+        # 如果环境变量未设置，跳过验证
+        if not required_token and not required_client:
+            logger.info("未配置API验证，跳过请求头验证")
+            response = await call_next(request)
+            return response
 
-        # 只允许符合特定 header 的请求通过
-        if x_token != os.getenv("API_X_TOKEN", "") or x_client != os.getenv("API_X_CLIENT", ""):
+        x_token = request.headers.get("X-Token", "")
+        x_client = request.headers.get("X-Client", "")
+
+        # 验证请求头
+        token_valid = not required_token or x_token == required_token
+        client_valid = not required_client or x_client == required_client
+        
+        if not (token_valid and client_valid):
             logger.warning(f"无效的请求头: X-Token={x_token}, X-Client={x_client}")
             return JSONResponse(
                 status_code=403,
-                content={"detail": "Invalid or missing headers"},
+                content={
+                    "detail": "Invalid or missing headers",
+                    "message": "请提供有效的X-Token和X-Client请求头"
+                },
             )
 
         response = await call_next(request)
@@ -70,7 +86,7 @@ async def header_verification_middleware(request: Request, call_next):
         logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
         return JSONResponse(
             status_code=500,
-            content={"detail": "服务器内部错误"}
+            content={"detail": "服务器内部错误", "message": "中间件处理异常"}
         )
 
 # 全局异常处理器
@@ -79,7 +95,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.error(f"请求验证错误: {exc}")
     return JSONResponse(
         status_code=422,
-        content={"detail": "请求参数验证失败", "errors": exc.errors()}
+        content={
+            "detail": "请求参数验证失败",
+            "message": "请检查请求参数格式",
+            "errors": exc.errors(),
+            "status": 422
+        }
     )
 
 @app.exception_handler(HTTPException)
@@ -87,7 +108,11 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     logger.error(f"HTTP异常: {exc.detail}")
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail}
+        content={
+            "detail": exc.detail,
+            "message": exc.detail,
+            "status": exc.status_code
+        }
     )
 
 @app.exception_handler(Exception)
@@ -95,7 +120,11 @@ async def general_exception_handler(request: Request, exc: Exception):
     logger.error(f"未处理的异常: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "服务器内部错误"}
+        content={
+            "detail": "服务器内部错误",
+            "message": "服务器处理请求时发生未知错误",
+            "status": 500
+        }
     )
 
 # 根路径端点
