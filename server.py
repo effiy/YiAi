@@ -37,7 +37,7 @@ app.add_middleware(
 )
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = os.getenv("ENABLE_MIDDLEWARE", "true").lower() == "true"
+ENABLE_MIDDLEWARE = True
 
 # 中间件拦截器
 @app.middleware("http")
