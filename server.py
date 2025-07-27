@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt
@@ -23,12 +24,20 @@ app = FastAPI(
     title="YiAi API",
     description="AI服务API",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    docs_url="/docs"
+)
+
+# 添加 CORS 中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，生产环境中应该指定具体域名
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有头部
 )
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = True
+ENABLE_MIDDLEWARE = False
 
 # 中间件拦截器
 @app.middleware("http")
