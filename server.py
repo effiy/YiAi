@@ -113,7 +113,10 @@ if __name__ == "__main__":
     # 导入uvicorn服务器
     import uvicorn
     # 启动uvicorn服务器，运行FastAPI应用
+    # host="0.0.0.0" 允许外网访问
     uvicorn.run(
         "server:app",  # 指定应用模块路径
-        reload=True    # 启用热重载，便于开发调试
+        host="0.0.0.0",  # 允许外网访问
+        port=8000,       # 可根据需要修改端口
+        reload=True      # 启用热重载，便于开发调试
     )
