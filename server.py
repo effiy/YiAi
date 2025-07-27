@@ -37,7 +37,7 @@ app.add_middleware(
 )
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = False
+ENABLE_MIDDLEWARE = True
 
 # 中间件拦截器
 @app.middleware("http")
@@ -98,15 +98,10 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={"detail": "服务器内部错误"}
     )
 
-# 健康检查端点
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "message": "YiAi API is running"}
-
 # 根路径端点
 @app.get("/")
 async def root():
-    return {"message": "Welcome to YiAi API", "docs": "/docs"}
+    return {"message": "Welcome to YiAi API"}
 
 app.include_router(oss.router)
 app.include_router(base.router)
