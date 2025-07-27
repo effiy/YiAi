@@ -37,14 +37,9 @@ def extract_json_from_text(text: str) -> str:
     # 如果没有代码块，则尝试直接解析整个文本
     return text
 
-@router.post("")
-async def generate_role_ai_json_no_slash(request: ContentRequest):
-    """处理 /prompt 路由（无末尾斜杠）"""
-    return await generate_role_ai_json_internal(request)
-
 @router.post("/")
 async def generate_role_ai_json(request: ContentRequest):
-    """处理 /prompt/ 路由（有末尾斜杠）"""
+    """处理 /prompt/ 路由"""
     return await generate_role_ai_json_internal(request)
 
 async def generate_role_ai_json_internal(request: ContentRequest):
