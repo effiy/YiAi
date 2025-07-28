@@ -66,7 +66,7 @@ async def generate_role_ai_json_internal(request: ContentRequest):
         # 创建LLM管道，支持自定义模型参数
         prompt_builder = ChatPromptBuilder(template=template)
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-        model_name = request.model if request.model else "qwq"
+        model_name = request.model if request.model else "qwen3:32b"
         
         try:
             llm = OllamaChatGenerator(model=model_name, url=ollama_url)
