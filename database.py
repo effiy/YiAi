@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from modules.database.mongoClient import MongoClient
 

@@ -1,5 +1,5 @@
 import logging, json
-from fastapi import APIRouter, Query, HTTPException # type: ignore
+from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any, Union
 

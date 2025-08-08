@@ -1,10 +1,10 @@
 import os
-from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
-from pymongo import ReturnDocument # type: ignore
+from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import ReturnDocument
 from typing import Any, Dict, List, Optional, TypeVar
 from datetime import datetime, timezone
 import logging
-from dotenv import load_dotenv # type: ignore
+from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 import asyncio
 
@@ -255,16 +255,6 @@ class MongoClient:
             logger.error(f"查找并更新文档失败: {str(e)}")
             raise
 
-"""测试插入单个文档
-
-Args:
-    params: 参数字典，可包含：
-        - cname: 集合名称，默认为"test_collection"
-        - document: 要插入的文档，默认为测试数据
-
-Returns:
-    str: 插入文档的ID
-"""
 async def insert_one(params: Dict[str, Any] = None) -> str:
 
     if params is None:
@@ -289,16 +279,6 @@ async def insert_one(params: Dict[str, Any] = None) -> str:
         logger.error(f"插入文档时出错: {e}")
         raise
 
-"""测试查找单个文档
-Args:
-    params: 参数字典，可包含：
-        - cname: 集合名称，默认为"test_collection"
-        - query: 查询条件，默认查询名为"张三"的文档
-        - projection: 指定返回的字段，默认为None（返回所有字段）
-
-Returns:
-    Optional[Dict[str, Any]]: 查找到的文档
-"""
 async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
     # 使用空字典作为默认值
     params = params or {}
@@ -335,17 +315,6 @@ async def find_one(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
         logger.exception("详细错误信息:")
         raise
 
-"""测试更新单个文档
-
-Args:
-    params: 参数字典，可包含：
-        - cname: 集合名称，默认为"test_collection"
-        - query: 查询条件，默认查询名为"张三"的文档
-        - update: 更新内容，默认更新年龄和添加updated标记
-
-Returns:
-    int: 更新的文档数量
-"""
 async def update_one(params: Dict[str, Any] = None) -> int:
 
     if params is None:
@@ -371,19 +340,6 @@ async def update_one(params: Dict[str, Any] = None) -> int:
         logger.error(f"更新文档时出错: {e}")
         raise
 
-
-"""测试查找并更新文档
-
-Args:
-    params: 参数字典，可包含：
-        - cname: 集合名称，默认为"test_collection"
-        - query: 查询条件，默认查询名为"张三"的文档
-        - update: 更新内容，默认添加status字段
-        - return_document: 是否返回更新后的文档，默认为True
-
-Returns:
-    Optional[Dict[str, Any]]: 更新前或更新后的文档
-"""
 async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[str, Any]]:
 
     if params is None:
@@ -412,17 +368,6 @@ async def find_one_and_update(params: Dict[str, Any] = None) -> Optional[Dict[st
         logger.error(f"查找并更新文档时出错: {e}")
         raise
 
-
-"""测试插入多个文档
-
-Args:
-    params: 参数字典，可包含：
-        - cname: 集合名称，默认为"test_collection"
-        - documents: 要插入的文档列表，默认为测试数据
-
-Returns:
-    List[str]: 插入文档的ID列表
-"""
 async def insert_many(params: Dict[str, Any] = None) -> List[str]:
 
     if params is None:
@@ -449,16 +394,6 @@ async def insert_many(params: Dict[str, Any] = None) -> List[str]:
         logger.error(f"批量插入文档时出错: {e}")
         raise
 
-"""查询多个文档
-Args:
-    params: 参数字典，可包含：
-        - collection_name: 集合名称，默认为"test_collection"
-        - filter_query: 查询条件，默认查询年龄大于25的文档
-        - sort_criteria: 排序条件，默认按年龄降序排列
-
-Returns:
-    List[Dict[str, Any]]: 查询到的文档列表
-"""
 async def find_many(params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     
     if params is None:
@@ -662,14 +597,6 @@ async def upsert_many(params: Dict[str, Any] = None) -> Dict[str, Any]:
         raise
 
 async def list_collections(params: Dict[str, Any] = None) -> List[str]:
-    """获取数据库中的所有集合列表
-
-    Args:
-        params: 参数字典，可选
-
-    Returns:
-        List[str]: 集合名称列表
-    """
     if params is None:
         params = {}
 
@@ -686,14 +613,6 @@ async def list_collections(params: Dict[str, Any] = None) -> List[str]:
         raise
 
 async def main(params: Dict[str, Any] = None):
-    """MongoDB类使用示例
-    
-    Args:
-        params: 参数字典，可选
-        
-    Returns:
-        Dict[str, Any]: 测试结果
-    """
     logger.info("开始MongoClient测试...")
     
     try:

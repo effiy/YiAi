@@ -2,9 +2,9 @@ import asyncio
 import re
 import argparse
 from typing import List, Dict, Optional
-from crawl4ai import AsyncWebCrawler # type: ignore
+from crawl4ai import AsyncWebCrawler
 import logging
-from tenacity import retry, stop_after_attempt, wait_exponential # type: ignore
+from tenacity import retry, stop_after_attempt, wait_exponential
 from Resp import RespOk
 
 # 配置日志
@@ -35,31 +35,12 @@ class LinkExtractor:
             link for link in link_objects
             if len(link['title']) > self.min_title_length
         ]
-
-"""
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params={"url":"https://www.qbitai.com/"}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=fetch_page_content&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%7D"
-#
-# 参数说明:
-# - url: 要爬取的网页URL
-"""
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
     reraise=True
 )
 async def fetch_page_content(params: Dict[str, any]) -> str:
-    """获取页面内容，带重试机制
-    
-    参数:
-        params (dict): 包含url的参数字典
-    
-    返回:
-        str: 页面的markdown内容
-    """
     url = params.get("url")
     try:
         async with AsyncWebCrawler() as crawler:
@@ -69,27 +50,7 @@ async def fetch_page_content(params: Dict[str, any]) -> str:
         logger.error(f"爬取页面失败: {str(e)}")
         raise
 
-"""
-# 示例请求:
-# GET http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=main&params={"url":"https://www.qbitai.com/","min_title_length":24}
-#
-# curl 示例:
-# curl -X GET "http://localhost:8000/api/?module_name=modules.crawler.crawler&method_name=main&params=%7B%22url%22%3A%22https%3A%2F%2Fwww.qbitai.com%2F%22%2C%22min_title_length%22%3A24%7D"
-#
-# 参数说明:
-# - url: 要爬取的网页URL
-# - min_title_length: 最小标题长度，默认为24
-"""
 async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
-    """
-    主函数：从指定URL爬取网页内容，提取并过滤链接标题
-    
-    参数:
-        params (dict): 包含url和min_title_length的参数字典
-    
-    返回:
-        List[Dict[str, str]]: 过滤后的长标题链接列表
-    """
     url = params.get("url")
     min_title_length = params.get("min_title_length", 24)
     

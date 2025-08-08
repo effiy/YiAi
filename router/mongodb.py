@@ -144,22 +144,6 @@ def build_sort_list(sort_param: str, sort_order: int) -> List[tuple]:
 @router.get("/")
 @ensure_initialized()
 async def query(request: Request):
-    """查询MongoDB集合数据
-
-    GET 请求：
-    /mongodb/?cname=rss&isoDate=2025-06-21,2025-06-21
-
-    参数说明：
-    - cname: 集合名称（必需）
-    - pageNum: 页码，默认为1
-    - pageSize: 每页大小，默认为999999999
-    - orderBy: 排序字段，默认为'order'
-    - orderType: 排序方式，'asc'升序或'desc'降序，默认为'asc'
-    - 其他参数用于过滤条件：
-      - 字符串参数：支持模糊查询，多个值用逗号分隔
-      - 日期范围：格式为 "开始日期,结束日期"，如 "2024-01-01,2024-12-31"
-      - 数值范围：格式为 "最小值,最大值"，如 "10,100"
-    """
     try:
         query_params = dict(request.query_params)
 

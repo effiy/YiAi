@@ -1,8 +1,8 @@
 from typing import Union
 
-from fastapi import status as http_status # type: ignore
-from fastapi.responses import JSONResponse, Response # type: ignore
-from fastapi.encoders import jsonable_encoder # type: ignore
+from fastapi import status as http_status
+from fastapi.responses import JSONResponse, Response
+from fastapi.encoders import jsonable_encoder
 
 class Resp(object):
     def __init__(self, status: int, msg: str, code: int):
