@@ -5,10 +5,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Body, HTTPException
 from typing import Dict, Any, List, Optional
 
-from haystack import Pipeline
-from haystack.dataclasses import ChatMessage
-from haystack.components.builders import ChatPromptBuilder
-from haystack_integrations.components.generators.ollama import OllamaChatGenerator
+from ollama import Client
 
 from Resp import RespOk
 
@@ -58,38 +55,47 @@ async def generate_role_ai_json(request: ContentRequest):
 async def generate_role_ai_json_internal(request: ContentRequest):
     """内部处理函数，避免代码重复"""
     try:
-        template = [
-            ChatMessage.from_system(request.fromSystem),
-            ChatMessage.from_user(request.fromUser)
-        ]
-
-        # 创建LLM管道，支持自定义模型参数
-        prompt_builder = ChatPromptBuilder(template=template)
+        # 创建Ollama客户端
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-        model_name = request.model if request.model else "gpt-oss"
+        model_name = request.model if request.model else "qwen3"
         
+        # 获取认证信息
+        ollama_auth = os.getenv("OLLAMA_AUTH", "")
+        
+        # 配置客户端
+        if ollama_auth:
+            # 分离用户名和密码
+            if ':' in ollama_auth:
+                username, password = ollama_auth.split(':', 1)
+            else:
+                username = ollama_auth
+                password = ""
+            client = Client(host=ollama_url, auth=(username, password))
+        else:
+            client = Client(host=ollama_url)
+        
+        # 准备消息
+        messages = [
+            {"role": "system", "content": request.fromSystem},
+            {"role": "user", "content": request.fromUser}
+        ]
+        
+        # 调用Ollama
         try:
-            llm = OllamaChatGenerator(model=model_name, url=ollama_url)
+            response = client.chat(model=model_name, messages=messages)
+            result_text = response['message']['content']
         except Exception as e:
-            logger.error(f"Ollama连接失败: {str(e)}")
+            logger.error(f"Ollama调用失败: {str(e)}")
             raise HTTPException(
                 status_code=500, 
-                detail=f"AI服务连接失败: {str(e)}"
+                detail=f"AI服务调用失败: {str(e)}"
             )
-
-        pipeline = Pipeline()
-        pipeline.add_component("prompt_builder", prompt_builder)
-        pipeline.add_component("llm", llm)
-        pipeline.connect("prompt_builder.prompt", "llm.messages")
-
-        # 运行管道生成指标建议
-        result = pipeline.run(data={"prompt_builder": {}})
-        # 修复返回结果为 null 的问题
-        replies = result.get("llm", {}).get("replies", [])
-        if not replies or not hasattr(replies[0], "text"):
-            logger.error("LLM返回内容为空或格式不正确")
+        
+        # 处理返回结果
+        if not result_text:
+            logger.error("LLM返回内容为空")
             return RespOk(data="AI未返回有效内容")
-        result_text = replies[0].text # type: ignore
+        
         try:
             json_text = extract_json_from_text(result_text)
             # 先尝试解析为JSON对象
