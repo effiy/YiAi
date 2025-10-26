@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流式 Prompt 客户端示例</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .output::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .output::-webkit-scrollbar-track {
+            background: #2e2e2e;
+        }
+        
+        .output::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        
+        .output::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🤖 流式 Prompt 客户端</h1>
+            
+            <div id="status" class="status"></div>
+            
+            <h2>请求配置</h2>
+            
+            <div class="form-group">
+                <label for="baseUrl">API 服务器地址：</label>
+                <input type="text" id="baseUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+            </div>
+            
+            <div class="form-group">
+                <label for="model">模型名称（可选）：</label>
+                <input type="text" id="model" placeholder="qwen3" value="qwen3">
+            </div>
+            
+            <div class="form-group">
+                <label for="fromSystem">系统提示词：</label>
+                <textarea id="fromSystem" placeholder="例如：你是一个有用的助手。">你是一个专业的助手，请用简洁明了的语言回答问题。</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="fromUser">用户提示词：</label>
+                <textarea id="fromUser" placeholder="例如：请介绍一下人工智能。">请用中文简单介绍一下人工智能的发展历史，字数控制在200字左右。</textarea>
+            </div>
+            
+            <div class="button-group">
+                <button id="btnStream" onclick="streamPrompt()">🚀 流式调用</button>
+                <button id="btnClear" onclick="clearOutput()">🧹 清空输出</button>
+            </div>
+            
+            <h2>输出结果</h2>
+            <div id="output" class="output">等待调用...</div>
+        </div>
+    </div>
+
+    <script>
+        let isStreaming = false;
+        
+        async function streamPrompt() {
+            if (isStreaming) {
+                showStatus('info', '正在处理请求中，请稍候...');
+                return;
+            }
+            
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const model = document.getElementById('model').value.trim();
+            const fromSystem = document.getElementById('fromSystem').value.trim();
+            const fromUser = document.getElementById('fromUser').value.trim();
+            
+            // 验证输入
+            if (!fromSystem || !fromUser) {
+                showStatus('error', '系统提示词和用户提示词不能为空！');
+                return;
+            }
+            
+            if (!baseUrl) {
+                showStatus('error', 'API 服务器地址不能为空！');
+                return;
+            }
+            
+            isStreaming = true;
+            const btnStream = document.getElementById('btnStream');
+            const output = document.getElementById('output');
+            
+            // 更新按钮状态
+            btnStream.disabled = true;
+            btnStream.innerHTML = '<span class="loading"></span> 正在处理...';
+            
+            // 清空输出
+            output.textContent = '';
+            showStatus('info', '正在连接服务器...');
+            
+            try {
+                const payload = {
+                    fromSystem,
+                    fromUser,
+                };
+                
+                if (model) {
+                    payload.model = model;
+                }
+                
+                const response = await fetch(`${baseUrl}/prompt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                showStatus('success', '✅ 连接成功，开始接收数据...');
+                
+                // 读取流式响应
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) {
+                        break;
+                    }
+                    
+                    // 解码数据并添加到缓冲区
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // 处理完整的 SSE 消息
+                    const messages = buffer.split('\n\n');
+                    buffer = messages.pop() || '';
+                    
+                    for (const message of messages) {
+                        if (message.startsWith('data: ')) {
+                            try {
+                                const dataStr = message.substring(6);
+                                const data = JSON.parse(dataStr);
+                                
+                                if (data.type === 'content') {
+                                    // 实时追加内容
+                                    output.textContent += data.data;
+                                    // 自动滚动到底部
+                                    output.scrollTop = output.scrollHeight;
+                                } else if (data.type === 'done') {
+                                    showStatus('success', '✅ 完成！');
+                                } else if (data.type === 'error') {
+                                    showStatus('error', `❌ 错误: ${data.data}`);
+                                }
+                            } catch (e) {
+                                console.warn('解析消息失败:', message, e);
+                            }
+                        }
+                    }
+                }
+                
+                // 处理最后的消息
+                if (buffer.trim()) {
+                    const message = buffer.trim();
+                    if (message.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(message.substring(6));
+                            if (data.type === 'done') {
+                                showStatus('success', '✅ 完成！');
+                            } else if (data.type === 'error') {
+                                showStatus('error', `❌ 错误: ${data.data}`);
+                            }
+                        } catch (e) {
+                            console.warn('解析最后消息失败:', message, e);
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                console.error('请求失败:', error);
+                showStatus('error', `❌ 请求失败: ${error.message}`);
+            } finally {
+                isStreaming = false;
+                btnStream.disabled = false;
+                btnStream.textContent = '🚀 流式调用';
+            }
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').textContent = '等待调用...';
+            hideStatus();
+        }
+        
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+        }
+        
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+

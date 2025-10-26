@@ -1,13 +1,12 @@
-import logging, json, re, os
+import logging, json, os
 
 from pydantic import BaseModel
 
-from fastapi import APIRouter, Body, HTTPException
-from typing import Dict, Any, List, Optional
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from typing import Optional
 
 from ollama import Client
-
-from Resp import RespOk
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -23,37 +22,8 @@ class ContentRequest(BaseModel):
     fromUser: str
     model: Optional[str] = None  # 新增模型参数，允许可选
 
-def extract_json_from_text(text: str) -> str:
-    """从文本中提取JSON部分"""
-    text = text.strip()
-    # 尝试匹配```json```格式
-    json_pattern = re.compile(r'```(?:json)?(.*?)```', re.DOTALL)
-    match = json_pattern.search(text)
-    if match:
-        return match.group(1).strip()
-    # 如果没有代码块，则尝试直接解析整个文本
-    return text
-
-@router.post("/")
-async def generate_role_ai_json(request: ContentRequest):
-    """处理 /prompt/ 路由"""
-    try:
-        # 参数验证
-        if not request.fromSystem or not request.fromUser:
-            raise HTTPException(
-                status_code=400, 
-                detail="fromSystem和fromUser参数不能为空"
-            )
-        
-        return await generate_role_ai_json_internal(request)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"请求处理错误: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"请求处理失败: {str(e)}")
-
-async def generate_role_ai_json_internal(request: ContentRequest):
-    """内部处理函数，避免代码重复"""
+async def stream_ollama_response(request: ContentRequest):
+    """生成流式响应"""
     try:
         # 创建Ollama客户端
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
@@ -80,47 +50,61 @@ async def generate_role_ai_json_internal(request: ContentRequest):
             {"role": "user", "content": request.fromUser}
         ]
         
-        # 调用Ollama
+        # 调用Ollama流式API
         try:
-            response = client.chat(model=model_name, messages=messages)
-            result_text = response['message']['content']
+            stream = client.chat(
+                model=model_name, 
+                messages=messages,
+                stream=True
+            )
+            
+            full_response = ""
+            for chunk in stream:
+                if chunk.get('message', {}).get('content'):
+                    content = chunk['message']['content']
+                    full_response += content
+                    # 以JSON格式发送每个块
+                    chunk_data = json.dumps({
+                        "type": "content",
+                        "data": content
+                    }, ensure_ascii=False)
+                    yield f"data: {chunk_data}\n\n"
+            
+            # 发送结束标志
+            end_data = json.dumps({
+                "type": "done",
+                "data": full_response
+            }, ensure_ascii=False)
+            yield f"data: {end_data}\n\n"
+            
         except Exception as e:
             logger.error(f"Ollama调用失败: {str(e)}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"AI服务调用失败: {str(e)}"
-            )
-        
-        # 处理返回结果
-        if not result_text:
-            logger.error("LLM返回内容为空")
-            return RespOk(data="AI未返回有效内容")
-        
-        try:
-            json_text = extract_json_from_text(result_text)
-            # 先尝试解析为JSON对象
-            parsed_result = None
-            if json_text:
-                try:
-                    parsed_result = json.loads(json_text)
-                except Exception as e:
-                    logger.warning(f"内容不是有效JSON，返回原始文本: {str(e)}")
-                    parsed_result = json_text
-            else:
-                parsed_result = result_text
-            # 如果解析后为None或空，返回原始文本
-            if parsed_result is None or parsed_result == "" or parsed_result == {} or parsed_result == []:
-                parsed_result = result_text
-            return RespOk(data=parsed_result)
-        except Exception as e:
-            logger.error(f"提取JSON失败: {str(e)}", exc_info=True)
-            return RespOk(data=result_text)
-
-    except HTTPException:
-        raise
+            error_data = json.dumps({
+                "type": "error",
+                "data": f"AI服务调用失败: {str(e)}"
+            }, ensure_ascii=False)
+            yield f"data: {error_data}\n\n"
+            
     except Exception as e:
-        logger.error(f"生成角色信息JSON失败: {str(e)}", exc_info=True)
+        logger.error(f"流式处理错误: {str(e)}", exc_info=True)
+        error_data = json.dumps({
+            "type": "error",
+            "data": f"处理失败: {str(e)}"
+        }, ensure_ascii=False)
+        yield f"data: {error_data}\n\n"
+
+@router.post("/")
+async def generate_role_ai_json(request: ContentRequest):
+    """处理 /prompt/ 路由，支持流式响应"""
+    # 参数验证
+    if not request.fromSystem or not request.fromUser:
         raise HTTPException(
-            status_code=500, 
-            detail=f"AI生成失败: {str(e)}"
+            status_code=400, 
+            detail="fromSystem和fromUser参数不能为空"
         )
+    
+    return StreamingResponse(
+        stream_ollama_response(request),
+        media_type="text/event-stream"
+    )
+
