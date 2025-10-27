@@ -316,18 +316,26 @@
                         if (message.startsWith('data: ')) {
                             try {
                                 const dataStr = message.substring(6);
-                                const data = JSON.parse(dataStr);
+                                const chunk = JSON.parse(dataStr);
                                 
-                                if (data.type === 'content') {
+                                // 解析 ollama 的原始响应格式
+                                if (chunk.message && chunk.message.content) {
                                     // 实时追加内容
-                                    output.textContent += data.data;
+                                    output.textContent += chunk.message.content;
                                     // 自动滚动到底部
                                     output.scrollTop = output.scrollHeight;
-                                } else if (data.type === 'done') {
-                                    showStatus('success', '✅ 完成！');
-                                } else if (data.type === 'error') {
-                                    showStatus('error', `❌ 错误: ${data.data}`);
                                 }
+                                
+                                // 检查是否完成
+                                if (chunk.done === true) {
+                                    showStatus('success', '✅ 完成！');
+                                }
+                                
+                                // 处理错误（自定义错误格式，当 ollama 调用失败时）
+                                if (chunk.type === 'error') {
+                                    showStatus('error', `❌ 错误: ${chunk.data}`);
+                                }
+                                
                             } catch (e) {
                                 console.warn('解析消息失败:', message, e);
                             }
@@ -340,11 +348,11 @@
                     const message = buffer.trim();
                     if (message.startsWith('data: ')) {
                         try {
-                            const data = JSON.parse(message.substring(6));
-                            if (data.type === 'done') {
+                            const chunk = JSON.parse(message.substring(6));
+                            if (chunk.done === true) {
                                 showStatus('success', '✅ 完成！');
-                            } else if (data.type === 'error') {
-                                showStatus('error', `❌ 错误: ${data.data}`);
+                            } else if (chunk.type === 'error') {
+                                showStatus('error', `❌ 错误: ${chunk.data}`);
                             }
                         } catch (e) {
                             console.warn('解析最后消息失败:', message, e);

@@ -58,24 +58,29 @@ async def stream_ollama_response(request: ContentRequest):
                 stream=True
             )
             
-            full_response = ""
+            # 直接转发 ollama 的完整响应
             for chunk in stream:
-                if chunk.get('message', {}).get('content'):
-                    content = chunk['message']['content']
-                    full_response += content
-                    # 以JSON格式发送每个块
-                    chunk_data = json.dumps({
-                        "type": "content",
-                        "data": content
-                    }, ensure_ascii=False)
-                    yield f"data: {chunk_data}\n\n"
-            
-            # 发送结束标志
-            end_data = json.dumps({
-                "type": "done",
-                "data": full_response
-            }, ensure_ascii=False)
-            yield f"data: {end_data}\n\n"
+                # 完整转发 ollama 的原始 chunk
+                # 将 ChatResponse 对象转换为字典
+                if hasattr(chunk, 'model_dump'):
+                    chunk_dict = chunk.model_dump()
+                elif hasattr(chunk, 'dict'):
+                    chunk_dict = chunk.dict()
+                elif hasattr(chunk, '__dict__'):
+                    chunk_dict = chunk.__dict__
+                else:
+                    chunk_dict = {
+                        'message': chunk.message.dict() if hasattr(chunk.message, 'dict') else str(chunk.message),
+                        'done': chunk.done if hasattr(chunk, 'done') else False,
+                        'total_duration': getattr(chunk, 'total_duration', None),
+                        'load_duration': getattr(chunk, 'load_duration', None),
+                        'prompt_eval_count': getattr(chunk, 'prompt_eval_count', None),
+                        'prompt_eval_duration': getattr(chunk, 'prompt_eval_duration', None),
+                        'eval_count': getattr(chunk, 'eval_count', None),
+                        'eval_duration': getattr(chunk, 'eval_duration', None)
+                    }
+                chunk_data = json.dumps(chunk_dict, ensure_ascii=False)
+                yield f"data: {chunk_data}\n\n"
             
         except Exception as e:
             logger.error(f"Ollama调用失败: {str(e)}")
