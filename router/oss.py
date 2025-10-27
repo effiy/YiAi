@@ -2,7 +2,7 @@ from fastapi.responses import JSONResponse
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 
 import oss2, os, logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Any
 from functools import lru_cache, wraps
 
@@ -48,6 +48,12 @@ def handle_error(e: Exception, status_code: int = 500) -> dict:
         message=str(e),
         data=None
     )
+
+def build_oss_url(bucket_name: str, endpoint: str, object_key: str) -> str:
+    """构建OSS文件的访问URL"""
+    # 移除 endpoint 中可能存在的协议头
+    clean_endpoint = endpoint.replace('http://', '').replace('https://', '')
+    return f"https://{bucket_name}.{clean_endpoint}/{object_key}"
 
 router = APIRouter(
     prefix="/oss",
@@ -131,7 +137,7 @@ async def upload_file(
         object_name = f"{directory + '/' if directory else ''}{timestamp}{file_ext}"
 
         bucket.put_object(object_name, content)
-        file_url = f"https://{config.bucket_name}.{config.endpoint}/{object_name}"
+        file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
 
         logger.info(f"文件上传成功: {object_name}")
         return create_response(
@@ -167,12 +173,23 @@ async def list_files(
         files = []
 
         for obj in oss2.ObjectIterator(bucket, prefix=prefix, max_keys=max_keys):
+            # 格式化最后修改时间
+            last_modified_str = None
+            if obj.last_modified:
+                # 将时间戳转换为格式化的字符串
+                try:
+                    last_modified_dt = datetime.fromtimestamp(obj.last_modified, tz=timezone.utc)
+                    last_modified_str = last_modified_dt.strftime("%Y-%m-%d %H:%M:%S")
+                except (ValueError, TypeError, OSError):
+                    last_modified_str = str(obj.last_modified)
+            
             files.append({
                 "name": obj.key,
                 "size": obj.size,
                 "size_human": f"{obj.size/1024/1024:.2f}MB",
                 "last_modified": obj.last_modified,
-                "url": f"https://{bucket.bucket_name}.{bucket.endpoint}/{obj.key}"
+                "last_modified_str": last_modified_str,
+                "url": build_oss_url(bucket.bucket_name, bucket.endpoint, obj.key)
             })
 
         logger.info(f"成功获取文件列表，共{len(files)}个文件")

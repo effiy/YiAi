@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSS 文件管理客户端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        button.btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        button.btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .file-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            transition: background 0.2s;
+        }
+        
+        .file-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .file-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-url {
+            word-break: break-all;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: #667eea;
+            margin-top: 5px;
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .file-preview:hover {
+            transform: scale(1.02);
+        }
+
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            cursor: pointer;
+        }
+
+        .image-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .image-modal-content img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: #fff;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .toggle-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>📦 OSS 文件管理客户端</h1>
+            
+            <div id="status" class="status"></div>
+            
+            <h2>服务器配置</h2>
+            
+            <div class="form-group">
+                <label for="baseUrl">API 服务器地址：</label>
+                <input type="text" id="baseUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+            </div>
+            
+            <div class="form-group">
+                <label for="directory">目录路径（可选）：</label>
+                <input type="text" id="directory" placeholder="例如: images">
+            </div>
+            
+            <h2>上传文件</h2>
+            
+            <div class="form-group">
+                <label for="fileInput">选择文件：</label>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx">
+            </div>
+            
+            <div class="button-group">
+                <button id="btnUpload" onclick="uploadFile()">📤 上传文件</button>
+                <button id="btnRefresh" onclick="listFiles()">🔄 刷新列表</button>
+            </div>
+            
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="toggle-section">
+                <h2>文件列表</h2>
+                <label class="toggle-label">
+                    <span>🖼️ 显示图片预览</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showImages" onchange="toggleImageDisplay()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </label>
+            </div>
+            
+            <div class="file-list" id="fileList">
+                <div class="empty-state">点击"刷新列表"获取文件</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示状态消息
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+
+        // 上传文件
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const directory = document.getElementById('directory').value.trim();
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showStatus('error', '❌ 请先选择文件！');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const btnUpload = document.getElementById('btnUpload');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            
+            if (!baseUrl) {
+                showStatus('error', '❌ API 服务器地址不能为空！');
+                return;
+            }
+            
+            btnUpload.disabled = true;
+            btnUpload.innerHTML = '<span class="loading"></span> 上传中...';
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                if (directory) {
+                    formData.append('directory', directory);
+                }
+                
+                const response = await fetch(`${baseUrl}/oss/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                progressFill.style.width = '100%';
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showStatus('success', `✅ 上传成功！文件名：${result.data.filename}`);
+                    fileInput.value = '';
+                    // 自动刷新列表
+                    setTimeout(listFiles, 500);
+                } else {
+                    throw new Error(result.message || '上传失败');
+                }
+                
+            } catch (error) {
+                console.error('上传失败:', error);
+                showStatus('error', `❌ 上传失败: ${error.message}`);
+            } finally {
+                btnUpload.disabled = false;
+                btnUpload.textContent = '📤 上传文件';
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 1000);
+            }
+        }
+        
+        // 列出文件
+        async function listFiles() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const directory = document.getElementById('directory').value.trim();
+            const btnRefresh = document.getElementById('btnRefresh');
+            
+            if (!baseUrl) {
+                showStatus('error', '❌ API 服务器地址不能为空！');
+                return;
+            }
+            
+            btnRefresh.disabled = true;
+            btnRefresh.innerHTML = '<span class="loading"></span> 加载中...';
+            
+            try {
+                let url = `${baseUrl}/oss/files?max_keys=100`;
+                if (directory) {
+                    url += `&directory=${encodeURIComponent(directory)}`;
+                }
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    displayFiles(result.data);
+                    if (result.data.length === 0) {
+                        showStatus('info', '📂 该目录下暂无文件');
+                    } else {
+                        showStatus('success', `✅ 已加载 ${result.data.length} 个文件`);
+                    }
+                } else {
+                    throw new Error(result.message || '获取文件列表失败');
+                }
+                
+            } catch (error) {
+                console.error('获取文件列表失败:', error);
+                showStatus('error', `❌ 获取文件列表失败: ${error.message}`);
+                document.getElementById('fileList').innerHTML = '<div class="empty-state">加载失败</div>';
+            } finally {
+                btnRefresh.disabled = false;
+                btnRefresh.textContent = '🔄 刷新列表';
+            }
+        }
+        
+        // 判断是否为图片文件
+        function isImageFile(filename) {
+            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+            const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+            return imageExtensions.includes(ext);
+        }
+
+        // 获取文件类型图标
+        function getFileIcon(filename) {
+            const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+            const iconMap = {
+                '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🖼️', '.webp': '🖼️', '.bmp': '🖼️',
+                '.pdf': '📄',
+                '.doc': '📝', '.docx': '📝',
+                '.txt': '📄',
+                '.zip': '📦', '.rar': '📦', '.7z': '📦',
+                '.mp4': '🎬', '.avi': '🎬', '.mov': '🎬',
+                '.mp3': '🎵', '.wav': '🎵',
+            };
+            return iconMap[ext] || '📄';
+        }
+
+        // 切换图片显示
+        function toggleImageDisplay() {
+            const showImages = document.getElementById('showImages').checked;
+            // 重新渲染文件列表
+            const currentFiles = window.currentFiles;
+            if (currentFiles) {
+                displayFiles(currentFiles);
+            }
+        }
+
+        // 显示文件列表
+        function displayFiles(files) {
+            const fileList = document.getElementById('fileList');
+            
+            // 保存当前文件列表
+            window.currentFiles = files;
+            
+            if (!files || files.length === 0) {
+                fileList.innerHTML = '<div class="empty-state">暂无文件</div>';
+                return;
+            }
+            
+            const showImages = document.getElementById('showImages').checked;
+            
+            fileList.innerHTML = files.map(file => {
+                const isImage = isImageFile(file.name);
+                const imagePreview = isImage && showImages ? `<img src="${file.url}" alt="${file.name}" class="file-preview" />` : '';
+                
+                return `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">${getFileIcon(file.name)} ${file.name}</div>
+                        <div class="file-meta">
+                            📊 大小: ${file.size_human || `${(file.size/1024/1024).toFixed(2)}MB`} | 
+                            📅 修改时间: ${file.last_modified_str || '未知'}
+                        </div>
+                        <div class="file-url">🔗 ${file.url}</div>
+                        ${imagePreview ? `<div onclick="openImageModal('${file.url}')">${imagePreview}</div>` : ''}
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-success" onclick="copyUrl('${file.url}')">📋 复制链接</button>
+                        <button class="btn-danger" onclick="deleteFile('${file.name}')">🗑️ 删除</button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+        
+        // 删除文件
+        async function deleteFile(objectName) {
+            if (!confirm(`确定要删除文件 "${objectName}" 吗？`)) {
+                return;
+            }
+            
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            
+            if (!baseUrl) {
+                showStatus('error', '❌ API 服务器地址不能为空！');
+                return;
+            }
+            
+            try {
+                const encodedName = encodeURIComponent(objectName);
+                const response = await fetch(`${baseUrl}/oss/delete/${encodedName}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showStatus('success', '✅ 删除成功！');
+                    // 自动刷新列表
+                    setTimeout(listFiles, 500);
+                } else {
+                    throw new Error(result.message || '删除失败');
+                }
+                
+            } catch (error) {
+                console.error('删除失败:', error);
+                showStatus('error', `❌ 删除失败: ${error.message}`);
+            }
+        }
+        
+        // 复制链接
+        async function copyUrl(url) {
+            try {
+                await navigator.clipboard.writeText(url);
+                showStatus('success', '✅ 链接已复制到剪贴板！');
+            } catch (error) {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showStatus('success', '✅ 链接已复制到剪贴板！');
+            }
+        }
+        
+        // 打开图片预览模态框
+        function openImageModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            modalImg.src = imageUrl;
+        }
+
+        // 关闭图片预览模态框
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+        }
+
+        // 点击模态框背景关闭
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('imageModal');
+            if (event.target === modal) {
+                closeImageModal();
+            }
+        });
+
+        // ESC键关闭模态框
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+
+        // 页面加载时自动获取文件列表
+        window.addEventListener('DOMContentLoaded', () => {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            if (baseUrl) {
+                listFiles();
+            }
+        });
+    </script>
+
+    <!-- 图片预览模态框 -->
+    <div id="imageModal" class="image-modal">
+        <span class="close-modal" onclick="closeImageModal()">&times;</span>
+        <div class="image-modal-content">
+            <img id="modalImage" src="" alt="预览图片">
+        </div>
+    </div>
+</body>
+</html>
+
