@@ -30,6 +30,7 @@ def RespOk(*, data: Union[list, dict, str] = None, pagination: dict = None, msg:
         status_code=http_status.HTTP_200_OK,
         content=jsonable_encoder({
             'status': 200,
+            'code': 200,
             'msg': msg,
             'data': data,
             'pagination': pagination
@@ -42,6 +43,7 @@ def RespFail(resp: Resp) -> Response:
         status_code=resp.code,
         content=jsonable_encoder({
             'status': resp.status,
+            'code': resp.code,
             'msg': resp.msg,
         })
     )

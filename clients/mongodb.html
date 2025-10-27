@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB 数据管理客户端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 120px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        button.btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        button.btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        button.btn-info {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        button.btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #f57c00;
+        }
+        
+        .data-item {
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .data-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .data-key {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-preview {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            max-height: 100px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .data-preview.expanded {
+            max-height: 1000px;
+        }
+        
+        .preview-field {
+            display: flex;
+            gap: 10px;
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 3px solid #e0e0e0;
+            padding-left: 12px;
+            background: #f9f9f9;
+        }
+        
+        .preview-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 100px;
+        }
+        
+        .preview-value {
+            color: #333;
+            flex: 1;
+            word-break: break-word;
+        }
+        
+        .data-content {
+            font-size: 13px;
+            color: #666;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 12px;
+            border: 1px solid #e8e8e8;
+            display: none;
+        }
+        
+        .data-content.show {
+            display: block;
+        }
+        
+        .data-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .expand-btn {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .expand-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(155, 89, 182, 0.3);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+            color: #999;
+            font-size: 16px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+        
+        .empty-state:only-child::before {
+            content: '📋';
+            display: block;
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-state:not(:only-child) {
+            padding: 20px;
+            background: transparent;
+            border: none;
+        }
+        
+        @media (max-width: 768px) {
+            .data-item {
+                padding: 15px;
+            }
+            
+            .data-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .data-actions {
+                flex-direction: column;
+            }
+            
+            .data-actions button {
+                width: 100%;
+            }
+            
+            .preview-field {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .preview-label {
+                min-width: auto;
+            }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .pagination button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .json-viewer {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🗄️ MongoDB 数据管理客户端</h1>
+            
+            <div id="status" class="status"></div>
+            
+            <h2>服务器配置</h2>
+            
+            <div class="form-group">
+                <label for="baseUrl">API 服务器地址：</label>
+                <input type="text" id="baseUrl" value="https://api.effiy.cn" placeholder="https://api.effiy.cn">
+            </div>
+            
+            <h2>集合配置</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="collectionName">集合名称：</label>
+                    <input type="text" id="collectionName" value="rss" placeholder="例如: users">
+                </div>
+            </div>
+            
+            <h2>日期范围筛选（可选）</h2>
+            
+            <div class="search-filters">
+                <div class="form-group">
+                    <label for="dateField">日期字段：</label>
+                    <input type="text" id="dateField" value="isoDate" placeholder="例如: isoDate">
+                </div>
+                <div class="form-group">
+                    <label for="startDate">开始日期：</label>
+                    <input type="date" id="startDate" placeholder="2025-10-26">
+                </div>
+                <div class="form-group">
+                    <label for="endDate">结束日期：</label>
+                    <input type="date" id="endDate" placeholder="2025-10-26">
+                </div>
+            </div>
+            
+            <h2>其他筛选（可选）</h2>
+            
+            <div class="search-filters">
+                <div class="form-group">
+                    <label for="filterField1">筛选字段1：</label>
+                    <input type="text" id="filterField1" placeholder="例如: name">
+                </div>
+                <div class="form-group">
+                    <label for="filterValue1">筛选值1：</label>
+                    <input type="text" id="filterValue1" placeholder="支持模糊查询">
+                </div>
+                <div class="form-group">
+                    <label for="filterField2">筛选字段2：</label>
+                    <input type="text" id="filterField2" placeholder="例如: age">
+                </div>
+                <div class="form-group">
+                    <label for="filterValue2">筛选值2：</label>
+                    <input type="text" id="filterValue2" placeholder="支持数字范围">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="btnQuery" onclick="queryData()">🔍 查询数据</button>
+                <button id="btnClear" onclick="clearData()">🧹 清空数据</button>
+                <button id="btnShowCreate" onclick="showCreateModal()">➕ 创建数据</button>
+            </div>
+            
+            <h2>查询结果 <span id="resultInfo"></span></h2>
+            
+            <div class="data-list" id="dataList">
+                <div class="empty-state">点击"🔍 查询数据"按钮获取数据</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 创建/编辑数据模态框 -->
+    <div id="dataModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">创建数据</h2>
+            
+            <div class="form-group">
+                <label for="modalKey">Key（编辑时必须）：</label>
+                <input type="text" id="modalKey" placeholder="自动生成" disabled>
+            </div>
+            
+            <div class="form-group">
+                <label for="modalData">JSON 数据：</label>
+                <textarea id="modalData" placeholder='{"name": "示例", "age": 25}'></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button id="btnSave" onclick="saveData()">💾 保存</button>
+                <button id="btnCancel" onclick="closeModal()">❌ 取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 详情模态框 -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDetailModal()">&times;</span>
+            <h2>数据详情</h2>
+            <div id="detailContent" class="json-viewer"></div>
+        </div>
+    </div>
+
+    <script>
+        let editingMode = false;
+        let currentData = [];
+        
+        // 显示状态消息
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 查询数据
+        async function queryData() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const collectionName = document.getElementById('collectionName').value.trim();
+            const btnQuery = document.getElementById('btnQuery');
+            
+            if (!baseUrl || !collectionName) {
+                showStatus('error', '❌ 请填写服务器地址和集合名称！');
+                return;
+            }
+            
+            btnQuery.disabled = true;
+            btnQuery.innerHTML = '<span class="loading"></span> 查询中...';
+            
+            try {
+                // 构建查询参数
+                const params = new URLSearchParams({
+                    cname: collectionName
+                });
+                
+                // 添加日期范围筛选条件
+                const dateField = document.getElementById('dateField').value.trim();
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                if (dateField && startDate && endDate) {
+                    // 将日期组合成范围格式：2025-10-26,2025-10-26
+                    params.append(dateField, `${startDate},${endDate}`);
+                } else if (dateField && startDate) {
+                    // 只有开始日期
+                    params.append(dateField, startDate);
+                } else if (dateField && endDate) {
+                    // 只有结束日期
+                    params.append(dateField, endDate);
+                }
+                
+                // 添加其他筛选条件
+                const filterField1 = document.getElementById('filterField1').value.trim();
+                const filterValue1 = document.getElementById('filterValue1').value.trim();
+                if (filterField1 && filterValue1) {
+                    params.append(filterField1, filterValue1);
+                }
+                
+                const filterField2 = document.getElementById('filterField2').value.trim();
+                const filterValue2 = document.getElementById('filterValue2').value.trim();
+                if (filterField2 && filterValue2) {
+                    params.append(filterField2, filterValue2);
+                }
+                
+                const response = await fetch(`${baseUrl}/mongodb?${params.toString()}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('API 返回结果:', result);
+                
+                if (result.code === 200) {
+                    // 处理数据，可能是列表格式或对象格式
+                    const data = Array.isArray(result.data) ? result.data : result.data.list;
+                    const total = result.data.total || (Array.isArray(result.data) ? result.data.length : 0);
+                    
+                    if (data) {
+                        currentData = data;
+                        displayData(data);
+                        showStatus('success', `✅ 查询成功！共 ${total} 条数据`);
+                    } else {
+                        showStatus('warning', '⚠️ 查询成功，但没有返回数据');
+                    }
+                } else {
+                    throw new Error(result.message || '查询失败');
+                }
+                
+            } catch (error) {
+                console.error('查询失败:', error);
+                showStatus('error', `❌ 查询失败: ${error.message}`);
+                document.getElementById('dataList').innerHTML = '<div class="empty-state">❌ 查询失败，请检查配置或网络连接</div>';
+            } finally {
+                btnQuery.disabled = false;
+                btnQuery.textContent = '🔍 查询数据';
+            }
+        }
+        
+        // 格式化字段值显示
+        function formatFieldValue(value) {
+            if (value === null || value === undefined) return 'null';
+            if (typeof value === 'object') {
+                if (Array.isArray(value)) {
+                    return `[数组] ${value.length} 项`;
+                }
+                return '{对象}';
+            }
+            if (typeof value === 'boolean') return value ? '✓' : '✗';
+            if (typeof value === 'string') {
+                // 检查是否是URL
+                if (value.startsWith('http://') || value.startsWith('https://')) {
+                    return `<a href="${value}" target="_blank" style="color: #667eea;">${value}</a>`;
+                }
+                // 长文本截断
+                return value.length > 50 ? value.substring(0, 50) + '...' : value;
+            }
+            return String(value);
+        }
+        
+        // 获取重要字段预览
+        function getPreviewFields(item) {
+            const previewFields = [];
+            const ignoreFields = ['_id', 'key', '__v'];
+            
+            for (let key in item) {
+                if (ignoreFields.includes(key)) continue;
+                const value = item[key];
+                // 优先显示常用字段
+                if (['title', 'name', 'content', 'description', 'text', 'link', 'url', 'href', 'isoDate', 'pubDate', 'date', 'time', 'status', 'type'].includes(key)) {
+                    previewFields.unshift({ key, value }); // 放到前面
+                } else if (typeof value !== 'object' || Array.isArray(value)) {
+                    previewFields.push({ key, value });
+                }
+            }
+            
+            return previewFields.slice(0, 5); // 最多显示5个字段
+        }
+        
+        // 转义HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 显示数据列表
+        function displayData(data) {
+            const dataList = document.getElementById('dataList');
+            const resultInfo = document.getElementById('resultInfo');
+            
+            if (!data || data.length === 0) {
+                dataList.innerHTML = '<div class="empty-state">📭 暂无数据</div>';
+                resultInfo.textContent = '';
+                return;
+            }
+            
+            resultInfo.textContent = `(${data.length} 条)`;
+            
+            dataList.innerHTML = data.map((item, index) => {
+                // 格式化显示
+                const key = item.key || item._id || `Item ${index + 1}`;
+                const content = JSON.stringify(item, null, 2);
+                const previewFields = getPreviewFields(item);
+                
+                let previewHtml = '';
+                if (previewFields.length > 0) {
+                    previewHtml = previewFields.map(field => {
+                        const value = formatFieldValue(field.value);
+                        return `
+                            <div class="preview-field">
+                                <div class="preview-label">${escapeHtml(field.key)}:</div>
+                                <div class="preview-value">${value}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    previewHtml = `<div class="preview-field"><div class="preview-value" style="color: #999;">无可用预览</div></div>`;
+                }
+                
+                return `
+                <div class="data-item">
+                    <div class="data-header">
+                        <div class="data-key">
+                            <span>🔑</span>
+                            <span>Key: ${escapeHtml(String(key))}</span>
+                        </div>
+                        <button class="expand-btn" onclick="toggleExpand(${index})">📋 显示JSON</button>
+                    </div>
+                    <div class="data-preview" id="preview-${index}">
+                        ${previewHtml}
+                    </div>
+                    <div class="data-content" id="content-${index}">
+                        ${escapeHtml(content)}
+                    </div>
+                    <div class="data-actions">
+                        <button class="btn-info" onclick="viewDetail('${key}')">👁️ 查看详情</button>
+                        <button class="btn-warning" onclick="editData('${key}')">✏️ 编辑</button>
+                        <button class="btn-danger" onclick="deleteData('${key}')">🗑️ 删除</button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+        
+        // 切换展开/收起
+        function toggleExpand(index) {
+            const content = document.getElementById(`content-${index}`);
+            const button = content.previousElementSibling.previousElementSibling.querySelector('.expand-btn');
+            
+            if (content.classList.contains('show')) {
+                content.classList.remove('show');
+                button.textContent = '📋 显示JSON';
+            } else {
+                content.classList.add('show');
+                button.textContent = '🔝 收起JSON';
+            }
+        }
+        
+        // 查看详情
+        async function viewDetail(key) {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const collectionName = document.getElementById('collectionName').value.trim();
+            
+            try {
+                const response = await fetch(`${baseUrl}/mongodb/detail?cname=${collectionName}&id=${key}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    const detailContent = document.getElementById('detailContent');
+                    detailContent.textContent = JSON.stringify(result.data, null, 2);
+                    document.getElementById('detailModal').style.display = 'block';
+                } else {
+                    throw new Error(result.message || '获取详情失败');
+                }
+                
+            } catch (error) {
+                console.error('获取详情失败:', error);
+                showStatus('error', `❌ 获取详情失败: ${error.message}`);
+            }
+        }
+        
+        // 关闭详情模态框
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+        
+        // 编辑数据
+        async function editData(key) {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const collectionName = document.getElementById('collectionName').value.trim();
+            
+            try {
+                const response = await fetch(`${baseUrl}/mongodb/detail?cname=${collectionName}&id=${key}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    editingMode = true;
+                    document.getElementById('modalTitle').textContent = '编辑数据';
+                    document.getElementById('modalKey').value = key;
+                    document.getElementById('modalKey').disabled = true;
+                    document.getElementById('modalData').value = JSON.stringify(result.data, null, 2);
+                    document.getElementById('dataModal').style.display = 'block';
+                } else {
+                    throw new Error(result.message || '获取数据失败');
+                }
+                
+            } catch (error) {
+                console.error('获取编辑数据失败:', error);
+                showStatus('error', `❌ 获取编辑数据失败: ${error.message}`);
+            }
+        }
+        
+        // 显示创建模态框
+        function showCreateModal() {
+            editingMode = false;
+            document.getElementById('modalTitle').textContent = '创建数据';
+            document.getElementById('modalKey').value = '';
+            document.getElementById('modalKey').disabled = true;
+            document.getElementById('modalData').value = '{}';
+            document.getElementById('dataModal').style.display = 'block';
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('dataModal').style.display = 'none';
+            document.getElementById('modalKey').value = '';
+            document.getElementById('modalData').value = '';
+        }
+        
+        // 保存数据
+        async function saveData() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const collectionName = document.getElementById('collectionName').value.trim();
+            const modalData = document.getElementById('modalData').value.trim();
+            const modalKey = document.getElementById('modalKey').value.trim();
+            const btnSave = document.getElementById('btnSave');
+            
+            if (!modalData) {
+                showStatus('error', '❌ 数据不能为空！');
+                return;
+            }
+            
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="loading"></span> 保存中...';
+            
+            try {
+                // 解析JSON
+                const data = JSON.parse(modalData);
+                
+                // 添加 cname
+                data.cname = collectionName;
+                
+                if (editingMode) {
+                    // 编辑模式
+                    if (!modalKey) {
+                        throw new Error('编辑时必须提供 key');
+                    }
+                    data.key = modalKey;
+                    
+                    const response = await fetch(`${baseUrl}/mongodb?cname=${collectionName}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.code === 200) {
+                        showStatus('success', '✅ 更新成功！');
+                        closeModal();
+                        setTimeout(queryData, 500);
+                    } else {
+                        throw new Error(result.message || '更新失败');
+                    }
+                } else {
+                    // 创建模式
+                    const response = await fetch(`${baseUrl}/mongodb?cname=${collectionName}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.code === 200) {
+                        showStatus('success', `✅ 创建成功！Key: ${result.data.key}`);
+                        closeModal();
+                        setTimeout(queryData, 500);
+                    } else {
+                        throw new Error(result.message || '创建失败');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('保存失败:', error);
+                showStatus('error', `❌ 保存失败: ${error.message}`);
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = '💾 保存';
+            }
+        }
+        
+        // 删除数据
+        async function deleteData(key) {
+            if (!confirm(`确定要删除数据 "${key}" 吗？`)) {
+                return;
+            }
+            
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const collectionName = document.getElementById('collectionName').value.trim();
+            
+            try {
+                const response = await fetch(`${baseUrl}/mongodb?cname=${collectionName}&key=${key}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showStatus('success', '✅ 删除成功！');
+                    setTimeout(queryData, 500);
+                } else {
+                    throw new Error(result.message || '删除失败');
+                }
+                
+            } catch (error) {
+                console.error('删除失败:', error);
+                showStatus('error', `❌ 删除失败: ${error.message}`);
+            }
+        }
+        
+        // 清空数据
+        function clearData() {
+            if (confirm('确定要清空当前显示的数据吗？')) {
+                document.getElementById('dataList').innerHTML = '<div class="empty-state">点击"🔍 查询数据"按钮获取数据</div>';
+                document.getElementById('resultInfo').textContent = '';
+            }
+        }
+        
+        // 点击模态框外部关闭
+        window.addEventListener('click', (event) => {
+            const dataModal = document.getElementById('dataModal');
+            const detailModal = document.getElementById('detailModal');
+            if (event.target === dataModal) {
+                closeModal();
+            }
+            if (event.target === detailModal) {
+                closeDetailModal();
+            }
+        });
+        
+        // ESC 键关闭模态框
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeModal();
+                closeDetailModal();
+            }
+        });
+        
+        // 页面加载时设置今天的日期
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+        });
+    </script>
+</body>
+</html>
+

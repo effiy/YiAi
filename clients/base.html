@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模块动态调用客户端</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        button.btn-example {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        
+        button.btn-clear {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #f57c00;
+        }
+        
+        .output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            min-height: 200px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .output::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .output::-webkit-scrollbar-track {
+            background: #2e2e2e;
+        }
+        
+        .output::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        
+        .output::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .example-badge {
+            background: #f5f7fa;
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+            font-size: 13px;
+            color: #555;
+            transition: all 0.2s;
+        }
+        
+        .example-badge:hover {
+            border-color: #667eea;
+            cursor: pointer;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>⚙️ 模块动态调用客户端</h1>
+            
+            <div id="status" class="status"></div>
+            
+            <h2>服务器配置</h2>
+            
+            <div class="form-group">
+                <label for="baseUrl">API 服务器地址：</label>
+                <input type="text" id="baseUrl" value="https://api.effiy.cn" placeholder="https://api.effiy.cn">
+            </div>
+            
+            <h2>快速示例</h2>
+            
+            <div class="examples">
+                <button class="btn-example" onclick="loadExample('crawler')">🕷️ 网页爬虫示例</button>
+                <button class="btn-example" onclick="loadExample('tree')">🌲 文件树生成示例</button>
+            </div>
+            
+            <h2>模块配置</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="moduleName">模块名称：</label>
+                    <input type="text" id="moduleName" placeholder="例如: modules.crawler.crawler">
+                </div>
+                <div class="form-group">
+                    <label for="methodName">方法名称：</label>
+                    <input type="text" id="methodName" placeholder="例如: main">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="params">参数 (JSON 格式)：</label>
+                <textarea id="params" placeholder='例如: {"url": "https://www.qbitai.com/", "min_title_length": 24}'></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button id="btnExecute" onclick="executeModule()">🚀 执行模块</button>
+                <button id="btnClear" class="btn-clear" onclick="clearOutput()">🧹 清空输出</button>
+            </div>
+            
+            <h2>执行结果</h2>
+            <div id="output" class="output">等待执行...</div>
+        </div>
+    </div>
+
+    <script>
+        // 示例数据
+        const examples = {
+            crawler: {
+                module_name: 'modules.crawler.crawler',
+                method_name: 'main',
+                params: JSON.stringify({"url": "https://www.qbitai.com/", "min_title_length": 24}, null, 2)
+            },
+            tree: {
+                module_name: 'modules.commands.generate_tree_files',
+                method_name: 'main',
+                params: JSON.stringify({"folder_path": ".", "max_depth": 2}, null, 2)
+            }
+        };
+        
+        // 加载示例
+        function loadExample(key) {
+            const example = examples[key];
+            if (!example) return;
+            
+            document.getElementById('moduleName').value = example.module_name;
+            document.getElementById('methodName').value = example.method_name;
+            document.getElementById('params').value = example.params;
+            
+            showStatus('info', `✅ 已加载示例: ${example.module_name}`);
+        }
+        
+        // 显示状态消息
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 执行模块
+        async function executeModule() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const moduleName = document.getElementById('moduleName').value.trim();
+            const methodName = document.getElementById('methodName').value.trim();
+            const paramsStr = document.getElementById('params').value.trim();
+            const btnExecute = document.getElementById('btnExecute');
+            const output = document.getElementById('output');
+            
+            if (!baseUrl) {
+                showStatus('error', '❌ 请填写服务器地址！');
+                return;
+            }
+            
+            if (!moduleName || !methodName) {
+                showStatus('error', '❌ 请填写模块名和方法名！');
+                return;
+            }
+            
+            let params;
+            try {
+                if (paramsStr) {
+                    params = JSON.parse(paramsStr);
+                } else {
+                    params = {};
+                }
+            } catch (e) {
+                showStatus('error', `❌ 参数 JSON 格式错误: ${e.message}`);
+                return;
+            }
+            
+            btnExecute.disabled = true;
+            btnExecute.innerHTML = '<span class="loading"></span> 执行中...';
+            
+            try {
+                // 清空输出
+                output.textContent = '正在执行，请稍候...\n';
+                showStatus('info', '正在执行模块，请稍候...');
+                
+                const payload = {
+                    module_name: moduleName,
+                    method_name: methodName,
+                    params: params
+                };
+                
+                console.log('请求负载:', payload);
+                
+                const response = await fetch(`${baseUrl}/module`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('API 返回结果:', result);
+                
+                // 格式化输出
+                let outputText = '=== 执行成功 ===\n\n';
+                outputText += '返回数据:\n';
+                outputText += JSON.stringify(result, null, 2);
+                
+                // 如果是爬虫返回的数据，特殊处理
+                if (result.data && Array.isArray(result.data)) {
+                    outputText += '\n\n=== 数据详情 ===\n\n';
+                    outputText += `共 ${result.data.length} 条记录\n\n`;
+                    result.data.forEach((item, index) => {
+                        outputText += `\n--- 记录 ${index + 1} ---\n`;
+                        outputText += JSON.stringify(item, null, 2) + '\n';
+                    });
+                }
+                
+                output.textContent = outputText;
+                showStatus('success', '✅ 执行成功！');
+                
+            } catch (error) {
+                console.error('执行失败:', error);
+                const errorMsg = `执行失败: ${error.message}\n\n堆栈信息:\n${error.stack || '无'}`;
+                output.textContent = errorMsg;
+                showStatus('error', `❌ ${error.message}`);
+            } finally {
+                btnExecute.disabled = false;
+                btnExecute.textContent = '🚀 执行模块';
+            }
+        }
+        
+        // 清空输出
+        function clearOutput() {
+            document.getElementById('output').textContent = '等待执行...';
+            showStatus('info', '输出已清空');
+        }
+        
+        // 默认加载爬虫示例
+        window.addEventListener('DOMContentLoaded', () => {
+            loadExample('crawler');
+        });
+    </script>
+</body>
+</html>
+
