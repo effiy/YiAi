@@ -21,6 +21,7 @@ class ContentRequest(BaseModel):
     fromSystem: str
     fromUser: str
     model: Optional[str] = None  # 新增模型参数，允许可选
+    images: Optional[list[str]] = None  # 支持图片 base64 列表
 
 async def stream_ollama_response(request: ContentRequest):
     """生成流式响应"""
@@ -45,10 +46,23 @@ async def stream_ollama_response(request: ContentRequest):
             client = Client(host=ollama_url)
         
         # 准备消息
-        messages = [
-            {"role": "system", "content": request.fromSystem},
-            {"role": "user", "content": request.fromUser}
-        ]
+        # 检查是否有图片输入（视觉模型支持）
+        if request.images and len(request.images) > 0:
+            # 视觉模型需要特殊格式
+            content = []
+            content.append({"type": "text", "text": request.fromUser})
+            for img in request.images:
+                content.append({"type": "image_url", "image_url": {"url": img}})
+            messages = [
+                {"role": "system", "content": request.fromSystem},
+                {"role": "user", "content": content}
+            ]
+        else:
+            # 纯文本消息
+            messages = [
+                {"role": "system", "content": request.fromSystem},
+                {"role": "user", "content": request.fromUser}
+            ]
         
         # 调用Ollama流式API
         try:

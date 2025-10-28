@@ -190,6 +190,41 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        .image-preview-item {
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .image-preview-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .image-preview-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-preview-item .remove-btn:hover {
+            background: rgba(244, 67, 54, 1);
+        }
     </style>
 </head>
 <body>
@@ -208,7 +243,7 @@
             
             <div class="form-group">
                 <label for="model">模型名称（可选）：</label>
-                <input type="text" id="model" placeholder="qwen3" value="qwen3">
+                <input type="text" id="model" placeholder="llama3.2-vision" value="llama3.2-vision">
             </div>
             
             <div class="form-group">
@@ -219,6 +254,16 @@
             <div class="form-group">
                 <label for="fromUser">用户提示词：</label>
                 <textarea id="fromUser" placeholder="例如：请介绍一下人工智能。">请用中文简单介绍一下人工智能的发展历史，字数控制在200字左右。</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="imageUpload">图片上传（支持视觉模型）：</label>
+                <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button type="button" onclick="document.getElementById('imageUpload').click()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">📷 选择图片</button>
+                    <button type="button" onclick="clearImages()" style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 6px; cursor: pointer;">🗑️ 清除图片</button>
+                </div>
+                <div id="imagePreview" style="margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;"></div>
             </div>
             
             <div class="button-group">
@@ -233,6 +278,57 @@
 
     <script>
         let isStreaming = false;
+        let uploadedImages = []; // 存储 base64 编码的图片
+        
+        // 处理图片上传
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (!files) return;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) {
+                    alert('请选择图片文件！');
+                    continue;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Data = e.target.result;
+                    uploadedImages.push(base64Data);
+                    updateImagePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 更新图片预览
+        function updateImagePreview() {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            uploadedImages.forEach((img, index) => {
+                const div = document.createElement('div');
+                div.className = 'image-preview-item';
+                div.innerHTML = `
+                    <img src="${img}" alt="预览 ${index + 1}">
+                    <button class="remove-btn" onclick="removeImage(${index})">×</button>
+                `;
+                preview.appendChild(div);
+            });
+        }
+        
+        // 删除指定图片
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            updateImagePreview();
+        }
+        
+        // 清除所有图片
+        function clearImages() {
+            uploadedImages = [];
+            updateImagePreview();
+        }
         
         async function streamPrompt() {
             if (isStreaming) {
@@ -276,6 +372,11 @@
                 
                 if (model) {
                     payload.model = model;
+                }
+                
+                // 如果有上传的图片，添加到请求中
+                if (uploadedImages.length > 0) {
+                    payload.images = uploadedImages;
                 }
                 
                 const response = await fetch(`${baseUrl}/prompt`, {
@@ -373,6 +474,8 @@
         function clearOutput() {
             document.getElementById('output').textContent = '等待调用...';
             hideStatus();
+            // 也清除图片
+            clearImages();
         }
         
         function showStatus(type, message) {
