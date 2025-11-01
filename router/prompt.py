@@ -1,5 +1,7 @@
 import logging, json, os
+import uuid
 from typing import Optional, List
+from datetime import datetime, timezone
 
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -7,6 +9,8 @@ from fastapi.responses import StreamingResponse, JSONResponse
 
 from ollama import Client
 from modules.services.chatService import ChatService
+from modules.database.qdrantClient import QdrantClient
+from qdrant_client.models import PointStruct, Distance
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -19,6 +23,15 @@ router = APIRouter(
 
 # 初始化聊天服务
 chat_service = ChatService()
+
+# 初始化 Qdrant 客户端
+qdrant_client = QdrantClient()
+
+# 聊天记录集合名称
+CHAT_COLLECTION_NAME = "chat_records"
+
+# 向量维度（需要与 embedding 模型匹配，默认使用 nomic-embed-text 的 768 维）
+VECTOR_SIZE = 768
 
 
 def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
@@ -226,19 +239,127 @@ async def save_chat(
     conversation_id: Optional[str] = None,
     metadata: Optional[dict] = None
 ):
-    """保存聊天记录"""
+    """保存聊天记录到 Qdrant"""
     try:
         user_id = get_user_id(http_request, user_id)
-        await chat_service.initialize()
-        result = await chat_service.save_chat(
-            user_id=user_id,
-            conversation_id=conversation_id,
-            messages=messages or [],
-            metadata=metadata
+        messages = messages or []
+        
+        if not messages:
+            raise HTTPException(status_code=400, detail="消息列表不能为空")
+        
+        # 如果没有 conversation_id，创建新的会话
+        if not conversation_id:
+            conversation_id = str(uuid.uuid4())
+        
+        # 确保集合存在
+        qdrant_client.create_collection(
+            collection_name=CHAT_COLLECTION_NAME,
+            vector_size=VECTOR_SIZE,
+            distance=Distance.COSINE
         )
+        
+        # 获取 Ollama 配置用于生成 embedding
+        ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        ollama_auth = os.getenv("OLLAMA_AUTH", "")
+        embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+        
+        # 创建 Ollama 客户端用于生成 embedding
+        if ollama_auth:
+            if ':' in ollama_auth:
+                username, password = ollama_auth.split(':', 1)
+            else:
+                username = ollama_auth
+                password = ""
+            ollama_client = Client(host=ollama_url, auth=(username, password))
+        else:
+            ollama_client = Client(host=ollama_url)
+        
+        # 合并所有消息内容用于生成 embedding
+        text_content = "\n".join([
+            f"{msg.get('role', 'unknown')}: {msg.get('content', '')}"
+            for msg in messages
+        ])
+        
+        # 生成 embedding
+        try:
+            embedding_response = ollama_client.embed(
+                model=embedding_model,
+                input=text_content
+            )
+            
+            # 处理响应，可能是字典或者对象
+            if hasattr(embedding_response, 'embedding'):
+                vector = embedding_response.embedding
+            elif isinstance(embedding_response, dict):
+                vector = embedding_response.get("embedding", [])
+            else:
+                # 尝试直接访问属性
+                vector = getattr(embedding_response, 'embedding', [])
+            
+            if not vector or len(vector) == 0:
+                raise ValueError(f"生成的向量为空，请检查 embedding 模型 {embedding_model} 是否可用")
+            
+            # 确保向量维度匹配
+            if len(vector) != VECTOR_SIZE:
+                logger.warning(f"向量维度不匹配: 期望 {VECTOR_SIZE}, 实际 {len(vector)}. 自动调整向量大小.")
+                if len(vector) > VECTOR_SIZE:
+                    vector = vector[:VECTOR_SIZE]
+                else:
+                    vector.extend([0.0] * (VECTOR_SIZE - len(vector)))
+        except Exception as e:
+            logger.error(f"生成 embedding 失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"生成向量失败: {str(e)}")
+        
+        # 构建聊天记录文档
+        chat_doc = {
+            "conversation_id": conversation_id,
+            "user_id": user_id,
+            "messages": messages,
+            "message_count": len(messages),
+            "created_time": datetime.now(timezone.utc).isoformat(),
+            "updated_time": datetime.now(timezone.utc).isoformat(),
+            "metadata": metadata or {}
+        }
+        
+        # 生成文档 ID
+        doc_id = str(uuid.uuid4())
+        
+        # 构建 Qdrant Point
+        point = PointStruct(
+            id=doc_id,
+            vector=vector,
+            payload={
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "messages": messages,
+                "message_count": len(messages),
+                "created_time": chat_doc["created_time"],
+                "updated_time": chat_doc["updated_time"],
+                "metadata": metadata or {},
+                "text_content": text_content  # 保存原始文本用于检索
+            }
+        )
+        
+        # 保存到 Qdrant
+        qdrant_client.upsert_points(
+            collection_name=CHAT_COLLECTION_NAME,
+            points=[point]
+        )
+        
+        result = {
+            "id": doc_id,
+            "conversation_id": conversation_id,
+            "success": True,
+            "vector_size": len(vector)
+        }
+        
+        logger.info(f"聊天记录已保存到 Qdrant: doc_id={doc_id}, conversation_id={conversation_id}")
         return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"保存聊天记录失败: {str(e)}")
+        logger.error(f"保存聊天记录失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
