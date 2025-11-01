@@ -235,11 +235,11 @@ def post_api_mode(args):
     # 参考服务端校验逻辑，附带认证请求头
     headers = {"Content-Type": "application/json"}
     env_token = os.getenv("API_X_TOKEN", "")
-    env_client = os.getenv("API_X_CLIENT", "")
+    env_user = os.getenv("API_X_USER", "")
     if env_token:
         headers["X-Token"] = env_token
-    if env_client:
-        headers["X-Client"] = env_client
+    if env_user:
+        headers["X-User"] = env_user
 
     query_params = {
         "projectId": project_id,

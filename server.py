@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from router import base, mongodb, oss, prompt
+from router import base, mongodb, oss, prompt, mem0, qdrant
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -53,28 +53,28 @@ async def header_verification_middleware(request: Request, call_next):
 
         # 获取环境变量中的配置
         required_token = os.getenv("API_X_TOKEN", "")
-        required_client = os.getenv("API_X_CLIENT", "")
+        required_user = os.getenv("API_X_USER", "")
         
         # 如果环境变量未设置，跳过验证
-        if not required_token and not required_client:
+        if not required_token and not required_user:
             logger.info("未配置API验证，跳过请求头验证")
             response = await call_next(request)
             return response
 
         x_token = request.headers.get("X-Token", "")
-        x_client = request.headers.get("X-Client", "")
+        x_user = request.headers.get("X-User", "")
 
         # 验证请求头
         token_valid = not required_token or x_token == required_token
-        client_valid = not required_client or x_client == required_client
+        user_valid = not required_user or x_user == required_user
         
-        if not (token_valid and client_valid):
-            logger.warning(f"无效的请求头: X-Token={x_token}, X-Client={x_client}")
+        if not (token_valid and user_valid):
+            logger.warning(f"无效的请求头: X-Token={x_token}, X-User={x_user}")
             return JSONResponse(
                 status_code=403,
                 content={
                     "detail": "Invalid or missing headers",
-                    "message": "请提供有效的X-Token和X-Client请求头"
+                    "message": "请提供有效的X-Token和X-User请求头"
                 },
             )
 
@@ -127,15 +127,39 @@ async def general_exception_handler(request: Request, exc: Exception):
         }
     )
 
+# 挂载静态文件服务（客户端 HTML 文件）
+try:
+    import os
+    clients_dir = os.path.join(os.path.dirname(__file__), "clients")
+    if os.path.exists(clients_dir):
+        app.mount("/clients", StaticFiles(directory=clients_dir, html=True), name="clients")
+        logger.info(f"静态文件服务已挂载: /clients -> {clients_dir}")
+except Exception as e:
+    logger.warning(f"挂载静态文件服务失败: {e}")
+
 # 根路径端点
 @app.get("/")
 async def root():
-    return {"message": "Welcome to YiAi API"}
+    return {
+        "message": "Welcome to YiAi API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "clients": {
+            "prompt": "/clients/prompt.html",
+            "mongodb": "/clients/mongodb.html",
+            "oss": "/clients/oss.html",
+            "base": "/clients/base.html",
+            "mem0": "/clients/mem0Client.html",
+            "qdrant": "/clients/qdrantClient.html"
+        }
+    }
 
 app.include_router(oss.router)
 app.include_router(base.router)
 app.include_router(prompt.router)
 app.include_router(mongodb.router)
+app.include_router(mem0.router)
+app.include_router(qdrant.router)
 
 # 当直接运行此脚本时执行以下代码
 if __name__ == "__main__":
