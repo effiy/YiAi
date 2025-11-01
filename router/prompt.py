@@ -10,7 +10,8 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from ollama import Client
 from modules.services.chatService import ChatService
 from modules.database.qdrantClient import QdrantClient
-from qdrant_client.models import PointStruct, Distance
+from modules.database.mem0Client import Mem0Client
+from qdrant_client.models import PointStruct, Distance, Filter, FieldCondition, MatchValue
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -26,6 +27,9 @@ chat_service = ChatService()
 
 # 初始化 Qdrant 客户端
 qdrant_client = QdrantClient()
+
+# 初始化 Mem0 客户端
+mem0_client = Mem0Client()
 
 # 聊天记录集合名称
 CHAT_COLLECTION_NAME = "chat_records"
@@ -54,6 +58,10 @@ class ContentRequest(BaseModel):
     user_id: Optional[str] = None  # 用户ID，用于存储聊天记录
     conversation_id: Optional[str] = None  # 会话ID，用于关联多轮对话
     save_chat: bool = True  # 是否保存聊天记录
+    use_memory: bool = True  # 是否使用 Mem0 记忆检索
+    memory_limit: int = 5  # 记忆检索数量限制
+    use_vector_search: bool = True  # 是否使用 Qdrant 向量检索
+    vector_search_limit: int = 5  # 向量检索数量限制
 
 
 class ChatQueryRequest(BaseModel):
@@ -256,6 +264,95 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         else:
             client = Client(host=ollama_url)
         
+        # 增强系统提示：添加检索到的相关记忆和聊天记录
+        enhanced_system_prompt = request.fromSystem
+        relevant_context = []
+        
+        # 1. 使用 Mem0 检索相关记忆
+        if request.use_memory and mem0_client.is_available() and user_id:
+            try:
+                memories = mem0_client.search_memories(
+                    query=request.fromUser,
+                    user_id=user_id,
+                    limit=request.memory_limit
+                )
+                if memories:
+                    memory_texts = []
+                    for mem in memories:
+                        mem_content = mem.get("memory", "")
+                        if mem_content:
+                            memory_texts.append(f"- {mem_content}")
+                    if memory_texts:
+                        relevant_context.append(f"相关记忆：\n" + "\n".join(memory_texts))
+                        logger.info(f"检索到 {len(memories)} 条相关记忆")
+            except Exception as e:
+                logger.warning(f"Mem0 记忆检索失败: {str(e)}")
+        
+        # 2. 使用 Qdrant 检索相关聊天记录（如果 Mem0 不可用或需要更直接的检索）
+        if request.use_vector_search and user_id:
+            try:
+                # 生成用户查询的 embedding（重用已创建的 client）
+                embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+                embedding_response = client.embed(
+                    model=embedding_model,
+                    input=[request.fromUser]
+                )
+                
+                # 提取向量
+                query_vector = None
+                if isinstance(embedding_response, dict):
+                    if "embeddings" in embedding_response:
+                        embeddings = embedding_response["embeddings"]
+                        query_vector = embeddings[0] if isinstance(embeddings, list) and len(embeddings) > 0 else embeddings
+                    elif "embedding" in embedding_response:
+                        query_vector = embedding_response["embedding"]
+                elif hasattr(embedding_response, 'embeddings'):
+                    embeddings = embedding_response.embeddings
+                    query_vector = embeddings[0] if isinstance(embeddings, list) and len(embeddings) > 0 else embeddings
+                elif hasattr(embedding_response, 'embedding'):
+                    query_vector = embedding_response.embedding
+                elif isinstance(embedding_response, list):
+                    query_vector = embedding_response[0] if len(embedding_response) > 0 else None
+                
+                # 在 Qdrant 中搜索相关聊天记录
+                if query_vector:
+                    search_results = qdrant_client.search(
+                        collection_name=CHAT_COLLECTION_NAME,
+                        query_vector=query_vector,
+                        limit=request.vector_search_limit,
+                        filter=Filter(
+                            must=[
+                                FieldCondition(
+                                    key="user_id",
+                                    match=MatchValue(value=user_id)
+                                )
+                            ]
+                        ) if user_id else None,
+                        score_threshold=0.7  # 相似度阈值
+                    )
+                    
+                    if search_results:
+                        chat_texts = []
+                        for result in search_results:
+                            payload = result.get("payload", {})
+                            text_content = payload.get("text_content", "")
+                            if text_content and len(text_content) > 0:
+                                # 截断过长的内容
+                                if len(text_content) > 200:
+                                    text_content = text_content[:200] + "..."
+                                chat_texts.append(f"- {text_content}")
+                        if chat_texts:
+                            relevant_context.append(f"相关聊天记录：\n" + "\n".join(chat_texts))
+                            logger.info(f"检索到 {len(search_results)} 条相关聊天记录")
+            except Exception as e:
+                logger.warning(f"Qdrant 向量检索失败: {str(e)}")
+        
+        # 3. 如果有相关上下文，添加到系统提示中
+        if relevant_context:
+            context_section = "\n\n" + "=" * 50 + "\n相关上下文信息（请参考这些信息来更好地回答用户的问题）：\n" + "=" * 50 + "\n"
+            context_section += "\n\n".join(relevant_context)
+            enhanced_system_prompt = request.fromSystem + context_section
+        
         # 准备消息
         if request.images and len(request.images) > 0:
             content = []
@@ -263,16 +360,16 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
             for img in request.images:
                 content.append({"type": "image_url", "image_url": {"url": img}})
             messages = [
-                {"role": "system", "content": request.fromSystem},
+                {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": content}
             ]
         else:
             messages = [
-                {"role": "system", "content": request.fromSystem},
+                {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": request.fromUser}
             ]
         
-        # 如果有会话ID，获取历史消息
+        # 4. 如果有会话ID，获取历史消息
         if conversation_id and user_id:
             try:
                 history_chats = await chat_service.get_chats_by_conversation(
@@ -284,10 +381,10 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     chat_messages = chat.get("messages", [])
                     # 只取最后的消息对，避免消息过多
                     if chat_messages:
-                        messages = messages[:-1]  # 移除当前的 system 和 user 消息
+                        messages = messages[:-2]  # 移除当前的 system 和 user 消息
                         messages.extend(chat_messages)
-                        messages.append({"role": "system", "content": request.fromSystem})
-                        messages.append({"role": "user", "content": request.fromUser})
+                        messages.append({"role": "system", "content": enhanced_system_prompt})
+                        messages.append({"role": "user", "content": request.fromUser if not request.images else content})
                         break
             except Exception as e:
                 logger.warning(f"获取历史消息失败: {str(e)}")
