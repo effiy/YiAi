@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qdrant 向量数据库管理系统</title>
+    <style>
+        /* ===== 重置和基础样式 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #2e7d32;
+            --error-color: #c62828;
+            --warning-color: #f57c00;
+            --info-color: #1976d2;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-muted: #999;
+            --border-color: #e0e0e0;
+            --bg-dark: #1e1e1e;
+            --bg-light: #f9f9f9;
+            --bg-status-ok: #e8f5e9;
+            --bg-status-error: #ffebee;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --radius: 6px;
+            --radius-lg: 10px;
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        /* ===== 布局组件 ===== */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-title {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+        
+        /* ===== 服务状态显示 ===== */
+        .service-status {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-badge.available {
+            background: var(--bg-status-ok);
+            color: var(--success-color);
+        }
+        
+        .status-badge.unavailable {
+            background: var(--bg-status-error);
+            color: var(--error-color);
+        }
+        
+        .status-badge.checking {
+            background: #fff3cd;
+            color: var(--warning-color);
+        }
+        
+        /* ===== 表单组件 ===== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-label small {
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+        
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 14px;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .form-number {
+            width: 120px;
+            padding: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 14px;
+        }
+        
+        .form-select {
+            padding: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 14px;
+            background: white;
+        }
+        
+        /* ===== 按钮组件 ===== */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: var(--text-primary);
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #d32f2f;
+        }
+        
+        .btn-info {
+            background: var(--info-color);
+            color: white;
+        }
+        
+        .btn-info:hover:not(:disabled) {
+            background: #1565c0;
+        }
+        
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-sm {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        
+        /* ===== 状态提示组件 ===== */
+        .status {
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .status.show {
+            display: block;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: var(--info-color);
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: var(--error-color);
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* ===== 加载动画 ===== */
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ===== 集合卡片 ===== */
+        .collection-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .collection-card {
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            background: var(--bg-light);
+            transition: var(--transition);
+        }
+        
+        .collection-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .collection-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .collection-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .info-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .info-item strong {
+            color: var(--text-primary);
+            margin-right: 5px;
+        }
+        
+        /* ===== 点卡片 ===== */
+        .point-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .point-card {
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            background: var(--bg-light);
+            transition: var(--transition);
+        }
+        
+        .point-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .point-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .point-id {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .point-score {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--info-color);
+            color: white;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .point-vector {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: var(--radius);
+            max-height: 150px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+        
+        .point-payload {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: var(--radius);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .point-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        /* ===== 折叠面板 ===== */
+        .collapsible {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .collapsible-header {
+            padding: 12px 16px;
+            background: var(--bg-light);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            user-select: none;
+            transition: var(--transition);
+        }
+        
+        .collapsible-header:hover {
+            background: #f0f0f0;
+        }
+        
+        .collapsible-content {
+            padding: 16px;
+            display: none;
+        }
+        
+        .collapsible-content.show {
+            display: block;
+        }
+        
+        .collapsible-toggle {
+            transition: transform 0.3s ease;
+        }
+        
+        .collapsible.open .collapsible-toggle {
+            transform: rotate(180deg);
+        }
+        
+        /* ===== 统计信息 ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-light);
+            padding: 20px;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        /* ===== 响应式设计 ===== */
+        @media (max-width: 768px) {
+            .card {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .collection-header,
+            .point-header {
+                flex-direction: column;
+            }
+        }
+        
+        /* ===== 工具类 ===== */
+        .flex {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .flex-1 {
+            flex: 1;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: var(--radius);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="card-title">
+                <span>🗄️ Qdrant 向量数据库管理系统</span>
+                <button class="btn btn-info btn-sm" onclick="app.checkStatus()">🔄 检查状态</button>
+            </h1>
+            
+            <!-- 服务状态显示 -->
+            <div class="service-status" id="serviceStatus">
+                <span class="status-badge checking">
+                    <span class="spinner"></span> 检查中...
+                </span>
+            </div>
+            
+            <div id="status" class="status"></div>
+            
+            <!-- 统计信息 -->
+            <div class="stats-grid" id="statsGrid" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCollections">0</div>
+                    <div class="stat-label">集合总数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalPoints">0</div>
+                    <div class="stat-label">向量点总数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="searchResults">0</div>
+                    <div class="stat-label">搜索结果</div>
+                </div>
+            </div>
+            
+            <!-- 配置区域 -->
+            <h2 class="section-title">配置</h2>
+            
+            <div class="form-group">
+                <label for="baseUrl" class="form-label">API 服务器地址：</label>
+                <input type="text" id="baseUrl" class="form-input" value="https://api.effiy.cn" placeholder="https://api.effiy.cn">
+            </div>
+            
+            <!-- 集合管理 -->
+            <h2 class="section-title">集合管理</h2>
+            
+            <div class="collapsible" id="createCollectionPanel">
+                <div class="collapsible-header" onclick="app.toggleCollapsible('createCollectionPanel')">
+                    <span>➕ 创建新集合</span>
+                    <span class="collapsible-toggle">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="collectionName" class="form-label">集合名称：</label>
+                            <input type="text" id="collectionName" class="form-input" placeholder="例如：my_collection">
+                        </div>
+                        <div class="form-group">
+                            <label for="vectorSize" class="form-label">向量维度：</label>
+                            <input type="number" id="vectorSize" class="form-number" value="768" min="1" max="10000">
+                            <small>默认：768</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="distanceType" class="form-label">距离类型：</label>
+                            <select id="distanceType" class="form-select">
+                                <option value="COSINE">COSINE（余弦相似度）</option>
+                                <option value="EUCLID">EUCLID（欧氏距离）</option>
+                                <option value="DOT">DOT（点积）</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="app.createCollection()">创建集合</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-info" onclick="app.loadCollections()">📋 加载所有集合</button>
+            </div>
+            
+            <!-- 集合列表 -->
+            <div id="collectionList" class="collection-list"></div>
+            
+            <!-- 向量点管理 -->
+            <h2 class="section-title">向量点管理</h2>
+            
+            <div class="form-group">
+                <label for="selectedCollection" class="form-label">选择集合：</label>
+                <div class="flex">
+                    <select id="selectedCollection" class="form-select flex-1">
+                        <option value="">请先加载集合</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" onclick="app.refreshCollectionList()">🔄 刷新</button>
+                </div>
+            </div>
+            
+            <!-- 插入向量点 -->
+            <div class="collapsible" id="insertPointPanel">
+                <div class="collapsible-header" onclick="app.toggleCollapsible('insertPointPanel')">
+                    <span>➕ 插入/更新向量点</span>
+                    <span class="collapsible-toggle">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="form-group">
+                        <label for="pointId" class="form-label">点ID：</label>
+                        <input type="text" id="pointId" class="form-input" placeholder="例如：point_1 或 123">
+                    </div>
+                    <div class="form-group">
+                        <label for="pointVector" class="form-label">向量（JSON 数组）：</label>
+                        <textarea id="pointVector" class="form-textarea" placeholder='例如：[0.1, 0.2, 0.3, ...]'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="pointPayload" class="form-label">Payload（JSON 对象，可选）：</label>
+                        <textarea id="pointPayload" class="form-textarea" placeholder='例如：{"text": "示例文本", "metadata": {...}}'></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="app.insertPoint()">插入/更新点</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 向量搜索 -->
+            <h2 class="section-title">向量搜索</h2>
+            
+            <div class="form-group">
+                <label for="searchQueryVector" class="form-label">查询向量（JSON 数组）：</label>
+                <textarea id="searchQueryVector" class="form-textarea" placeholder='例如：[0.1, 0.2, 0.3, ...]'></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="searchLimit" class="form-label">结果数量限制：</label>
+                    <input type="number" id="searchLimit" class="form-number" value="10" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label for="scoreThreshold" class="form-label">相似度阈值（可选）：</label>
+                    <input type="number" id="scoreThreshold" class="form-number" step="0.01" placeholder="例如：0.7">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="app.searchVectors()">🔍 搜索向量</button>
+            </div>
+            
+            <!-- 浏览向量点 -->
+            <h2 class="section-title">浏览向量点</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="scrollLimit" class="form-label">每页数量：</label>
+                    <input type="number" id="scrollLimit" class="form-number" value="10" min="1" max="100">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-info" onclick="app.scrollPoints()">📄 浏览向量点</button>
+                <button class="btn btn-secondary" onclick="app.resetScroll()">🔄 重置分页</button>
+            </div>
+            
+            <!-- 向量点列表 -->
+            <div id="pointList" class="point-list"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Qdrant 向量数据库管理客户端
+         */
+        class QdrantClient {
+            constructor() {
+                this.apiClient = new APIClient();
+                this.ui = new UI();
+                this.configManager = new ConfigManager();
+                this.scrollOffset = null;
+                this.init();
+            }
+            
+            init() {
+                // 加载保存的配置
+                this.configManager.loadConfig();
+                
+                // 检查服务状态
+                this.checkStatus();
+            }
+            
+            getBaseUrl() {
+                return document.getElementById('baseUrl').value.trim() || 'https://api.effiy.cn';
+            }
+            
+            getSelectedCollection() {
+                return document.getElementById('selectedCollection').value.trim();
+            }
+            
+            toggleCollapsible(panelId) {
+                const panel = document.getElementById(panelId);
+                panel.classList.toggle('open');
+                const content = panel.querySelector('.collapsible-content');
+                content.classList.toggle('show');
+            }
+            
+            async checkStatus() {
+                const baseUrl = this.getBaseUrl();
+                const statusContainer = document.getElementById('serviceStatus');
+                statusContainer.innerHTML = '<span class="status-badge checking"><span class="spinner"></span> 检查中...</span>';
+                
+                try {
+                    const data = await this.apiClient.get(`${baseUrl}/qdrant/status`);
+                    const statusClass = data.available ? 'available' : 'unavailable';
+                    const icon = data.available ? '✅' : '❌';
+                    statusContainer.innerHTML = `
+                        <span class="status-badge ${statusClass}">
+                            ${icon} Qdrant
+                            <small style="margin-left: 8px;">${data.message}</small>
+                            ${data.collections_count !== undefined ? ` | 集合数: ${data.collections_count}` : ''}
+                        </span>
+                    `;
+                } catch (error) {
+                    statusContainer.innerHTML = `
+                        <span class="status-badge unavailable">
+                            ❌ 无法连接服务器
+                        </span>
+                    `;
+                    this.ui.showStatus('error', `无法连接服务器: ${error.message}`);
+                }
+            }
+            
+            async loadCollections() {
+                const baseUrl = this.getBaseUrl();
+                
+                try {
+                    this.ui.showStatus('info', '正在加载集合...');
+                    const response = await this.apiClient.get(`${baseUrl}/qdrant/collections`);
+                    
+                    this.displayCollections(response.collections || []);
+                    this.updateCollectionSelect(response.collections || []);
+                    document.getElementById('totalCollections').textContent = response.count || 0;
+                    document.getElementById('statsGrid').style.display = 'grid';
+                    this.ui.showStatus('success', response.message || `✅ 加载了 ${response.count} 个集合`);
+                } catch (error) {
+                    console.error('加载失败:', error);
+                    this.ui.showStatus('error', `❌ 加载失败: ${error.message}`);
+                }
+            }
+            
+            displayCollections(collections) {
+                const container = document.getElementById('collectionList');
+                
+                if (collections.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>暂无集合</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                let totalPoints = 0;
+                collections.forEach((col) => {
+                    if (col.vectors_count !== undefined) {
+                        totalPoints += col.vectors_count || 0;
+                    }
+                    
+                    html += `<div class="collection-card">`;
+                    html += `<div class="collection-header">`;
+                    html += `<div class="collection-name">${this.ui.escapeHtml(col.name)}</div>`;
+                    html += `</div>`;
+                    html += `<div class="collection-info">`;
+                    
+                    if (col.error) {
+                        html += `<div class="info-item" style="color: var(--error-color);">错误: ${this.ui.escapeHtml(col.error)}</div>`;
+                    } else {
+                        html += `<div class="info-item"><strong>向量数量:</strong> ${col.vectors_count || 0}</div>`;
+                        if (col.config) {
+                            html += `<div class="info-item"><strong>向量维度:</strong> ${col.config.vector_size || 'N/A'}</div>`;
+                            html += `<div class="info-item"><strong>距离类型:</strong> ${col.config.distance || 'N/A'}</div>`;
+                        }
+                    }
+                    
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                container.innerHTML = html;
+                document.getElementById('totalPoints').textContent = totalPoints;
+            }
+            
+            updateCollectionSelect(collections) {
+                const select = document.getElementById('selectedCollection');
+                select.innerHTML = '<option value="">选择集合...</option>';
+                collections.forEach(col => {
+                    if (!col.error) {
+                        const option = document.createElement('option');
+                        option.value = col.name;
+                        option.textContent = `${col.name} (${col.vectors_count || 0} 个向量)`;
+                        select.appendChild(option);
+                    }
+                });
+            }
+            
+            async refreshCollectionList() {
+                await this.loadCollections();
+            }
+            
+            async createCollection() {
+                const baseUrl = this.getBaseUrl();
+                const name = document.getElementById('collectionName').value.trim();
+                const vectorSize = parseInt(document.getElementById('vectorSize').value) || 768;
+                const distance = document.getElementById('distanceType').value;
+                
+                if (!name) {
+                    this.ui.showStatus('error', '请输入集合名称！');
+                    return;
+                }
+                
+                try {
+                    this.ui.showStatus('info', '正在创建集合...');
+                    const response = await this.apiClient.post(`${baseUrl}/qdrant/collection`, {
+                        collection_name: name,
+                        vector_size: vectorSize,
+                        distance: distance
+                    });
+                    
+                    this.ui.showStatus('success', response.message || '✅ 集合创建成功！');
+                    document.getElementById('collectionName').value = '';
+                    
+                    // 重新加载集合列表
+                    await this.loadCollections();
+                } catch (error) {
+                    console.error('创建失败:', error);
+                    this.ui.showStatus('error', `❌ 创建失败: ${error.message}`);
+                }
+            }
+            
+            async insertPoint() {
+                const baseUrl = this.getBaseUrl();
+                const collection = this.getSelectedCollection();
+                const pointId = document.getElementById('pointId').value.trim();
+                const vectorText = document.getElementById('pointVector').value.trim();
+                const payloadText = document.getElementById('pointPayload').value.trim();
+                
+                if (!collection) {
+                    this.ui.showStatus('error', '请先选择集合！');
+                    return;
+                }
+                
+                if (!pointId) {
+                    this.ui.showStatus('error', '请输入点ID！');
+                    return;
+                }
+                
+                if (!vectorText) {
+                    this.ui.showStatus('error', '请输入向量！');
+                    return;
+                }
+                
+                try {
+                    // 解析向量
+                    const vector = JSON.parse(vectorText);
+                    if (!Array.isArray(vector) || vector.length === 0) {
+                        throw new Error('向量必须是非空数组');
+                    }
+                    
+                    // 解析 payload（如果有）
+                    let payload = null;
+                    if (payloadText) {
+                        payload = JSON.parse(payloadText);
+                    }
+                    
+                    this.ui.showStatus('info', '正在插入/更新向量点...');
+                    const response = await this.apiClient.post(`${baseUrl}/qdrant/points`, {
+                        collection_name: collection,
+                        points: [{
+                            id: pointId,
+                            vector: vector,
+                            payload: payload
+                        }]
+                    });
+                    
+                    this.ui.showStatus('success', response.message || '✅ 插入/更新成功！');
+                    
+                    // 清空表单
+                    document.getElementById('pointId').value = '';
+                    document.getElementById('pointVector').value = '';
+                    document.getElementById('pointPayload').value = '';
+                } catch (error) {
+                    console.error('插入失败:', error);
+                    if (error instanceof SyntaxError) {
+                        this.ui.showStatus('error', `❌ JSON 格式错误: ${error.message}`);
+                    } else {
+                        this.ui.showStatus('error', `❌ 插入失败: ${error.message}`);
+                    }
+                }
+            }
+            
+            async searchVectors() {
+                const baseUrl = this.getBaseUrl();
+                const collection = this.getSelectedCollection();
+                const queryVectorText = document.getElementById('searchQueryVector').value.trim();
+                const limit = parseInt(document.getElementById('searchLimit').value) || 10;
+                const thresholdText = document.getElementById('scoreThreshold').value.trim();
+                
+                if (!collection) {
+                    this.ui.showStatus('error', '请先选择集合！');
+                    return;
+                }
+                
+                if (!queryVectorText) {
+                    this.ui.showStatus('error', '请输入查询向量！');
+                    return;
+                }
+                
+                try {
+                    // 解析查询向量
+                    const queryVector = JSON.parse(queryVectorText);
+                    if (!Array.isArray(queryVector) || queryVector.length === 0) {
+                        throw new Error('查询向量必须是非空数组');
+                    }
+                    
+                    const payload = {
+                        collection_name: collection,
+                        query_vector: queryVector,
+                        limit: limit
+                    };
+                    
+                    if (thresholdText) {
+                        payload.score_threshold = parseFloat(thresholdText);
+                    }
+                    
+                    this.ui.showStatus('info', '正在搜索...');
+                    const response = await this.apiClient.post(`${baseUrl}/qdrant/search`, payload);
+                    
+                    this.displayPoints(response.results || [], true);
+                    document.getElementById('searchResults').textContent = response.count || 0;
+                    this.ui.showStatus('success', `✅ 找到 ${response.count} 个相关向量点`);
+                } catch (error) {
+                    console.error('搜索失败:', error);
+                    if (error instanceof SyntaxError) {
+                        this.ui.showStatus('error', `❌ JSON 格式错误: ${error.message}`);
+                    } else {
+                        this.ui.showStatus('error', `❌ 搜索失败: ${error.message}`);
+                    }
+                }
+            }
+            
+            async scrollPoints() {
+                const baseUrl = this.getBaseUrl();
+                const collection = this.getSelectedCollection();
+                const limit = parseInt(document.getElementById('scrollLimit').value) || 10;
+                
+                if (!collection) {
+                    this.ui.showStatus('error', '请先选择集合！');
+                    return;
+                }
+                
+                try {
+                    this.ui.showStatus('info', '正在加载向量点...');
+                    const payload = {
+                        collection_name: collection,
+                        limit: limit
+                    };
+                    
+                    if (this.scrollOffset) {
+                        payload.offset = this.scrollOffset;
+                    }
+                    
+                    const response = await this.apiClient.post(`${baseUrl}/qdrant/scroll`, payload);
+                    
+                    this.displayPoints(response.points || [], false);
+                    this.scrollOffset = response.next_page_offset || null;
+                    
+                    if (response.next_page_offset) {
+                        this.ui.showStatus('success', `✅ 加载了 ${response.count} 个向量点，还有更多...`);
+                    } else {
+                        this.ui.showStatus('success', `✅ 加载了 ${response.count} 个向量点（已到底）`);
+                    }
+                } catch (error) {
+                    console.error('加载失败:', error);
+                    this.ui.showStatus('error', `❌ 加载失败: ${error.message}`);
+                }
+            }
+            
+            resetScroll() {
+                this.scrollOffset = null;
+                document.getElementById('pointList').innerHTML = '';
+                this.ui.showStatus('info', '分页已重置');
+            }
+            
+            displayPoints(points, isSearch = false) {
+                const container = document.getElementById('pointList');
+                
+                if (points.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>暂无向量点</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                points.forEach((point) => {
+                    const pointId = point.id || 'N/A';
+                    const vector = point.vector || [];
+                    const payload = point.payload || {};
+                    const score = point.score !== undefined ? point.score.toFixed(4) : null;
+                    
+                    html += `<div class="point-card">`;
+                    html += `<div class="point-header">`;
+                    html += `<div class="point-id">ID: ${this.ui.escapeHtml(String(pointId))}</div>`;
+                    if (score !== null) {
+                        html += `<span class="point-score">相似度: ${score}</span>`;
+                    }
+                    html += `</div>`;
+                    
+                    if (vector.length > 0) {
+                        html += `<div class="point-vector">`;
+                        html += `<strong>向量 (${vector.length} 维):</strong><br>`;
+                        html += `<div class="code-block">${JSON.stringify(vector, null, 2)}</div>`;
+                        html += `</div>`;
+                    }
+                    
+                    if (Object.keys(payload).length > 0) {
+                        html += `<div class="point-payload">`;
+                        html += `<strong>Payload:</strong><br>`;
+                        html += `<div class="code-block">${JSON.stringify(payload, null, 2)}</div>`;
+                        html += `</div>`;
+                    }
+                    
+                    html += `<div class="point-actions">`;
+                    html += `<button class="btn btn-secondary btn-sm" onclick="app.updatePointPayload('${pointId}')">✏️ 更新 Payload</button>`;
+                    html += `<button class="btn btn-danger btn-sm" onclick="app.deletePoint('${pointId}')">🗑️ 删除</button>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                container.innerHTML = html;
+            }
+            
+            async updatePointPayload(pointId) {
+                const baseUrl = this.getBaseUrl();
+                const collection = this.getSelectedCollection();
+                
+                if (!collection) {
+                    this.ui.showStatus('error', '请先选择集合！');
+                    return;
+                }
+                
+                const newPayloadText = prompt('输入新的 Payload（JSON 格式）：', '{}');
+                if (newPayloadText === null) return;
+                
+                try {
+                    const payload = JSON.parse(newPayloadText);
+                    
+                    this.ui.showStatus('info', '正在更新 Payload...');
+                    await this.apiClient.post(`${baseUrl}/qdrant/point/payload`, {
+                        collection_name: collection,
+                        point_id: pointId,
+                        payload: payload
+                    }, 'PUT');
+                    
+                    this.ui.showStatus('success', '✅ Payload 更新成功！');
+                    
+                    // 重新加载点列表
+                    await this.scrollPoints();
+                } catch (error) {
+                    console.error('更新失败:', error);
+                    if (error instanceof SyntaxError) {
+                        this.ui.showStatus('error', `❌ JSON 格式错误: ${error.message}`);
+                    } else {
+                        this.ui.showStatus('error', `❌ 更新失败: ${error.message}`);
+                    }
+                }
+            }
+            
+            async deletePoint(pointId) {
+                const baseUrl = this.getBaseUrl();
+                const collection = this.getSelectedCollection();
+                
+                if (!collection) {
+                    this.ui.showStatus('error', '请先选择集合！');
+                    return;
+                }
+                
+                if (!confirm(`确定要删除点 ${pointId} 吗？`)) {
+                    return;
+                }
+                
+                try {
+                    this.ui.showStatus('info', '正在删除向量点...');
+                    await this.apiClient.deleteRequest(`${baseUrl}/qdrant/points`, {
+                        collection_name: collection,
+                        point_ids: [pointId]
+                    });
+                    
+                    this.ui.showStatus('success', '✅ 删除成功！');
+                    
+                    // 重新加载点列表
+                    await this.scrollPoints();
+                } catch (error) {
+                    console.error('删除失败:', error);
+                    this.ui.showStatus('error', `❌ 删除失败: ${error.message}`);
+                }
+            }
+        }
+        
+        /**
+         * API 客户端
+         */
+        class APIClient {
+            async get(url) {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            }
+            
+            async post(url, payload, method = 'POST') {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                };
+                
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            }
+            
+            async deleteRequest(url, payload) {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            }
+        }
+        
+        /**
+         * UI 管理器
+         */
+        class UI {
+            showStatus(type, message) {
+                const status = document.getElementById('status');
+                status.className = `status ${type} show`;
+                status.textContent = message;
+                
+                // 自动隐藏成功和提示消息
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => {
+                        if (status.textContent === message) {
+                            this.hideStatus();
+                        }
+                    }, 5000);
+                }
+            }
+            
+            hideStatus() {
+                const status = document.getElementById('status');
+                status.classList.remove('show');
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+        
+        /**
+         * 配置管理器
+         */
+        class ConfigManager {
+            constructor() {
+                this.storageKey = 'qdrant_client_config';
+            }
+            
+            loadConfig() {
+                try {
+                    const saved = localStorage.getItem(this.storageKey);
+                    if (saved) {
+                        const config = JSON.parse(saved);
+                        if (config.baseUrl) {
+                            document.getElementById('baseUrl').value = config.baseUrl;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('加载配置失败:', e);
+                }
+            }
+            
+            saveConfig() {
+                try {
+                    const config = {
+                        baseUrl: document.getElementById('baseUrl').value.trim()
+                    };
+                    localStorage.setItem(this.storageKey, JSON.stringify(config));
+                } catch (e) {
+                    console.warn('保存配置失败:', e);
+                }
+            }
+        }
+        
+        // 初始化应用
+        const app = new QdrantClient();
+        
+        // 保存配置
+        document.getElementById('baseUrl').addEventListener('change', () => {
+            app.configManager.saveConfig();
+        });
+        
+        // 将 app 暴露到全局作用域
+        window.app = app;
+    </script>
+</body>
+</html>
+
