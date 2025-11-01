@@ -587,10 +587,46 @@
             <div class="button-group">
                 <button class="btn btn-info" onclick="app.loadAllMemories()">📋 加载所有记忆</button>
                 <button class="btn btn-warning" onclick="app.clearAllMemories()">🗑️ 清空所有记忆</button>
+                <button class="btn btn-secondary" onclick="app.exportMemories()">📥 导出记忆</button>
+                <button class="btn btn-secondary" onclick="app.showImportDialog()">📤 导入记忆</button>
+            </div>
+            
+            <!-- 批量操作 -->
+            <div class="collapsible" id="batchOperationsPanel">
+                <div class="collapsible-header" onclick="app.toggleCollapsible('batchOperationsPanel')">
+                    <span>⚙️ 批量操作</span>
+                    <span class="collapsible-toggle">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="selectAllMemories" onchange="app.toggleSelectAll()"> 
+                            全选/取消全选
+                        </label>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-danger btn-sm" onclick="app.batchDeleteMemories()">🗑️ 批量删除选中</button>
+                    </div>
+                </div>
             </div>
             
             <!-- 记忆列表 -->
             <div id="memoryList" class="memory-list"></div>
+            
+            <!-- 导入对话框（隐藏） -->
+            <div id="importDialog" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 30px; border-radius: var(--radius-lg); max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <h3 style="margin-bottom: 20px;">📤 导入记忆</h3>
+                    <div class="form-group">
+                        <label for="importText" class="form-label">导入内容（JSON 格式，每行一个记忆对象）：</label>
+                        <textarea id="importText" class="form-textarea" placeholder='[{"memory": "记忆内容1"}, {"memory": "记忆内容2"}]'></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="app.importMemories()">✅ 导入</button>
+                        <button class="btn btn-secondary" onclick="app.hideImportDialog()">取消</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -743,9 +779,12 @@
                     const metadata = mem.metadata || {};
                     const score = mem.score !== undefined ? mem.score.toFixed(4) : null;
                     
-                    html += `<div class="memory-card">`;
+                    html += `<div class="memory-card" data-memory-id="${memoryId}">`;
                     html += `<div class="memory-header">`;
+                    html += `<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">`;
+                    html += `<input type="checkbox" class="memory-checkbox" data-memory-id="${memoryId}" style="margin-right: 8px;">`;
                     html += `<div class="memory-id">ID: ${memoryId}</div>`;
+                    html += `</label>`;
                     if (score !== null) {
                         html += `<span class="memory-score">相似度: ${score}</span>`;
                     }
@@ -755,7 +794,7 @@
                     if (Object.keys(metadata).length > 0) {
                         html += `<div class="memory-metadata">`;
                         html += `<strong>元数据：</strong><br>`;
-                        html += `<pre style="font-size: 11px; margin-top: 5px;">${this.ui.escapeHtml(JSON.stringify(metadata, null, 2))}</pre>`;
+                        html += `<pre style="font-size: 11px; margin-top: 5px; overflow-x: auto;">${this.ui.escapeHtml(JSON.stringify(metadata, null, 2))}</pre>`;
                         html += `</div>`;
                     }
                     
@@ -767,6 +806,153 @@
                 });
                 
                 container.innerHTML = html;
+            }
+            
+            toggleCollapsible(panelId) {
+                const panel = document.getElementById(panelId);
+                panel.classList.toggle('open');
+                const content = panel.querySelector('.collapsible-content');
+                content.classList.toggle('show');
+            }
+            
+            toggleSelectAll() {
+                const selectAll = document.getElementById('selectAllMemories');
+                const checkboxes = document.querySelectorAll('.memory-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.checked = selectAll.checked;
+                });
+            }
+            
+            async batchDeleteMemories() {
+                const checkboxes = document.querySelectorAll('.memory-checkbox:checked');
+                if (checkboxes.length === 0) {
+                    this.ui.showStatus('warning', '请至少选择一条记忆！');
+                    return;
+                }
+                
+                if (!confirm(`确定要删除选中的 ${checkboxes.length} 条记忆吗？`)) {
+                    return;
+                }
+                
+                const baseUrl = this.getBaseUrl();
+                const userId = this.getUserId();
+                let deletedCount = 0;
+                let failedCount = 0;
+                
+                this.ui.showStatus('info', `正在删除 ${checkboxes.length} 条记忆...`);
+                
+                for (const checkbox of checkboxes) {
+                    const memoryId = checkbox.getAttribute('data-memory-id');
+                    try {
+                        await this.apiClient.delete(`${baseUrl}/mem0/memory/${memoryId}?user_id=${userId}`);
+                        deletedCount++;
+                    } catch (error) {
+                        console.error(`删除记忆 ${memoryId} 失败:`, error);
+                        failedCount++;
+                    }
+                }
+                
+                this.ui.showStatus('success', `✅ 成功删除 ${deletedCount} 条记忆${failedCount > 0 ? `，${failedCount} 条失败` : ''}`);
+                await this.loadAllMemories();
+            }
+            
+            exportMemories() {
+                // 从DOM中获取所有记忆卡片的数据
+                const memoryCards = document.querySelectorAll('.memory-card');
+                const memories = [];
+                
+                memoryCards.forEach(card => {
+                    const memoryId = card.getAttribute('data-memory-id');
+                    const content = card.querySelector('.memory-content')?.textContent || '';
+                    const metadataText = card.querySelector('.memory-metadata pre')?.textContent || '';
+                    let metadata = {};
+                    if (metadataText) {
+                        try {
+                            metadata = JSON.parse(metadataText);
+                        } catch (e) {
+                            // 忽略解析错误
+                        }
+                    }
+                    
+                    memories.push({
+                        memory: content,
+                        metadata: metadata
+                    });
+                });
+                
+                if (memories.length === 0) {
+                    this.ui.showStatus('warning', '没有可导出的记忆！');
+                    return;
+                }
+                
+                const jsonStr = JSON.stringify(memories, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `memories_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.ui.showStatus('success', `✅ 已导出 ${memories.length} 条记忆`);
+            }
+            
+            showImportDialog() {
+                document.getElementById('importDialog').style.display = 'flex';
+            }
+            
+            hideImportDialog() {
+                document.getElementById('importDialog').style.display = 'none';
+                document.getElementById('importText').value = '';
+            }
+            
+            async importMemories() {
+                const baseUrl = this.getBaseUrl();
+                const userId = this.getUserId();
+                const importText = document.getElementById('importText').value.trim();
+                
+                if (!importText) {
+                    this.ui.showStatus('error', '请输入要导入的内容！');
+                    return;
+                }
+                
+                try {
+                    const memories = JSON.parse(importText);
+                    if (!Array.isArray(memories)) {
+                        throw new Error('导入内容必须是JSON数组格式');
+                    }
+                    
+                    this.ui.showStatus('info', `正在导入 ${memories.length} 条记忆...`);
+                    let successCount = 0;
+                    let failedCount = 0;
+                    
+                    for (const mem of memories) {
+                        try {
+                            await this.apiClient.post(`${baseUrl}/mem0/memory`, {
+                                memory: mem.memory || mem.content || '',
+                                user_id: userId,
+                                metadata: mem.metadata || {}
+                            });
+                            successCount++;
+                        } catch (error) {
+                            console.error('导入记忆失败:', error);
+                            failedCount++;
+                        }
+                    }
+                    
+                    this.ui.showStatus('success', `✅ 成功导入 ${successCount} 条记忆${failedCount > 0 ? `，${failedCount} 条失败` : ''}`);
+                    this.hideImportDialog();
+                    await this.loadAllMemories();
+                } catch (error) {
+                    console.error('导入失败:', error);
+                    if (error instanceof SyntaxError) {
+                        this.ui.showStatus('error', `❌ JSON 格式错误: ${error.message}`);
+                    } else {
+                        this.ui.showStatus('error', `❌ 导入失败: ${error.message}`);
+                    }
+                }
             }
             
             async editMemory(memoryId) {

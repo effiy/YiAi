@@ -281,13 +281,23 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 )
                 if memories:
                     memory_texts = []
+                    memory_details = []
                     for mem in memories:
                         mem_content = mem.get("memory", "")
                         if mem_content:
                             memory_texts.append(f"- {mem_content}")
+                            # 保存详细信息用于前端展示
+                            memory_details.append({
+                                "memory": mem_content,
+                                "content": mem_content,  # 兼容字段
+                                "score": mem.get("score"),
+                                "id": mem.get("id"),
+                                "metadata": mem.get("metadata", {})
+                            })
                     if memory_texts:
                         relevant_context.append(f"相关记忆：\n" + "\n".join(memory_texts))
                         context_info["memories_count"] = len(memories)
+                        context_info["memories"] = memory_details
                         logger.info(f"检索到 {len(memories)} 条相关记忆")
             except Exception as e:
                 logger.warning(f"Mem0 记忆检索失败: {str(e)}")
@@ -337,17 +347,25 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     
                     if search_results:
                         chat_texts = []
+                        chat_details = []
                         for result in search_results:
                             payload = result.get("payload", {})
                             text_content = payload.get("text_content", "")
                             if text_content and len(text_content) > 0:
-                                # 截断过长的内容
-                                if len(text_content) > 200:
-                                    text_content = text_content[:200] + "..."
-                                chat_texts.append(f"- {text_content}")
+                                # 截断过长的内容用于系统提示
+                                display_text = text_content[:200] + "..." if len(text_content) > 200 else text_content
+                                chat_texts.append(f"- {display_text}")
+                                # 保存详细信息用于前端展示
+                                chat_details.append({
+                                    "text_content": text_content,
+                                    "score": result.get("score"),
+                                    "id": result.get("id"),
+                                    "payload": payload
+                                })
                         if chat_texts:
                             relevant_context.append(f"相关聊天记录：\n" + "\n".join(chat_texts))
                             context_info["chats_count"] = len(search_results)
+                            context_info["chats"] = chat_details
                             logger.info(f"检索到 {len(search_results)} 条相关聊天记录")
             except Exception as e:
                 logger.warning(f"Qdrant 向量检索失败: {str(e)}")

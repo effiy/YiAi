@@ -417,9 +417,17 @@
             padding: 10px;
             background: #f5f5f5;
             border-radius: var(--radius);
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
             word-break: break-all;
+        }
+        
+        .point-card {
+            position: relative;
+        }
+        
+        .point-card label {
+            flex: 1;
         }
         
         .point-payload {
@@ -651,6 +659,27 @@
             
             <div class="button-group">
                 <button class="btn btn-info" onclick="app.loadCollections()">📋 加载所有集合</button>
+                <button class="btn btn-secondary" onclick="app.refreshCollectionList()">🔄 刷新列表</button>
+            </div>
+            
+            <!-- 批量操作 -->
+            <div class="collapsible" id="batchOperationsPanel" style="display: none;">
+                <div class="collapsible-header" onclick="app.toggleCollapsible('batchOperationsPanel')">
+                    <span>⚙️ 批量操作向量点</span>
+                    <span class="collapsible-toggle">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="selectAllPoints" onchange="app.toggleSelectAllPoints()"> 
+                            全选/取消全选当前页
+                        </label>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-danger btn-sm" onclick="app.batchDeletePoints()">🗑️ 批量删除选中</button>
+                        <button class="btn btn-secondary btn-sm" onclick="app.exportSelectedPoints()">📥 导出选中</button>
+                    </div>
+                </div>
             </div>
             
             <!-- 集合列表 -->
@@ -1064,6 +1093,7 @@
             
             displayPoints(points, isSearch = false) {
                 const container = document.getElementById('pointList');
+                const batchPanel = document.getElementById('batchOperationsPanel');
                 
                 if (points.length === 0) {
                     container.innerHTML = `
@@ -1072,8 +1102,12 @@
                             <p>暂无向量点</p>
                         </div>
                     `;
+                    batchPanel.style.display = 'none';
                     return;
                 }
+                
+                // 显示批量操作面板
+                batchPanel.style.display = 'block';
                 
                 let html = '';
                 points.forEach((point) => {
@@ -1081,10 +1115,14 @@
                     const vector = point.vector || [];
                     const payload = point.payload || {};
                     const score = point.score !== undefined ? point.score.toFixed(4) : null;
+                    const pointIdStr = String(pointId).replace(/'/g, "\\'");
                     
-                    html += `<div class="point-card">`;
+                    html += `<div class="point-card" data-point-id="${this.ui.escapeHtml(String(pointId))}">`;
                     html += `<div class="point-header">`;
+                    html += `<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">`;
+                    html += `<input type="checkbox" class="point-checkbox" data-point-id="${this.ui.escapeHtml(String(pointId))}" style="margin-right: 8px;">`;
                     html += `<div class="point-id">ID: ${this.ui.escapeHtml(String(pointId))}</div>`;
+                    html += `</label>`;
                     if (score !== null) {
                         html += `<span class="point-score">相似度: ${score}</span>`;
                     }
@@ -1093,25 +1131,135 @@
                     if (vector.length > 0) {
                         html += `<div class="point-vector">`;
                         html += `<strong>向量 (${vector.length} 维):</strong><br>`;
-                        html += `<div class="code-block">${JSON.stringify(vector, null, 2)}</div>`;
+                        // 只显示前50个维度，避免显示过长
+                        const displayVector = vector.length > 50 ? vector.slice(0, 50) : vector;
+                        const vectorStr = JSON.stringify(displayVector, null, 2);
+                        html += `<div class="code-block">${vectorStr}${vector.length > 50 ? '\n... (还有 ' + (vector.length - 50) + ' 个维度)' : ''}</div>`;
                         html += `</div>`;
                     }
                     
                     if (Object.keys(payload).length > 0) {
                         html += `<div class="point-payload">`;
                         html += `<strong>Payload:</strong><br>`;
-                        html += `<div class="code-block">${JSON.stringify(payload, null, 2)}</div>`;
+                        html += `<div class="code-block">${this.ui.escapeHtml(JSON.stringify(payload, null, 2))}</div>`;
                         html += `</div>`;
                     }
                     
                     html += `<div class="point-actions">`;
-                    html += `<button class="btn btn-secondary btn-sm" onclick="app.updatePointPayload('${pointId}')">✏️ 更新 Payload</button>`;
-                    html += `<button class="btn btn-danger btn-sm" onclick="app.deletePoint('${pointId}')">🗑️ 删除</button>`;
+                    html += `<button class="btn btn-secondary btn-sm" onclick="app.updatePointPayload('${pointIdStr.replace(/\\'/g, "'")}')">✏️ 更新 Payload</button>`;
+                    html += `<button class="btn btn-danger btn-sm" onclick="app.deletePoint('${pointIdStr.replace(/\\'/g, "'")}')">🗑️ 删除</button>`;
                     html += `</div>`;
                     html += `</div>`;
                 });
                 
                 container.innerHTML = html;
+            }
+            
+            toggleSelectAllPoints() {
+                const selectAll = document.getElementById('selectAllPoints');
+                const checkboxes = document.querySelectorAll('.point-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.checked = selectAll.checked;
+                });
+            }
+            
+            async batchDeletePoints() {
+                const checkboxes = document.querySelectorAll('.point-checkbox:checked');
+                if (checkboxes.length === 0) {
+                    this.ui.showStatus('warning', '请至少选择一个向量点！');
+                    return;
+                }
+                
+                if (!confirm(`确定要删除选中的 ${checkboxes.length} 个向量点吗？`)) {
+                    return;
+                }
+                
+                const baseUrl = this.getBaseUrl();
+                const collection = this.getSelectedCollection();
+                
+                if (!collection) {
+                    this.ui.showStatus('error', '请先选择集合！');
+                    return;
+                }
+                
+                const pointIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-point-id'));
+                
+                try {
+                    this.ui.showStatus('info', `正在删除 ${pointIds.length} 个向量点...`);
+                    await this.apiClient.deleteRequest(`${baseUrl}/qdrant/points`, {
+                        collection_name: collection,
+                        point_ids: pointIds
+                    });
+                    
+                    this.ui.showStatus('success', `✅ 成功删除 ${pointIds.length} 个向量点`);
+                    
+                    // 重新加载点列表
+                    await this.scrollPoints();
+                } catch (error) {
+                    console.error('批量删除失败:', error);
+                    this.ui.showStatus('error', `❌ 批量删除失败: ${error.message}`);
+                }
+            }
+            
+            exportSelectedPoints() {
+                const checkboxes = document.querySelectorAll('.point-checkbox:checked');
+                if (checkboxes.length === 0) {
+                    this.ui.showStatus('warning', '请至少选择一个向量点！');
+                    return;
+                }
+                
+                const points = [];
+                checkboxes.forEach(checkbox => {
+                    const pointId = checkbox.getAttribute('data-point-id');
+                    const card = document.querySelector(`[data-point-id="${pointId}"]`);
+                    if (card) {
+                        const vectorText = card.querySelector('.point-vector .code-block')?.textContent || '';
+                        const payloadText = card.querySelector('.point-payload .code-block')?.textContent || '';
+                        
+                        let vector = [];
+                        let payload = {};
+                        
+                        try {
+                            if (vectorText && !vectorText.includes('...')) {
+                                vector = JSON.parse(vectorText);
+                            }
+                        } catch (e) {
+                            // 忽略解析错误
+                        }
+                        
+                        try {
+                            if (payloadText) {
+                                payload = JSON.parse(payloadText);
+                            }
+                        } catch (e) {
+                            // 忽略解析错误
+                        }
+                        
+                        points.push({
+                            id: pointId,
+                            vector: vector,
+                            payload: payload
+                        });
+                    }
+                });
+                
+                if (points.length === 0) {
+                    this.ui.showStatus('warning', '没有可导出的向量点！');
+                    return;
+                }
+                
+                const jsonStr = JSON.stringify(points, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `qdrant_points_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.ui.showStatus('success', `✅ 已导出 ${points.length} 个向量点`);
             }
             
             async updatePointPayload(pointId) {
@@ -1263,8 +1411,9 @@
             }
             
             escapeHtml(text) {
+                if (text === null || text === undefined) return '';
                 const div = document.createElement('div');
-                div.textContent = text;
+                div.textContent = String(text);
                 return div.innerHTML;
             }
         }
