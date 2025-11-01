@@ -863,12 +863,21 @@
                 
                 statusContainer.innerHTML = '<span class="status-badge checking"><span class="spinner"></span> 检查中...</span>';
                 
+                // 确保URL格式正确：移除baseUrl末尾的斜杠，确保路径以斜杠开头
+                const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+                const statusUrl = `${normalizedBaseUrl}/prompt/status`;
+                
                 try {
-                    // 确保URL格式正确：移除baseUrl末尾的斜杠，确保路径以斜杠开头
-                    const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
-                    const statusUrl = `${normalizedBaseUrl}/prompt/status`;
+                    // 添加调试信息
+                    console.log('正在连接服务器:', statusUrl);
+                    console.log('请求时间:', new Date().toISOString());
                     
+                    const startTime = Date.now();
                     const data = await this.apiClient.get(statusUrl);
+                    const duration = Date.now() - startTime;
+                    
+                    console.log('连接成功，耗时:', duration, 'ms');
+                    console.log('服务器响应:', data);
                     let html = '';
                     
                     if (data.qdrant) {
@@ -889,22 +898,68 @@
                     
                     statusContainer.innerHTML = html || '<span class="status-badge unavailable">⚠️ 服务状态信息为空</span>';
                 } catch (error) {
-                    console.error('检查服务状态失败:', error);
-                    let errorMessage = '无法连接服务器';
+                    // 详细的错误日志
+                    console.error('检查服务状态失败:');
+                    console.error('错误对象:', error);
+                    console.error('错误类型:', error?.constructor?.name);
+                    console.error('错误消息:', error?.message);
+                    console.error('错误堆栈:', error?.stack);
+                    console.error('请求URL:', statusUrl);
+                    console.error('请求时间:', new Date().toISOString());
                     
-                    if (error.message) {
-                        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                            errorMessage = '网络连接失败，请检查服务器地址是否正确';
-                        } else if (error.message.includes('CORS')) {
-                            errorMessage = 'CORS跨域错误，请检查服务器CORS配置';
-                        } else if (error.message.includes('HTTP')) {
-                            errorMessage = `服务器返回错误: ${error.message}`;
+                    let errorMessage = '无法连接服务器';
+                    let errorDetails = '';
+                    
+                    if (error?.message) {
+                        // 处理包含换行符的错误消息
+                        const errorMsg = error.message;
+                        if (errorMsg.includes('网络连接失败')) {
+                            errorMessage = '网络连接失败';
+                            // 提取详细原因
+                            const reasonsMatch = errorMsg.match(/可能的原因：([\s\S]+)/);
+                            if (reasonsMatch) {
+                                errorDetails = reasonsMatch[1].trim();
+                            }
+                        } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('fetch')) {
+                            errorMessage = '网络连接失败';
+                            errorDetails = '1. 请检查服务器地址是否正确\n2. 请确认服务器正在运行\n3. 检查网络连接\n4. 如果使用 HTTPS，请确认证书有效\n5. 检查浏览器控制台是否有 CORS 错误';
+                        } else if (errorMsg.includes('CORS') || errorMsg.includes('cors')) {
+                            errorMessage = 'CORS跨域错误';
+                            errorDetails = '浏览器阻止了跨域请求。请检查服务器的 CORS 配置，确保允许来自当前域的请求。';
+                        } else if (errorMsg.includes('HTTP')) {
+                            const httpMatch = errorMsg.match(/HTTP (\d+)/);
+                            if (httpMatch) {
+                                const statusCode = httpMatch[1];
+                                if (statusCode === '404') {
+                                    errorMessage = '接口不存在 (404)';
+                                    errorDetails = `服务器返回 404 错误，请检查接口路径是否正确: ${statusUrl}`;
+                                } else if (statusCode === '401' || statusCode === '403') {
+                                    errorMessage = `认证失败 (${statusCode})`;
+                                    errorDetails = '服务器拒绝了请求，可能需要认证信息或权限不足。';
+                                } else if (statusCode >= 500) {
+                                    errorMessage = `服务器错误 (${statusCode})`;
+                                    errorDetails = '服务器内部错误，请稍后重试或联系管理员。';
+                                } else {
+                                    errorMessage = `服务器返回错误 (${statusCode})`;
+                                    errorDetails = errorMsg;
+                                }
+                            } else {
+                                errorMessage = `服务器返回错误: ${errorMsg}`;
+                            }
                         } else {
-                            errorMessage = `连接失败: ${error.message}`;
+                            errorMessage = `连接失败: ${errorMsg}`;
                         }
                     }
                     
-                    statusContainer.innerHTML = `<span class="status-badge unavailable">❌ ${errorMessage}</span>`;
+                    let statusHtml = `<span class="status-badge unavailable">❌ ${errorMessage}</span>`;
+                    if (errorDetails) {
+                        statusHtml += `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: var(--radius); font-size: 12px; white-space: pre-line; max-width: 600px;">${this.ui.escapeHtml(errorDetails)}</div>`;
+                    }
+                    // 添加调试提示
+                    statusHtml += `<div style="margin-top: 8px; padding: 8px; background: #e3f2fd; border-radius: var(--radius); font-size: 11px; color: #1976d2;">
+                        💡 提示: 打开浏览器控制台 (F12) 查看详细的错误信息和网络请求
+                    </div>`;
+                    statusContainer.innerHTML = statusHtml;
                     this.ui.showStatus('error', `❌ ${errorMessage}`);
                 }
             }
@@ -1321,19 +1376,38 @@
                 try {
                     response = await fetch(fullUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify(payload),
+                        mode: 'cors',
+                        credentials: 'omit'
                     });
                     
                     if (!response.ok) {
-                        const errorText = await response.text();
+                        let errorText = '';
+                        try {
+                            errorText = await response.text();
+                        } catch (e) {
+                            errorText = `HTTP ${response.status} ${response.statusText}`;
+                        }
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
                 } catch (error) {
-                    if (error instanceof TypeError && error.message.includes('fetch')) {
-                        throw new Error(`网络连接失败: 无法连接到服务器 ${fullUrl}，请检查服务器地址是否正确或服务器是否运行`);
+                    // 处理网络错误
+                    if (error instanceof TypeError) {
+                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            throw new Error(`网络连接失败: 无法连接到服务器 ${fullUrl}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
+                        }
+                        throw new Error(`请求失败: ${error.message}`);
                     }
-                    throw error;
+                    // 如果已经是 Error 对象，直接抛出
+                    if (error instanceof Error) {
+                        throw error;
+                    }
+                    // 其他类型的错误
+                    throw new Error(`未知错误: ${String(error)}`);
                 }
                 
                 if (callbacks.onStart) callbacks.onStart();
@@ -1400,21 +1474,40 @@
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify(payload),
+                        mode: 'cors',
+                        credentials: 'omit'
                     });
                     
                     if (!response.ok) {
-                        const errorText = await response.text();
+                        let errorText = '';
+                        try {
+                            errorText = await response.text();
+                        } catch (e) {
+                            errorText = `HTTP ${response.status} ${response.statusText}`;
+                        }
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
                     
                     return await response.json();
                 } catch (error) {
-                    if (error instanceof TypeError && error.message.includes('fetch')) {
-                        throw new Error(`网络连接失败: 无法连接到服务器 ${url}，请检查服务器地址是否正确或服务器是否运行`);
+                    // 处理网络错误
+                    if (error instanceof TypeError) {
+                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            throw new Error(`网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
+                        }
+                        throw new Error(`请求失败: ${error.message}`);
                     }
-                    throw error;
+                    // 如果已经是 Error 对象，直接抛出
+                    if (error instanceof Error) {
+                        throw error;
+                    }
+                    // 其他类型的错误
+                    throw new Error(`未知错误: ${String(error)}`);
                 }
             }
             
@@ -1422,20 +1515,39 @@
                 try {
                     const response = await fetch(url, {
                         method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        credentials: 'omit'
                     });
                     
                     if (!response.ok) {
-                        const errorText = await response.text();
+                        let errorText = '';
+                        try {
+                            errorText = await response.text();
+                        } catch (e) {
+                            errorText = `HTTP ${response.status} ${response.statusText}`;
+                        }
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
                     
                     return await response.json();
                 } catch (error) {
-                    if (error instanceof TypeError && error.message.includes('fetch')) {
-                        throw new Error(`网络连接失败: 无法连接到服务器 ${url}，请检查服务器地址是否正确或服务器是否运行`);
+                    // 处理网络错误
+                    if (error instanceof TypeError) {
+                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            throw new Error(`网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
+                        }
+                        throw new Error(`请求失败: ${error.message}`);
                     }
-                    throw error;
+                    // 如果已经是 Error 对象，直接抛出
+                    if (error instanceof Error) {
+                        throw error;
+                    }
+                    // 其他类型的错误
+                    throw new Error(`未知错误: ${String(error)}`);
                 }
             }
             
@@ -1443,20 +1555,39 @@
                 try {
                     const response = await fetch(url, {
                         method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        credentials: 'omit'
                     });
                     
                     if (!response.ok) {
-                        const errorText = await response.text();
+                        let errorText = '';
+                        try {
+                            errorText = await response.text();
+                        } catch (e) {
+                            errorText = `HTTP ${response.status} ${response.statusText}`;
+                        }
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
                     
                     return await response.json();
                 } catch (error) {
-                    if (error instanceof TypeError && error.message.includes('fetch')) {
-                        throw new Error(`网络连接失败: 无法连接到服务器 ${url}，请检查服务器地址是否正确或服务器是否运行`);
+                    // 处理网络错误
+                    if (error instanceof TypeError) {
+                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            throw new Error(`网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
+                        }
+                        throw new Error(`请求失败: ${error.message}`);
                     }
-                    throw error;
+                    // 如果已经是 Error 对象，直接抛出
+                    if (error instanceof Error) {
+                        throw error;
+                    }
+                    // 其他类型的错误
+                    throw new Error(`未知错误: ${String(error)}`);
                 }
             }
         }
