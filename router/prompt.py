@@ -101,39 +101,79 @@ async def save_chat_to_qdrant(
             for msg in messages
         ])
         
+        # 验证输入内容不为空
+        if not text_content or not text_content.strip():
+            raise ValueError("无法生成 embedding：消息内容为空")
+        
         # 生成 embedding
         try:
+            # Ollama embed API 需要 input 参数为列表
             embedding_response = ollama_client.embed(
                 model=embedding_model,
-                input=text_content
+                input=[text_content]  # 改为列表格式
             )
             
-            # 处理响应：Ollama 返回的是 embeddings（复数），是一个二维列表
-            if hasattr(embedding_response, 'embeddings'):
+            # 添加调试日志
+            logger.debug(f"Embedding 响应类型: {type(embedding_response)}")
+            logger.debug(f"Embedding 响应内容: {embedding_response}")
+            
+            # 处理响应：Ollama 可能返回不同的格式
+            vector = None
+            
+            # 方法1: 检查是否是 dict 类型
+            if isinstance(embedding_response, dict):
+                # 可能是 {"embeddings": [[...]], ...} 或 {"embedding": [...]}
+                if "embeddings" in embedding_response:
+                    embeddings = embedding_response["embeddings"]
+                    if isinstance(embeddings, list) and len(embeddings) > 0:
+                        vector = embeddings[0] if isinstance(embeddings[0], list) else embeddings
+                elif "embedding" in embedding_response:
+                    vector = embedding_response["embedding"]
+            
+            # 方法2: 检查是否有 embeddings 属性（对象类型）
+            elif hasattr(embedding_response, 'embeddings'):
                 embeddings = embedding_response.embeddings
+                if isinstance(embeddings, list) and len(embeddings) > 0:
+                    vector = embeddings[0] if isinstance(embeddings[0], list) else embeddings
+                elif not isinstance(embeddings, list):
+                    vector = list(embeddings) if hasattr(embeddings, '__iter__') else None
+            
+            # 方法3: 检查是否有 embedding 属性（单数）
             elif hasattr(embedding_response, 'embedding'):
-                embeddings = [embedding_response.embedding]
-            elif isinstance(embedding_response, dict):
-                embeddings = embedding_response.get("embeddings", embedding_response.get("embedding", []))
-            else:
-                embeddings = getattr(embedding_response, 'embeddings', getattr(embedding_response, 'embedding', []))
+                vector = embedding_response.embedding
+                if not isinstance(vector, list):
+                    vector = list(vector) if hasattr(vector, '__iter__') else None
             
-            # embeddings 是二维列表，取第一个元素
-            if isinstance(embeddings, list) and len(embeddings) > 0:
-                vector = embeddings[0] if isinstance(embeddings[0], list) else embeddings
-            else:
-                vector = embeddings if isinstance(embeddings, list) else []
+            # 方法4: 直接是列表
+            elif isinstance(embedding_response, list):
+                if len(embedding_response) > 0:
+                    vector = embedding_response[0] if isinstance(embedding_response[0], list) else embedding_response
             
-            if not vector or len(vector) == 0:
-                raise ValueError(f"生成的向量为空，请检查 embedding 模型 {embedding_model} 是否可用。响应类型: {type(embedding_response)}")
+            # 验证向量
+            if not vector or not isinstance(vector, list) or len(vector) == 0:
+                error_msg = f"生成的向量为空，请检查 embedding 模型 {embedding_model} 是否可用。"
+                error_msg += f"\n响应类型: {type(embedding_response)}"
+                error_msg += f"\n响应内容: {str(embedding_response)[:500]}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # 确保向量是数字列表
+            if not all(isinstance(x, (int, float)) for x in vector):
+                error_msg = f"向量包含非数字元素，请检查 embedding 模型 {embedding_model}。"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             
             # 获取实际向量维度
             actual_vector_size = len(vector)
-            logger.info(f"生成向量维度: {actual_vector_size} (模型: {embedding_model})")
+            logger.info(f"成功生成向量，维度: {actual_vector_size} (模型: {embedding_model})")
             
+        except ValueError:
+            # 重新抛出 ValueError
+            raise
         except Exception as e:
-            logger.error(f"生成 embedding 失败: {str(e)}", exc_info=True)
-            raise ValueError(f"生成向量失败: {str(e)}。请确保 embedding 模型 {embedding_model} 已下载并可用。")
+            error_msg = f"生成 embedding 失败: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            raise ValueError(f"{error_msg}。请确保 embedding 模型 {embedding_model} 已下载并可用（可通过 'ollama pull {embedding_model}' 下载）。")
         
         # 使用实际向量维度创建或验证集合
         try:
