@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt, mem0, qdrant
+from router.prompt import ContentRequest, generate_role_ai_json
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -71,7 +72,7 @@ async def header_verification_middleware(request: Request, call_next):
         if not (token_valid and user_valid):
             logger.warning(f"无效的请求头: X-Token={x_token}, X-User={x_user}")
             return JSONResponse(
-                status_code=403,
+                status_code=401,
                 content={
                     "detail": "Invalid or missing headers",
                     "message": "请提供有效的X-Token和X-User请求头"
@@ -160,6 +161,12 @@ app.include_router(prompt.router)
 app.include_router(mongodb.router)
 app.include_router(mem0.router)
 app.include_router(qdrant.router)
+
+# 创建 /api/chat 路由，转发到 /prompt/ 端点
+@app.post("/api/chat")
+async def api_chat(request: ContentRequest, http_request: Request):
+    """处理 /api/chat 路由，转发到 /prompt/ 端点"""
+    return await generate_role_ai_json(request, http_request)
 
 # 当直接运行此脚本时执行以下代码
 if __name__ == "__main__":
