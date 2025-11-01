@@ -854,15 +854,21 @@
             
             async checkServiceStatus() {
                 const baseUrl = this.getInputValue('baseUrl');
+                const statusContainer = document.getElementById('serviceStatus');
+                
                 if (!baseUrl) {
+                    statusContainer.innerHTML = `<span class="status-badge unavailable">⚠️ 请先输入API服务器地址</span>`;
                     return;
                 }
                 
-                const statusContainer = document.getElementById('serviceStatus');
                 statusContainer.innerHTML = '<span class="status-badge checking"><span class="spinner"></span> 检查中...</span>';
                 
                 try {
-                    const data = await this.apiClient.get(`${baseUrl}/prompt/status`);
+                    // 确保URL格式正确：移除baseUrl末尾的斜杠，确保路径以斜杠开头
+                    const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+                    const statusUrl = `${normalizedBaseUrl}/prompt/status`;
+                    
+                    const data = await this.apiClient.get(statusUrl);
                     let html = '';
                     
                     if (data.qdrant) {
@@ -881,9 +887,25 @@
                         html += `</span>`;
                     }
                     
-                    statusContainer.innerHTML = html;
+                    statusContainer.innerHTML = html || '<span class="status-badge unavailable">⚠️ 服务状态信息为空</span>';
                 } catch (error) {
-                    statusContainer.innerHTML = `<span class="status-badge unavailable">❌ 无法连接服务器</span>`;
+                    console.error('检查服务状态失败:', error);
+                    let errorMessage = '无法连接服务器';
+                    
+                    if (error.message) {
+                        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                            errorMessage = '网络连接失败，请检查服务器地址是否正确';
+                        } else if (error.message.includes('CORS')) {
+                            errorMessage = 'CORS跨域错误，请检查服务器CORS配置';
+                        } else if (error.message.includes('HTTP')) {
+                            errorMessage = `服务器返回错误: ${error.message}`;
+                        } else {
+                            errorMessage = `连接失败: ${error.message}`;
+                        }
+                    }
+                    
+                    statusContainer.innerHTML = `<span class="status-badge unavailable">❌ ${errorMessage}</span>`;
+                    this.ui.showStatus('error', `❌ ${errorMessage}`);
                 }
             }
             
@@ -1279,17 +1301,39 @@
          * API 客户端
          */
         class APIClient {
+            normalizeUrl(baseUrl, path) {
+                // 移除baseUrl末尾的斜杠
+                const normalizedBase = baseUrl.replace(/\/+$/, '');
+                // 确保path以斜杠开头
+                const normalizedPath = path.startsWith('/') ? path : '/' + path;
+                return `${normalizedBase}${normalizedPath}`;
+            }
+            
             async streamRequest(url, payload, callbacks = {}) {
                 const baseUrl = document.getElementById('baseUrl').value.trim();
-                const response = await fetch(`${baseUrl}${url}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
+                if (!baseUrl) {
+                    throw new Error('API服务器地址不能为空');
+                }
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                const fullUrl = this.normalizeUrl(baseUrl, url);
+                let response;
+                
+                try {
+                    response = await fetch(fullUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                } catch (error) {
+                    if (error instanceof TypeError && error.message.includes('fetch')) {
+                        throw new Error(`网络连接失败: 无法连接到服务器 ${fullUrl}，请检查服务器地址是否正确或服务器是否运行`);
+                    }
+                    throw error;
                 }
                 
                 if (callbacks.onStart) callbacks.onStart();
@@ -1353,41 +1397,67 @@
             }
             
             async post(url, payload) {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload),
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    if (error instanceof TypeError && error.message.includes('fetch')) {
+                        throw new Error(`网络连接失败: 无法连接到服务器 ${url}，请检查服务器地址是否正确或服务器是否运行`);
+                    }
+                    throw error;
                 }
-                
-                return await response.json();
             }
             
             async get(url) {
-                const response = await fetch(url, {
-                    method: 'GET',
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    if (error instanceof TypeError && error.message.includes('fetch')) {
+                        throw new Error(`网络连接失败: 无法连接到服务器 ${url}，请检查服务器地址是否正确或服务器是否运行`);
+                    }
+                    throw error;
                 }
-                
-                return await response.json();
             }
             
             async delete(url) {
-                const response = await fetch(url, {
-                    method: 'DELETE',
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    if (error instanceof TypeError && error.message.includes('fetch')) {
+                        throw new Error(`网络连接失败: 无法连接到服务器 ${url}，请检查服务器地址是否正确或服务器是否运行`);
+                    }
+                    throw error;
                 }
-                
-                return await response.json();
             }
         }
         
