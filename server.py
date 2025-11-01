@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt, mem0, qdrant
-from router.prompt import ContentRequest, generate_role_ai_json
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -161,12 +160,6 @@ app.include_router(prompt.router)
 app.include_router(mongodb.router)
 app.include_router(mem0.router)
 app.include_router(qdrant.router)
-
-# 创建 /api/chat 路由，转发到 /prompt/ 端点
-@app.post("/api/chat")
-async def api_chat(request: ContentRequest, http_request: Request):
-    """处理 /api/chat 路由，转发到 /prompt/ 端点"""
-    return await generate_role_ai_json(request, http_request)
 
 # 当直接运行此脚本时执行以下代码
 if __name__ == "__main__":
