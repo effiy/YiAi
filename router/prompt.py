@@ -267,6 +267,9 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         # 增强系统提示：添加检索到的相关记忆和聊天记录
         enhanced_system_prompt = request.fromSystem
         relevant_context = []
+        context_info = {"memories_count": 0, "chats_count": 0}
+        memories = []
+        search_results = []
         
         # 1. 使用 Mem0 检索相关记忆
         if request.use_memory and mem0_client.is_available() and user_id:
@@ -284,6 +287,7 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                             memory_texts.append(f"- {mem_content}")
                     if memory_texts:
                         relevant_context.append(f"相关记忆：\n" + "\n".join(memory_texts))
+                        context_info["memories_count"] = len(memories)
                         logger.info(f"检索到 {len(memories)} 条相关记忆")
             except Exception as e:
                 logger.warning(f"Mem0 记忆检索失败: {str(e)}")
@@ -343,6 +347,7 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                                 chat_texts.append(f"- {text_content}")
                         if chat_texts:
                             relevant_context.append(f"相关聊天记录：\n" + "\n".join(chat_texts))
+                            context_info["chats_count"] = len(search_results)
                             logger.info(f"检索到 {len(search_results)} 条相关聊天记录")
             except Exception as e:
                 logger.warning(f"Qdrant 向量检索失败: {str(e)}")
@@ -352,6 +357,14 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
             context_section = "\n\n" + "=" * 50 + "\n相关上下文信息（请参考这些信息来更好地回答用户的问题）：\n" + "=" * 50 + "\n"
             context_section += "\n\n".join(relevant_context)
             enhanced_system_prompt = request.fromSystem + context_section
+        
+        # 发送上下文信息到前端
+        if context_info["memories_count"] > 0 or context_info["chats_count"] > 0:
+            context_notification = json.dumps({
+                "type": "context_info",
+                "data": context_info
+            }, ensure_ascii=False)
+            yield f"data: {context_notification}\n\n"
         
         # 准备消息
         if request.images and len(request.images) > 0:
@@ -658,3 +671,40 @@ async def delete_conversation(conversation_id: str):
     except Exception as e:
         logger.error(f"删除会话失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/status")
+async def get_service_status():
+    """获取服务状态（Mem0 和 Qdrant）"""
+    try:
+        qdrant_status = {
+            "available": False,
+            "message": "未检查"
+        }
+        mem0_status = {
+            "available": mem0_client.is_available(),
+            "message": "Mem0 服务可用" if mem0_client.is_available() else "Mem0 服务不可用"
+        }
+        
+        # 检查 Qdrant 状态
+        try:
+            collections = qdrant_client.client.get_collections()
+            qdrant_status = {
+                "available": True,
+                "collections_count": len(collections.collections),
+                "message": f"Qdrant 服务可用，共有 {len(collections.collections)} 个集合"
+            }
+        except Exception as e:
+            qdrant_status = {
+                "available": False,
+                "message": f"Qdrant 服务不可用: {str(e)}"
+            }
+        
+        return JSONResponse(content={
+            "success": True,
+            "qdrant": qdrant_status,
+            "mem0": mem0_status
+        })
+    except Exception as e:
+        logger.error(f"获取服务状态失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取服务状态失败: {str(e)}")

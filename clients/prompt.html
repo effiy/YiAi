@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 对话客户端</title>
+    <title>AI 对话客户端 - 增强版</title>
     <style>
         /* ===== 重置和基础样式 ===== */
         * {
@@ -18,6 +18,7 @@
             --secondary-color: #764ba2;
             --success-color: #2e7d32;
             --error-color: #c62828;
+            --warning-color: #f57c00;
             --info-color: #1976d2;
             --text-primary: #333;
             --text-secondary: #555;
@@ -25,6 +26,8 @@
             --border-color: #e0e0e0;
             --bg-dark: #1e1e1e;
             --bg-light: #f9f9f9;
+            --bg-status-ok: #e8f5e9;
+            --bg-status-error: #ffebee;
             --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
             --radius: 6px;
@@ -42,7 +45,7 @@
         
         /* ===== 布局组件 ===== */
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
@@ -59,6 +62,9 @@
             margin-bottom: 20px;
             font-size: 28px;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
         .section-title {
@@ -68,6 +74,39 @@
             font-weight: 600;
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
+        }
+        
+        /* ===== 服务状态显示 ===== */
+        .service-status {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-badge.available {
+            background: var(--bg-status-ok);
+            color: var(--success-color);
+        }
+        
+        .status-badge.unavailable {
+            background: var(--bg-status-error);
+            color: var(--error-color);
+        }
+        
+        .status-badge.checking {
+            background: #fff3cd;
+            color: var(--warning-color);
         }
         
         /* ===== 表单组件 ===== */
@@ -81,6 +120,12 @@
             color: var(--text-secondary);
             font-weight: 600;
             font-size: 14px;
+        }
+        
+        .form-label small {
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 8px;
         }
         
         .form-input,
@@ -107,8 +152,29 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .form-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+        
         .form-checkbox {
             margin-right: 8px;
+        }
+        
+        .form-number {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 14px;
         }
         
         /* ===== 按钮组件 ===== */
@@ -161,6 +227,15 @@
             background: #d32f2f;
         }
         
+        .btn-info {
+            background: var(--info-color);
+            color: white;
+        }
+        
+        .btn-info:hover:not(:disabled) {
+            background: #1565c0;
+        }
+        
         .btn:active:not(:disabled) {
             transform: translateY(0);
         }
@@ -206,6 +281,12 @@
             border-left: 4px solid var(--error-color);
         }
         
+        .status.warning {
+            background: #fff3cd;
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+        
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -215,6 +296,30 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        
+        /* ===== 上下文信息显示 ===== */
+        .context-info {
+            background: #f5f5f5;
+            border-left: 4px solid var(--info-color);
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+            font-size: 13px;
+            display: none;
+        }
+        
+        .context-info.show {
+            display: block;
+        }
+        
+        .context-info-item {
+            margin: 5px 0;
+            color: var(--text-secondary);
+        }
+        
+        .context-info-item strong {
+            color: var(--info-color);
         }
         
         /* ===== 输出区域 ===== */
@@ -311,6 +416,47 @@
             transform: scale(1.1);
         }
         
+        /* ===== 折叠面板 ===== */
+        .collapsible {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .collapsible-header {
+            padding: 12px 16px;
+            background: var(--bg-light);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            user-select: none;
+            transition: var(--transition);
+        }
+        
+        .collapsible-header:hover {
+            background: #f0f0f0;
+        }
+        
+        .collapsible-content {
+            padding: 16px;
+            display: none;
+        }
+        
+        .collapsible-content.show {
+            display: block;
+        }
+        
+        .collapsible-toggle {
+            transition: transform 0.3s ease;
+        }
+        
+        .collapsible.open .collapsible-toggle {
+            transform: rotate(180deg);
+        }
+        
         /* ===== 聊天记录组件 ===== */
         .chat-history {
             display: none;
@@ -384,8 +530,8 @@
                 width: 100%;
             }
             
-            .form-group > div[style*="flex"] {
-                flex-direction: column;
+            .form-row {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -408,9 +554,22 @@
 <body>
     <div class="container">
         <div class="card">
-            <h1 class="card-title">🤖 AI 对话客户端</h1>
+            <h1 class="card-title">
+                <span>🤖 AI 对话客户端 - 增强版</span>
+                <button class="btn btn-info btn-sm" onclick="app.checkServiceStatus()">🔄 检查服务状态</button>
+            </h1>
+            
+            <!-- 服务状态显示 -->
+            <div class="service-status" id="serviceStatus">
+                <span class="status-badge checking">
+                    <span class="spinner"></span> 检查中...
+                </span>
+            </div>
             
             <div id="status" class="status"></div>
+            
+            <!-- 上下文信息显示 -->
+            <div id="contextInfo" class="context-info"></div>
             
             <!-- 请求配置区域 -->
             <h2 class="section-title">请求配置</h2>
@@ -420,9 +579,21 @@
                 <input type="text" id="baseUrl" class="form-input" value="https://api.effiy.cn" placeholder="https://api.effiy.cn">
             </div>
             
-            <div class="form-group">
-                <label for="model" class="form-label">模型名称（可选）：</label>
-                <input type="text" id="model" class="form-input" placeholder="qwen3" value="qwen3">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="model" class="form-label">模型名称（可选）：</label>
+                    <input type="text" id="model" class="form-input" placeholder="qwen3" value="qwen3">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userId" class="form-label">用户ID（可选）：</label>
+                    <input type="text" id="userId" class="form-input" placeholder="例如：user123">
+                </div>
+                
+                <div class="form-group">
+                    <label for="conversationId" class="form-label">会话ID（可选）：</label>
+                    <input type="text" id="conversationId" class="form-input" placeholder="留空将创建新会话">
+                </div>
             </div>
             
             <div class="form-group">
@@ -435,14 +606,41 @@
                 <textarea id="fromUser" class="form-textarea" placeholder="例如：请介绍一下人工智能。">请用中文简单介绍一下人工智能的发展历史，字数控制在200字左右。</textarea>
             </div>
             
-            <div class="form-group">
-                <label for="userId" class="form-label">用户ID（可选，用于保存聊天记录）：</label>
-                <input type="text" id="userId" class="form-input" placeholder="例如：user123">
-            </div>
-            
-            <div class="form-group">
-                <label for="conversationId" class="form-label">会话ID（可选，用于关联多轮对话）：</label>
-                <input type="text" id="conversationId" class="form-input" placeholder="留空将创建新会话">
+            <!-- 记忆检索配置 -->
+            <div class="collapsible" id="memoryConfigPanel">
+                <div class="collapsible-header" onclick="app.toggleCollapsible('memoryConfigPanel')">
+                    <span>🧠 记忆检索配置</span>
+                    <span class="collapsible-toggle">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="useMemory" class="form-checkbox" checked> 
+                            启用 Mem0 记忆检索
+                            <small>（自动检索相关的用户记忆）</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="useVectorSearch" class="form-checkbox" checked> 
+                            启用 Qdrant 向量检索
+                            <small>（自动检索相关的历史聊天记录）</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="memoryLimit" class="form-label">记忆检索数量：</label>
+                            <input type="number" id="memoryLimit" class="form-number" value="5" min="1" max="20">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="vectorSearchLimit" class="form-label">向量检索数量：</label>
+                            <input type="number" id="vectorSearchLimit" class="form-number" value="5" min="1" max="20">
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="form-group">
@@ -474,6 +672,26 @@
                 <button id="btnClear" class="btn btn-secondary flex-1" onclick="app.clearOutput()">
                     🧹 清空输出
                 </button>
+            </div>
+            
+            <!-- 记忆管理区域 -->
+            <div class="collapsible" id="memoryManagementPanel">
+                <div class="collapsible-header" onclick="app.toggleCollapsible('memoryManagementPanel')">
+                    <span>💾 记忆管理</span>
+                    <span class="collapsible-toggle">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="form-group">
+                        <label for="memoryText" class="form-label">添加新记忆：</label>
+                        <textarea id="memoryText" class="form-textarea" placeholder="输入要保存的记忆内容..."></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary btn-sm" onclick="app.addMemory()">➕ 添加记忆</button>
+                        <button class="btn btn-secondary btn-sm" onclick="app.loadMemories()">📋 查看我的记忆</button>
+                        <button class="btn btn-danger btn-sm" onclick="app.clearAllMemories()">🗑️ 清空所有记忆</button>
+                    </div>
+                    <div id="memoriesList" style="margin-top: 15px;"></div>
+                </div>
             </div>
             
             <!-- 聊天记录管理区域 -->
@@ -508,8 +726,8 @@
 
     <script>
         /**
-         * AI 对话客户端应用
-         * 使用现代 JavaScript 类和模块化设计
+         * AI 对话客户端应用 - 增强版
+         * 支持 Mem0 和 Qdrant 功能
          */
         class PromptClient {
             constructor() {
@@ -534,6 +752,9 @@
                 
                 // 绑定键盘快捷键
                 this.bindKeyboardShortcuts();
+                
+                // 检查服务状态
+                this.checkServiceStatus();
             }
             
             bindKeyboardShortcuts() {
@@ -545,11 +766,49 @@
                             this.streamPrompt();
                         }
                     }
-                    // Esc: 停止流式输出（如果需要）
-                    if (e.key === 'Escape' && this.isStreaming) {
-                        // 可以添加停止功能
-                    }
                 });
+            }
+            
+            toggleCollapsible(panelId) {
+                const panel = document.getElementById(panelId);
+                panel.classList.toggle('open');
+                const content = panel.querySelector('.collapsible-content');
+                content.classList.toggle('show');
+            }
+            
+            async checkServiceStatus() {
+                const baseUrl = this.getInputValue('baseUrl');
+                if (!baseUrl) {
+                    return;
+                }
+                
+                const statusContainer = document.getElementById('serviceStatus');
+                statusContainer.innerHTML = '<span class="status-badge checking"><span class="spinner"></span> 检查中...</span>';
+                
+                try {
+                    const data = await this.apiClient.get(`${baseUrl}/prompt/status`);
+                    let html = '';
+                    
+                    if (data.qdrant) {
+                        const qdrantStatus = data.qdrant.available ? 'available' : 'unavailable';
+                        html += `<span class="status-badge ${qdrantStatus}">`;
+                        html += data.qdrant.available ? '✅ Qdrant' : '❌ Qdrant';
+                        html += `<small style="margin-left: 8px;">${data.qdrant.message}</small>`;
+                        html += `</span>`;
+                    }
+                    
+                    if (data.mem0) {
+                        const mem0Status = data.mem0.available ? 'available' : 'unavailable';
+                        html += `<span class="status-badge ${mem0Status}">`;
+                        html += data.mem0.available ? '✅ Mem0' : '❌ Mem0';
+                        html += `<small style="margin-left: 8px;">${data.mem0.message}</small>`;
+                        html += `</span>`;
+                    }
+                    
+                    statusContainer.innerHTML = html;
+                } catch (error) {
+                    statusContainer.innerHTML = `<span class="status-badge unavailable">❌ 无法连接服务器</span>`;
+                }
             }
             
             async streamPrompt() {
@@ -568,6 +827,7 @@
                 this.isStreaming = true;
                 this.ui.setStreamButtonState(true);
                 this.ui.clearOutput();
+                this.ui.hideContextInfo();
                 this.ui.showStatus('info', '正在连接服务器...');
                 
                 try {
@@ -599,6 +859,10 @@
                     userId: this.getInputValue('userId'),
                     conversationId: this.getInputValue('conversationId'),
                     saveChat: document.getElementById('saveChat').checked,
+                    useMemory: document.getElementById('useMemory').checked,
+                    memoryLimit: parseInt(document.getElementById('memoryLimit').value) || 5,
+                    useVectorSearch: document.getElementById('useVectorSearch').checked,
+                    vectorSearchLimit: parseInt(document.getElementById('vectorSearchLimit').value) || 5,
                     images: this.imageManager.getImages()
                 };
                 
@@ -631,7 +895,11 @@
                 const payload = {
                     fromSystem: config.fromSystem,
                     fromUser: config.fromUser,
-                    save_chat: config.saveChat
+                    save_chat: config.saveChat,
+                    use_memory: config.useMemory,
+                    memory_limit: config.memoryLimit,
+                    use_vector_search: config.useVectorSearch,
+                    vector_search_limit: config.vectorSearchLimit
                 };
                 
                 if (config.model) payload.model = config.model;
@@ -651,6 +919,11 @@
                     output.scrollTop = output.scrollHeight;
                 }
                 
+                // 处理上下文信息
+                if (chunk.type === 'context_info') {
+                    this.ui.showContextInfo(chunk.data);
+                }
+                
                 // 处理聊天记录保存
                 if (chunk.type === 'chat_saved' && chunk.conversation_id) {
                     this.currentConversationId = chunk.conversation_id;
@@ -667,6 +940,117 @@
             clearOutput() {
                 this.ui.clearOutput();
                 this.imageManager.clearImages();
+                this.ui.hideContextInfo();
+            }
+            
+            async addMemory() {
+                const baseUrl = this.getInputValue('baseUrl');
+                const userId = this.getInputValue('userId');
+                const memoryText = document.getElementById('memoryText').value.trim();
+                
+                if (!memoryText) {
+                    this.ui.showStatus('error', '请输入记忆内容！');
+                    return;
+                }
+                
+                if (!userId) {
+                    this.ui.showStatus('error', '请先输入用户ID！');
+                    return;
+                }
+                
+                try {
+                    this.ui.showStatus('info', '正在添加记忆...');
+                    await this.apiClient.post(`${baseUrl}/mem0/memory`, {
+                        memory: memoryText,
+                        user_id: userId
+                    });
+                    this.ui.showStatus('success', '✅ 记忆添加成功！');
+                    document.getElementById('memoryText').value = '';
+                    await this.loadMemories();
+                } catch (error) {
+                    console.error('添加记忆失败:', error);
+                    this.ui.showStatus('error', `❌ 添加记忆失败: ${error.message}`);
+                }
+            }
+            
+            async loadMemories() {
+                const baseUrl = this.getInputValue('baseUrl');
+                const userId = this.getInputValue('userId');
+                
+                if (!userId) {
+                    this.ui.showStatus('error', '请先输入用户ID！');
+                    return;
+                }
+                
+                try {
+                    this.ui.showStatus('info', '正在加载记忆...');
+                    const data = await this.apiClient.get(`${baseUrl}/mem0/memory?user_id=${userId}&limit=50`);
+                    this.displayMemories(data.memories || []);
+                    this.ui.showStatus('success', `✅ 加载了 ${data.count} 条记忆`);
+                } catch (error) {
+                    console.error('加载记忆失败:', error);
+                    this.ui.showStatus('error', `❌ 加载记忆失败: ${error.message}`);
+                }
+            }
+            
+            displayMemories(memories) {
+                const container = document.getElementById('memoriesList');
+                if (memories.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted);">暂无记忆</p>';
+                    return;
+                }
+                
+                let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+                memories.forEach((mem) => {
+                    html += `<div style="padding: 12px; background: var(--bg-light); border-radius: var(--radius); border-left: 3px solid var(--primary-color);">`;
+                    html += `<div style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">ID: ${mem.id || 'N/A'}</div>`;
+                    html += `<div>${this.ui.escapeHtml(mem.memory || '')}</div>`;
+                    html += `<button class="btn btn-danger btn-sm" style="margin-top: 8px;" onclick="app.deleteMemory('${mem.id}')">删除</button>`;
+                    html += `</div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+            
+            async deleteMemory(memoryId) {
+                if (!confirm('确定要删除这条记忆吗？')) {
+                    return;
+                }
+                
+                const baseUrl = this.getInputValue('baseUrl');
+                const userId = this.getInputValue('userId');
+                
+                try {
+                    await this.apiClient.delete(`${baseUrl}/mem0/memory/${memoryId}?user_id=${userId}`);
+                    this.ui.showStatus('success', '✅ 删除成功！');
+                    await this.loadMemories();
+                } catch (error) {
+                    console.error('删除失败:', error);
+                    this.ui.showStatus('error', `❌ 删除失败: ${error.message}`);
+                }
+            }
+            
+            async clearAllMemories() {
+                if (!confirm('确定要清空所有记忆吗？此操作不可恢复！')) {
+                    return;
+                }
+                
+                const baseUrl = this.getInputValue('baseUrl');
+                const userId = this.getInputValue('userId');
+                
+                if (!userId) {
+                    this.ui.showStatus('error', '请先输入用户ID！');
+                    return;
+                }
+                
+                try {
+                    await this.apiClient.delete(`${baseUrl}/mem0/memory?user_id=${userId}`);
+                    this.ui.showStatus('success', '✅ 清空成功！');
+                    document.getElementById('memoriesList').innerHTML = '';
+                } catch (error) {
+                    console.error('清空失败:', error);
+                    this.ui.showStatus('error', `❌ 清空失败: ${error.message}`);
+                }
             }
             
             async searchChats() {
@@ -855,6 +1239,9 @@
                                     if (chunk.type === 'chat_saved' && callbacks.onChunk) {
                                         callbacks.onChunk(chunk);
                                     }
+                                    if (chunk.type === 'context_info' && callbacks.onChunk) {
+                                        callbacks.onChunk(chunk);
+                                    }
                                     if (chunk.done === true && callbacks.onComplete) {
                                         callbacks.onComplete();
                                     }
@@ -940,7 +1327,11 @@
                         baseUrl: config.baseUrl,
                         model: config.model,
                         userId: config.userId,
-                        saveChat: config.saveChat
+                        saveChat: config.saveChat,
+                        useMemory: config.useMemory,
+                        memoryLimit: config.memoryLimit,
+                        useVectorSearch: config.useVectorSearch,
+                        vectorSearchLimit: config.vectorSearchLimit
                     };
                     localStorage.setItem(this.storageKey, JSON.stringify(configToSave));
                 } catch (e) {
@@ -958,6 +1349,18 @@
                         if (config.userId) document.getElementById('userId').value = config.userId;
                         if (config.saveChat !== undefined) {
                             document.getElementById('saveChat').checked = config.saveChat;
+                        }
+                        if (config.useMemory !== undefined) {
+                            document.getElementById('useMemory').checked = config.useMemory;
+                        }
+                        if (config.memoryLimit) {
+                            document.getElementById('memoryLimit').value = config.memoryLimit;
+                        }
+                        if (config.useVectorSearch !== undefined) {
+                            document.getElementById('useVectorSearch').checked = config.useVectorSearch;
+                        }
+                        if (config.vectorSearchLimit) {
+                            document.getElementById('vectorSearchLimit').value = config.vectorSearchLimit;
                         }
                     }
                 } catch (e) {
@@ -990,12 +1393,36 @@
                 status.classList.remove('show');
             }
             
+            showContextInfo(contextInfo) {
+                const contextDiv = document.getElementById('contextInfo');
+                if (!contextInfo || (contextInfo.memories_count === 0 && contextInfo.chats_count === 0)) {
+                    contextDiv.classList.remove('show');
+                    return;
+                }
+                
+                let html = '<strong>📋 检索到的上下文信息：</strong><br>';
+                if (contextInfo.memories_count > 0) {
+                    html += `<div class="context-info-item">✅ 相关记忆: ${contextInfo.memories_count} 条</div>`;
+                }
+                if (contextInfo.chats_count > 0) {
+                    html += `<div class="context-info-item">✅ 相关聊天记录: ${contextInfo.chats_count} 条</div>`;
+                }
+                
+                contextDiv.innerHTML = html;
+                contextDiv.classList.add('show');
+            }
+            
+            hideContextInfo() {
+                const contextDiv = document.getElementById('contextInfo');
+                contextDiv.classList.remove('show');
+            }
+            
             setStreamButtonState(isLoading) {
                 const btn = document.getElementById('btnStream');
                 btn.disabled = isLoading;
                 btn.innerHTML = isLoading 
                     ? '<span class="spinner"></span> 正在处理...'
-                    : '🚀 流式调用';
+                    : '🚀 流式调用 <span style="font-size: 12px; opacity: 0.8; margin-left: 8px;">(Ctrl+Enter)</span>';
             }
             
             clearOutput() {
@@ -1052,7 +1479,7 @@
         // 初始化应用
         const app = new PromptClient();
         
-        // 将 deleteChat 暴露到全局作用域以便 HTML 中的 onclick 调用
+        // 将 deleteChat 和 deleteMemory 暴露到全局作用域以便 HTML 中的 onclick 调用
         window.app = app;
     </script>
 </body>
