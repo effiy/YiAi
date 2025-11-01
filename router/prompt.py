@@ -79,13 +79,6 @@ async def save_chat_to_qdrant(
         if not conversation_id:
             conversation_id = str(uuid.uuid4())
         
-        # 确保集合存在
-        qdrant_client.create_collection(
-            collection_name=CHAT_COLLECTION_NAME,
-            vector_size=VECTOR_SIZE,
-            distance=Distance.COSINE
-        )
-        
         # 获取 Ollama 配置用于生成 embedding
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
         ollama_auth = os.getenv("OLLAMA_AUTH", "")
@@ -115,28 +108,43 @@ async def save_chat_to_qdrant(
                 input=text_content
             )
             
-            # 处理响应，可能是字典或者对象
-            if hasattr(embedding_response, 'embedding'):
-                vector = embedding_response.embedding
+            # 处理响应：Ollama 返回的是 embeddings（复数），是一个二维列表
+            if hasattr(embedding_response, 'embeddings'):
+                embeddings = embedding_response.embeddings
+            elif hasattr(embedding_response, 'embedding'):
+                embeddings = [embedding_response.embedding]
             elif isinstance(embedding_response, dict):
-                vector = embedding_response.get("embedding", [])
+                embeddings = embedding_response.get("embeddings", embedding_response.get("embedding", []))
             else:
-                # 尝试直接访问属性
-                vector = getattr(embedding_response, 'embedding', [])
+                embeddings = getattr(embedding_response, 'embeddings', getattr(embedding_response, 'embedding', []))
+            
+            # embeddings 是二维列表，取第一个元素
+            if isinstance(embeddings, list) and len(embeddings) > 0:
+                vector = embeddings[0] if isinstance(embeddings[0], list) else embeddings
+            else:
+                vector = embeddings if isinstance(embeddings, list) else []
             
             if not vector or len(vector) == 0:
-                raise ValueError(f"生成的向量为空，请检查 embedding 模型 {embedding_model} 是否可用")
+                raise ValueError(f"生成的向量为空，请检查 embedding 模型 {embedding_model} 是否可用。响应类型: {type(embedding_response)}")
             
-            # 确保向量维度匹配
-            if len(vector) != VECTOR_SIZE:
-                logger.warning(f"向量维度不匹配: 期望 {VECTOR_SIZE}, 实际 {len(vector)}. 自动调整向量大小.")
-                if len(vector) > VECTOR_SIZE:
-                    vector = vector[:VECTOR_SIZE]
-                else:
-                    vector.extend([0.0] * (VECTOR_SIZE - len(vector)))
+            # 获取实际向量维度
+            actual_vector_size = len(vector)
+            logger.info(f"生成向量维度: {actual_vector_size} (模型: {embedding_model})")
+            
         except Exception as e:
-            logger.error(f"生成 embedding 失败: {str(e)}")
-            raise
+            logger.error(f"生成 embedding 失败: {str(e)}", exc_info=True)
+            raise ValueError(f"生成向量失败: {str(e)}。请确保 embedding 模型 {embedding_model} 已下载并可用。")
+        
+        # 使用实际向量维度创建或验证集合
+        try:
+            qdrant_client.create_collection(
+                collection_name=CHAT_COLLECTION_NAME,
+                vector_size=actual_vector_size,  # 使用实际向量维度
+                distance=Distance.COSINE
+            )
+        except Exception as e:
+            # 如果集合已存在但维度不匹配，记录警告但继续尝试保存
+            logger.warning(f"集合创建/验证失败: {str(e)}。尝试使用现有集合。")
         
         # 生成文档 ID
         doc_id = str(uuid.uuid4())
