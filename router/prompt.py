@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 
 from ollama import Client
 from modules.services.chatService import ChatService
+from modules.services.sessionService import SessionService
 from modules.database.qdrantClient import QdrantClient
 from modules.database.mem0Client import Mem0Client
 from modules.utils.session_utils import normalize_session_id
@@ -25,6 +26,17 @@ router = APIRouter(
 
 # 初始化聊天服务
 chat_service = ChatService()
+
+# 初始化会话服务
+_session_service: Optional[SessionService] = None
+
+async def get_session_service() -> SessionService:
+    """获取会话服务实例（懒加载）"""
+    global _session_service
+    if _session_service is None:
+        _session_service = SessionService()
+        await _session_service.initialize()
+    return _session_service
 
 # 初始化 Qdrant 客户端
 qdrant_client = QdrantClient()
