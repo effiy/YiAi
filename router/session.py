@@ -1,10 +1,13 @@
 import logging
+import uuid
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Request, Query
 from fastapi.responses import JSONResponse
+from datetime import datetime, timezone
+import re
 
-from modules.services.sessionService import SessionService
+from database import db
 
 logger = logging.getLogger(__name__)
 
@@ -14,17 +17,13 @@ router = APIRouter(
     responses={404: {"description": "未找到"}},
 )
 
-# 初始化会话服务（延迟初始化）
-session_service = None
+COLLECTION_NAME = "sessions"
 
 
-async def get_session_service():
-    """获取会话服务实例（延迟初始化）"""
-    global session_service
-    if session_service is None:
-        session_service = SessionService()
-        await session_service.initialize()
-    return session_service
+async def ensure_db_initialized():
+    """确保数据库已初始化"""
+    if not hasattr(db, '_initialized') or not db._initialized:
+        await db.initialize()
 
 
 def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
@@ -72,7 +71,7 @@ class SearchSessionRequest(BaseModel):
 async def get_status():
     """检查会话服务状态"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         return {
             "available": True,
             "message": "会话服务可用"
@@ -89,31 +88,84 @@ async def get_status():
 async def save_session(request: SaveSessionRequest, http_request: Request):
     """保存YiPet会话数据到后端"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         user_id = get_user_id(http_request, request.user_id)
         
-        # 构建会话数据
-        session_data = {
-            "id": request.id,
-            "url": request.url,
-            "title": request.title,
-            "pageTitle": request.pageTitle,
-            "pageDescription": request.pageDescription,
-            "pageContent": request.pageContent,
-            "messages": request.messages,
-            "createdAt": request.createdAt,
-            "updatedAt": request.updatedAt,
-            "lastAccessTime": request.lastAccessTime
+        # 生成或使用现有的会话ID
+        session_id = request.id
+        if not session_id:
+            session_id = str(uuid.uuid4())
+        
+        # 获取当前时间
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        
+        # 构建会话文档
+        session_doc = {
+            "key": session_id,
+            "user_id": user_id,
+            "url": request.url or "",
+            "title": request.title or "",
+            "pageTitle": request.pageTitle or "",
+            "pageDescription": request.pageDescription or "",
+            "pageContent": request.pageContent or "",
+            "messages": request.messages or [],
+            "createdAt": request.createdAt or current_time,
+            "updatedAt": request.updatedAt or current_time,
+            "lastAccessTime": request.lastAccessTime or current_time,
+            "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
         }
         
-        result = await service.save_session(
-            session_data=session_data,
-            user_id=user_id
-        )
+        # 检查是否已存在
+        collection = db.mongodb.db[COLLECTION_NAME]
+        existing = await collection.find_one({"key": session_id})
+        
+        if existing:
+            # 更新现有会话（保留createdAt和order）
+            update_doc = {
+                "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            if request.url is not None:
+                update_doc["url"] = request.url or ""
+            if request.title is not None:
+                update_doc["title"] = request.title or ""
+            if request.pageTitle is not None:
+                update_doc["pageTitle"] = request.pageTitle or ""
+            if request.pageDescription is not None:
+                update_doc["pageDescription"] = request.pageDescription or ""
+            if request.pageContent is not None:
+                update_doc["pageContent"] = request.pageContent or ""
+            if request.messages is not None:
+                update_doc["messages"] = request.messages or []
+            if request.updatedAt is not None:
+                update_doc["updatedAt"] = request.updatedAt
+            else:
+                update_doc["updatedAt"] = current_time
+            if request.lastAccessTime is not None:
+                update_doc["lastAccessTime"] = request.lastAccessTime
+            else:
+                update_doc["lastAccessTime"] = current_time
+            
+            await collection.update_one(
+                {"key": session_id},
+                {"$set": update_doc}
+            )
+        else:
+            # 插入新会话，设置order字段
+            max_order_doc = await collection.find_one(
+                sort=[("order", -1)],
+                projection={"order": 1}
+            )
+            max_order = max_order_doc.get("order", 0) if max_order_doc else 0
+            session_doc["order"] = max_order + 1
+            await collection.insert_one(session_doc)
         
         return JSONResponse(content={
             "success": True,
-            "data": result,
+            "data": {
+                "session_id": session_id,
+                "id": session_id
+            },
             "message": "会话保存成功"
         })
     except Exception as e:
@@ -129,16 +181,31 @@ async def get_session(
 ):
     """根据会话ID获取会话数据"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         user_id = get_user_id(http_request, user_id)
         
-        session_data = await service.get_session(
-            session_id=session_id,
-            user_id=user_id
+        collection = db.mongodb.db[COLLECTION_NAME]
+        session_doc = await collection.find_one(
+            {"key": session_id},
+            {"_id": 0}
         )
         
-        if not session_data:
+        if not session_doc:
             raise HTTPException(status_code=404, detail=f"会话 {session_id} 不存在")
+        
+        # 转换为API响应格式
+        session_data = {
+            "id": session_doc.get("key"),
+            "url": session_doc.get("url", ""),
+            "title": session_doc.get("title", ""),
+            "pageTitle": session_doc.get("pageTitle", ""),
+            "pageDescription": session_doc.get("pageDescription", ""),
+            "pageContent": session_doc.get("pageContent", ""),
+            "messages": session_doc.get("messages", []),
+            "createdAt": session_doc.get("createdAt"),
+            "updatedAt": session_doc.get("updatedAt"),
+            "lastAccessTime": session_doc.get("lastAccessTime")
+        }
         
         return JSONResponse(content={
             "success": True,
@@ -161,14 +228,37 @@ async def list_sessions(
 ):
     """列出所有会话"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         user_id = get_user_id(http_request, user_id)
         
-        sessions = await service.list_sessions(
-            user_id=user_id,
-            limit=limit,
-            skip=skip
-        )
+        collection = db.mongodb.db[COLLECTION_NAME]
+        
+        # 构建查询条件
+        query = {}
+        if user_id and user_id != "default_user":
+            query["user_id"] = user_id
+        
+        # 查询会话，按更新时间倒序
+        cursor = collection.find(query, {"_id": 0}) \
+            .sort([("updatedAt", -1), ("order", -1)]) \
+            .skip(skip) \
+            .limit(limit)
+        
+        session_docs = await cursor.to_list(length=limit)
+        
+        # 转换为API响应格式
+        sessions = []
+        for doc in session_docs:
+            sessions.append({
+                "id": doc.get("key"),
+                "url": doc.get("url", ""),
+                "title": doc.get("title", ""),
+                "pageTitle": doc.get("pageTitle", ""),
+                "message_count": len(doc.get("messages", [])),
+                "createdAt": doc.get("createdAt"),
+                "updatedAt": doc.get("updatedAt"),
+                "lastAccessTime": doc.get("lastAccessTime")
+            })
         
         return JSONResponse(content={
             "success": True,
@@ -185,14 +275,45 @@ async def list_sessions(
 async def search_sessions(request: SearchSessionRequest, http_request: Request):
     """搜索会话"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         user_id = get_user_id(http_request, request.user_id)
         
-        sessions = await service.search_sessions(
-            query=request.query,
-            user_id=user_id,
-            limit=request.limit
-        )
+        collection = db.mongodb.db[COLLECTION_NAME]
+        
+        # 构建搜索条件
+        query = {}
+        if user_id and user_id != "default_user":
+            query["user_id"] = user_id
+        
+        # 构建文本搜索条件（在title、pageTitle、pageContent中搜索）
+        search_query = re.compile(f'.*{re.escape(request.query)}.*', re.IGNORECASE)
+        query["$or"] = [
+            {"title": search_query},
+            {"pageTitle": search_query},
+            {"pageContent": search_query},
+            {"pageDescription": search_query}
+        ]
+        
+        # 查询会话
+        cursor = collection.find(query, {"_id": 0}) \
+            .sort([("updatedAt", -1), ("order", -1)]) \
+            .limit(request.limit)
+        
+        session_docs = await cursor.to_list(length=request.limit)
+        
+        # 转换为API响应格式
+        sessions = []
+        for doc in session_docs:
+            sessions.append({
+                "id": doc.get("key"),
+                "url": doc.get("url", ""),
+                "title": doc.get("title", ""),
+                "pageTitle": doc.get("pageTitle", ""),
+                "message_count": len(doc.get("messages", [])),
+                "createdAt": doc.get("createdAt"),
+                "updatedAt": doc.get("updatedAt"),
+                "lastAccessTime": doc.get("lastAccessTime")
+            })
         
         return JSONResponse(content={
             "success": True,
@@ -213,13 +334,18 @@ async def delete_session(
 ):
     """删除会话"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         user_id = get_user_id(http_request, user_id)
         
-        success = await service.delete_session(
-            session_id=session_id,
-            user_id=user_id
-        )
+        collection = db.mongodb.db[COLLECTION_NAME]
+        
+        # 构建删除条件
+        query = {"key": session_id}
+        if user_id and user_id != "default_user":
+            query["user_id"] = user_id
+        
+        result = await collection.delete_one(query)
+        success = result.deleted_count > 0
         
         return JSONResponse(content={
             "success": success,
@@ -238,33 +364,61 @@ async def update_session(
 ):
     """更新会话数据"""
     try:
-        service = await get_session_service()
+        await ensure_db_initialized()
         user_id = get_user_id(http_request, request.user_id)
         
-        # 构建会话数据
-        session_data = {
-            "id": session_id,
-            "url": request.url,
-            "title": request.title,
-            "pageTitle": request.pageTitle,
-            "pageDescription": request.pageDescription,
-            "pageContent": request.pageContent,
-            "messages": request.messages,
-            "createdAt": request.createdAt,
-            "updatedAt": request.updatedAt,
-            "lastAccessTime": request.lastAccessTime
+        collection = db.mongodb.db[COLLECTION_NAME]
+        
+        # 检查会话是否存在
+        existing = await collection.find_one({"key": session_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail=f"会话 {session_id} 不存在")
+        
+        # 获取当前时间
+        current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+        
+        # 构建更新数据（保留原有数据，只更新提供的字段）
+        update_doc = {
+            "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
         }
         
-        result = await service.save_session(
-            session_data=session_data,
-            user_id=user_id
+        if request.url is not None:
+            update_doc["url"] = request.url
+        if request.title is not None:
+            update_doc["title"] = request.title
+        if request.pageTitle is not None:
+            update_doc["pageTitle"] = request.pageTitle
+        if request.pageDescription is not None:
+            update_doc["pageDescription"] = request.pageDescription
+        if request.pageContent is not None:
+            update_doc["pageContent"] = request.pageContent
+        if request.messages is not None:
+            update_doc["messages"] = request.messages
+        if request.updatedAt is not None:
+            update_doc["updatedAt"] = request.updatedAt
+        else:
+            update_doc["updatedAt"] = current_time
+        if request.lastAccessTime is not None:
+            update_doc["lastAccessTime"] = request.lastAccessTime
+        else:
+            update_doc["lastAccessTime"] = current_time
+        
+        # 更新会话
+        await collection.update_one(
+            {"key": session_id},
+            {"$set": update_doc}
         )
         
         return JSONResponse(content={
             "success": True,
-            "data": result,
+            "data": {
+                "session_id": session_id,
+                "id": session_id
+            },
             "message": "会话更新成功"
         })
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"更新会话失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"更新会话失败: {str(e)}")
