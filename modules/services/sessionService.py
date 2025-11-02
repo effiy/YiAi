@@ -1,10 +1,23 @@
-"""会话管理服务 - 统一管理YiPet会话数据"""
+"""
+会话管理服务 - 统一管理YiPet会话数据
+
+职责：
+- 管理YiPet扩展的会话数据（包含页面内容、消息等）
+- 提供会话的CRUD操作
+- 与ChatService的区别：
+  - SessionService: 管理完整的会话上下文（页面内容、标题、URL等），用于YiPet扩展
+  - ChatService: 管理聊天记录和向量搜索，用于AI对话服务
+"""
 import logging
 import uuid
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 from modules.database.mongoClient import MongoClient
 from modules.utils.session_utils import normalize_session_id
+from modules.models.session_model import (
+    session_to_api_format,
+    session_to_list_item
+)
 
 logger = logging.getLogger(__name__)
 
@@ -208,19 +221,8 @@ class SessionService:
             if not session_doc:
                 return None
             
-            # 转换为API响应格式
-            return {
-                "id": session_doc.get("key"),
-                "url": session_doc.get("url", ""),
-                "title": session_doc.get("title", ""),
-                "pageTitle": session_doc.get("pageTitle", ""),
-                "pageDescription": session_doc.get("pageDescription", ""),
-                "pageContent": session_doc.get("pageContent", ""),
-                "messages": session_doc.get("messages", []),
-                "createdAt": session_doc.get("createdAt"),
-                "updatedAt": session_doc.get("updatedAt"),
-                "lastAccessTime": session_doc.get("lastAccessTime")
-            }
+            # 使用统一的数据模型转换函数
+            return session_to_api_format(session_doc)
         except Exception as e:
             logger.error(f"获取会话失败: {str(e)}", exc_info=True)
             raise
@@ -275,19 +277,10 @@ class SessionService:
                 else:
                     session_map[session_key] = doc
             
-            # 转换为API响应格式
+            # 使用统一的数据模型转换函数
             sessions = []
             for doc in session_map.values():
-                sessions.append({
-                    "id": doc.get("key"),
-                    "url": doc.get("url", ""),
-                    "title": doc.get("title", ""),
-                    "pageTitle": doc.get("pageTitle", ""),
-                    "message_count": len(doc.get("messages", [])),
-                    "createdAt": doc.get("createdAt"),
-                    "updatedAt": doc.get("updatedAt"),
-                    "lastAccessTime": doc.get("lastAccessTime")
-                })
+                sessions.append(session_to_list_item(doc))
             
             # 重新排序，确保顺序正确（按 updatedAt 倒序）
             sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
@@ -392,19 +385,10 @@ class SessionService:
                 else:
                     session_map[session_key] = doc
             
-            # 转换为API响应格式
+            # 使用统一的数据模型转换函数
             sessions = []
             for doc in session_map.values():
-                sessions.append({
-                    "id": doc.get("key"),
-                    "url": doc.get("url", ""),
-                    "title": doc.get("title", ""),
-                    "pageTitle": doc.get("pageTitle", ""),
-                    "message_count": len(doc.get("messages", [])),
-                    "createdAt": doc.get("createdAt"),
-                    "updatedAt": doc.get("updatedAt"),
-                    "lastAccessTime": doc.get("lastAccessTime")
-                })
+                sessions.append(session_to_list_item(doc))
             
             # 重新排序
             sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
