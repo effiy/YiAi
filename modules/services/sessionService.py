@@ -262,17 +262,20 @@ class SessionService:
                 # 更新现有会话
                 update_doc = self._prepare_update_doc(session_data, existing, current_time)
                 await self._update_session(session_id, update_doc)
+                is_new = False
             else:
                 # 创建新会话
                 session_doc = self._prepare_session_doc(
                     session_id, session_data, user_id, current_time
                 )
                 await self._create_session(session_id, session_doc)
+                is_new = True
             
             return {
                 "session_id": session_id,
                 "id": session_id,
-                "success": True
+                "success": True,
+                "is_new": is_new
             }
         except Exception as e:
             logger.error(f"保存会话失败: {str(e)}", exc_info=True)

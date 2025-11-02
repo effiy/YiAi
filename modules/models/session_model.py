@@ -84,20 +84,25 @@ def session_to_api_format(session_doc: Dict[str, Any]) -> Dict[str, Any]:
 
 def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:
     """
-    将数据库文档转换为列表项格式（不包含完整消息）
+    将数据库文档转换为列表项格式（用于列表展示）
     
     Args:
         session_doc: MongoDB文档
         
     Returns:
-        列表项格式的会话数据
+        列表项格式的会话数据（与前端期望的格式一致）
     """
+    messages = session_doc.get("messages", [])
     return {
         "id": session_doc.get("key") or session_doc.get("_id"),
         "url": session_doc.get("url", ""),
         "title": session_doc.get("title", ""),
         "pageTitle": session_doc.get("pageTitle", ""),
-        "message_count": len(session_doc.get("messages", [])),
+        "pageDescription": session_doc.get("pageDescription", ""),
+        "message_count": len(messages),
+        # 为了兼容前端，也提供 messages 字段（但为空数组，避免列表接口返回大量数据）
+        # 前端如需完整消息，应调用单个会话接口
+        "messages": [],  # 列表项不包含完整消息，减少数据传输
         "createdAt": session_doc.get("createdAt"),
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")

@@ -81,7 +81,15 @@ async def get_status():
 
 @router.post("/save")
 async def save_session(request: SaveSessionRequest, http_request: Request):
-    """保存YiPet会话数据到后端"""
+    """
+    保存YiPet会话数据到后端
+    
+    自动判断创建或更新：
+    - 如果提供了 id 且会话存在，则更新
+    - 否则创建新会话
+    
+    返回完整的会话数据，便于前端更新缓存
+    """
     try:
         service = await get_session_service()
         user_id = get_user_id(http_request, request.user_id)
@@ -102,14 +110,21 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         
         # 调用服务层保存会话
         result = await service.save_session(session_data, user_id=user_id)
+        session_id = result["session_id"]
+        is_new = result.get("is_new", False)
+        
+        # 获取保存后的完整会话数据，用于返回给前端
+        saved_session = await service.get_session(session_id, user_id=user_id)
         
         return JSONResponse(content={
             "success": True,
             "data": {
-                "session_id": result["session_id"],
-                "id": result["id"]
+                "session_id": session_id,
+                "id": session_id,
+                "is_new": is_new,
+                "session": saved_session  # 返回完整会话数据，便于前端更新
             },
-            "message": "会话保存成功"
+            "message": "会话创建成功" if is_new else "会话更新成功"
         })
     except Exception as e:
         logger.error(f"保存会话失败: {str(e)}", exc_info=True)
