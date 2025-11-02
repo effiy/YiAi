@@ -333,19 +333,37 @@ class Mem0Client:
             logger.warning("Mem0 不可用，返回空搜索结果")
             return []
         try:
+            # Memory.search() 不支持 metadata 参数，只传递支持的参数
             results = self._memory.search(
                 query,
                 user_id=user_id,
-                limit=limit,
-                metadata=metadata
+                limit=limit
             )
             logger.info(f"搜索到 {len(results)} 条相关记忆")
             # 转换为字典列表
             if results and isinstance(results[0], dict):
-                return results
+                result_list = results
             else:
                 # 如果不是字典，尝试转换
-                return [{"id": getattr(r, "id", ""), "memory": getattr(r, "memory", str(r)), "metadata": getattr(r, "metadata", {})} for r in results]
+                result_list = [{"id": getattr(r, "id", ""), "memory": getattr(r, "memory", str(r)), "metadata": getattr(r, "metadata", {})} for r in results]
+            
+            # 如果提供了 metadata 过滤条件，对结果进行过滤
+            if metadata and result_list:
+                filtered_results = []
+                for result in result_list:
+                    result_metadata = result.get("metadata", {})
+                    # 检查是否所有 metadata 键值对都匹配
+                    match = True
+                    for key, value in metadata.items():
+                        if result_metadata.get(key) != value:
+                            match = False
+                            break
+                    if match:
+                        filtered_results.append(result)
+                result_list = filtered_results
+                logger.info(f"经过 metadata 过滤后剩余 {len(result_list)} 条记忆")
+            
+            return result_list
         except Exception as e:
             logger.error(f"搜索记忆失败: {str(e)}")
             return []
