@@ -586,6 +586,93 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                         "doc_id": result.get("id")
                     }, ensure_ascii=False)
                     yield f"data: {save_notification}\n\n"
+                    
+                    # 自动保存会话到 SessionService
+                    try:
+                        # 获取会话服务
+                        session_service = await get_session_service()
+                        
+                        # 收集当前会话的所有消息（包括历史消息和当前消息）
+                        all_messages = []
+                        
+                        # 如果有历史消息，先添加历史消息（但不包括 system 消息）
+                        if conversation_id and user_id:
+                            try:
+                                history_chats = await chat_service.get_chats_by_conversation(
+                                    conversation_id=conversation_id,
+                                    limit=100  # 获取更多历史消息以构建完整会话
+                                )
+                                
+                                # 反转列表，使最老的消息在前（因为get_chats_by_conversation返回的是倒序）
+                                history_chats = list(reversed(history_chats))
+                                
+                                for chat in history_chats:
+                                    chat_messages_list = chat.get("messages", [])
+                                    # 只添加用户和助手消息，排除系统消息
+                                    for msg in chat_messages_list:
+                                        role = msg.get("role", "")
+                                        if role in ["user", "assistant"]:
+                                            all_messages.append({
+                                                "role": role,
+                                                "content": msg.get("content", "")
+                                            })
+                            except Exception as e:
+                                logger.warning(f"获取历史消息用于会话保存失败: {str(e)}")
+                        
+                        # 添加当前消息
+                        all_messages.extend(chat_messages)
+                        
+                        # 如果没有消息，跳过保存
+                        if not all_messages:
+                            logger.debug("没有消息可保存到会话")
+                        else:
+                            # 构建会话数据
+                            # 如果 conversation_id 是 URL 格式，使用它作为会话 URL
+                            session_url = None
+                            if conversation_id and (conversation_id.startswith("http://") or conversation_id.startswith("https://")):
+                                session_url = conversation_id
+                            elif request.conversation_id and (request.conversation_id.startswith("http://") or request.conversation_id.startswith("https://")):
+                                session_url = request.conversation_id
+                            
+                            session_data = {
+                                "id": conversation_id,  # 使用 conversation_id 作为会话 ID
+                                "url": session_url or "",
+                                "title": request.fromUser[:100] if request.fromUser else "",  # 使用用户消息的前100字符作为标题
+                                "messages": all_messages,
+                                "updatedAt": int(datetime.now(timezone.utc).timestamp() * 1000),
+                                "lastAccessTime": int(datetime.now(timezone.utc).timestamp() * 1000)
+                            }
+                            
+                            # 如果 conversation_id 存在，尝试获取现有会话以保留其他字段
+                            if conversation_id:
+                                try:
+                                    existing_session = await session_service.get_session(conversation_id, user_id=user_id)
+                                    if existing_session:
+                                        # 保留现有会话的字段
+                                        session_data["url"] = existing_session.get("url", session_data["url"])
+                                        session_data["title"] = existing_session.get("title", session_data["title"])
+                                        session_data["pageTitle"] = existing_session.get("pageTitle", "")
+                                        session_data["pageDescription"] = existing_session.get("pageDescription", "")
+                                        session_data["pageContent"] = existing_session.get("pageContent", "")
+                                        session_data["createdAt"] = existing_session.get("createdAt")
+                                except Exception as e:
+                                    logger.debug(f"获取现有会话信息失败（可能是新会话）: {str(e)}")
+                            
+                            # 保存会话
+                            session_result = await session_service.save_session(session_data, user_id=user_id)
+                            
+                            # 发送会话保存成功的通知
+                            session_notification = json.dumps({
+                                "type": "session_saved",
+                                "session_id": session_result.get("session_id"),
+                                "is_new": session_result.get("is_new", False)
+                            }, ensure_ascii=False)
+                            yield f"data: {session_notification}\n\n"
+                            
+                            logger.info(f"会话已自动保存: session_id={session_result.get('session_id')}, is_new={session_result.get('is_new')}")
+                    except Exception as e:
+                        logger.error(f"自动保存会话失败: {str(e)}", exc_info=True)
+                        # 不抛出异常，避免影响主流程
                 except Exception as e:
                     logger.error(f"保存聊天记录失败: {str(e)}")
             
