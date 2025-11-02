@@ -329,34 +329,91 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     query_vector = embedding_response[0] if len(embedding_response) > 0 else None
                 
                 # 在 Qdrant 中搜索相关聊天记录
-                # 优先检索同一会话的聊天记录，如果没有 conversation_id 则检索用户的所有记录
+                # 优先检索同一会话的聊天记录，如果结果不够再检索用户的所有记录
                 if query_vector:
-                    filter_conditions = []
-                    if user_id:
-                        filter_conditions.append(
+                    search_results = []
+                    
+                    # 策略1：如果有 conversation_id，优先检索同一会话的记录
+                    if conversation_id and user_id:
+                        try:
+                            filter_conditions = [
+                                FieldCondition(
+                                    key="user_id",
+                                    match=MatchValue(value=user_id)
+                                ),
+                                FieldCondition(
+                                    key="conversation_id",
+                                    match=MatchValue(value=conversation_id)
+                                )
+                            ]
+                            
+                            session_results = qdrant_client.search(
+                                collection_name=CHAT_COLLECTION_NAME,
+                                query_vector=query_vector,
+                                limit=request.vector_search_limit,
+                                filter=Filter(must=filter_conditions),
+                                score_threshold=0.7
+                            )
+                            
+                            if session_results:
+                                search_results = session_results
+                                logger.info(f"从当前会话 {conversation_id} 检索到 {len(session_results)} 条相关记录")
+                        except Exception as e:
+                            logger.warning(f"检索会话记录失败: {str(e)}")
+                    
+                    # 策略2：如果同一会话记录不够，补充检索用户的其他会话记录
+                    if len(search_results) < request.vector_search_limit:
+                        try:
+                            filter_conditions = []
+                            if user_id:
+                                filter_conditions.append(
+                                    FieldCondition(
+                                        key="user_id",
+                                        match=MatchValue(value=user_id)
+                                    )
+                                )
+                            # 如果有会话 ID，排除当前会话已检索的记录（使用 should 而不是 must）
+                            if conversation_id:
+                                # 这里不排除，允许跨会话的相似内容作为补充上下文
+                                pass
+                            
+                            # 检索更多记录以补足限制
+                            remaining_limit = request.vector_search_limit - len(search_results)
+                            if remaining_limit > 0:
+                                additional_results = qdrant_client.search(
+                                    collection_name=CHAT_COLLECTION_NAME,
+                                    query_vector=query_vector,
+                                    limit=remaining_limit * 2,  # 多检索一些，然后过滤
+                                    filter=Filter(must=filter_conditions) if filter_conditions else None,
+                                    score_threshold=0.7
+                                )
+                                
+                                # 过滤掉已经在 search_results 中的记录（按 ID）
+                                existing_ids = {r.get("id") for r in search_results}
+                                additional_results = [r for r in additional_results if r.get("id") not in existing_ids]
+                                
+                                # 合并结果
+                                search_results.extend(additional_results[:remaining_limit])
+                                logger.info(f"补充检索到 {len(additional_results[:remaining_limit])} 条跨会话相关记录")
+                        except Exception as e:
+                            logger.warning(f"补充检索记录失败: {str(e)}")
+                    
+                    # 如果没有会话 ID，直接检索用户的所有记录
+                    if not search_results and user_id:
+                        filter_conditions = [
                             FieldCondition(
                                 key="user_id",
                                 match=MatchValue(value=user_id)
                             )
+                        ]
+                        
+                        search_results = qdrant_client.search(
+                            collection_name=CHAT_COLLECTION_NAME,
+                            query_vector=query_vector,
+                            limit=request.vector_search_limit,
+                            filter=Filter(must=filter_conditions),
+                            score_threshold=0.7
                         )
-                    # 如果有会话 ID，优先检索同一会话的记录（但不过度限制，因为跨会话的相似内容也有价值）
-                    # 这里可以选择是否添加 conversation_id 过滤，为了更好的上下文，我们暂时不加
-                    # 如果需要只检索当前会话，可以取消下面的注释：
-                    # if conversation_id:
-                    #     filter_conditions.append(
-                    #         FieldCondition(
-                    #             key="conversation_id",
-                    #             match=MatchValue(value=conversation_id)
-                    #         )
-                    #     )
-                    
-                    search_results = qdrant_client.search(
-                        collection_name=CHAT_COLLECTION_NAME,
-                        query_vector=query_vector,
-                        limit=request.vector_search_limit,
-                        filter=Filter(must=filter_conditions) if filter_conditions else None,
-                        score_threshold=0.7  # 相似度阈值
-                    )
                     
                     if search_results:
                         chat_texts = []
@@ -413,23 +470,37 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 {"role": "user", "content": request.fromUser}
             ]
         
-        # 4. 如果有会话ID，获取历史消息
+        # 4. 如果有会话ID，获取历史消息构建完整的对话上下文
         if conversation_id and user_id:
             try:
+                # 获取会话的所有历史消息（限制最多 20 条记录，每条记录包含一对消息）
                 history_chats = await chat_service.get_chats_by_conversation(
                     conversation_id=conversation_id,
-                    limit=10
+                    limit=20
                 )
-                # 将历史消息添加到 messages 中（按时间正序）
+                
+                # 将历史消息添加到 messages 中（按时间正序，最新的在前面）
+                history_messages = []
                 for chat in reversed(history_chats):
                     chat_messages = chat.get("messages", [])
-                    # 只取最后的消息对，避免消息过多
                     if chat_messages:
-                        messages = messages[:-2]  # 移除当前的 system 和 user 消息
-                        messages.extend(chat_messages)
-                        messages.append({"role": "system", "content": enhanced_system_prompt})
-                        messages.append({"role": "user", "content": request.fromUser if not request.images else content})
-                        break
+                        # 合并历史消息
+                        history_messages.extend(chat_messages)
+                
+                # 如果历史消息过多，只保留最近的（保留最后 30 条消息，约 15 轮对话）
+                if len(history_messages) > 30:
+                    history_messages = history_messages[-30:]
+                    logger.info(f"会话 {conversation_id} 历史消息过多，仅保留最近 30 条")
+                
+                # 构建完整的消息列表：历史消息 + 当前系统提示 + 当前用户消息
+                if history_messages:
+                    messages = history_messages.copy()
+                    # 在历史消息后添加当前的系统提示和用户消息
+                    messages.append({"role": "system", "content": enhanced_system_prompt})
+                    messages.append({"role": "user", "content": request.fromUser if not request.images else content})
+                    logger.info(f"已加载会话 {conversation_id} 的 {len(history_messages)} 条历史消息")
+                else:
+                    logger.debug(f"会话 {conversation_id} 暂无历史消息")
             except Exception as e:
                 logger.warning(f"获取历史消息失败: {str(e)}")
         
