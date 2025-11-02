@@ -329,19 +329,32 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     query_vector = embedding_response[0] if len(embedding_response) > 0 else None
                 
                 # 在 Qdrant 中搜索相关聊天记录
+                # 优先检索同一会话的聊天记录，如果没有 conversation_id 则检索用户的所有记录
                 if query_vector:
+                    filter_conditions = []
+                    if user_id:
+                        filter_conditions.append(
+                            FieldCondition(
+                                key="user_id",
+                                match=MatchValue(value=user_id)
+                            )
+                        )
+                    # 如果有会话 ID，优先检索同一会话的记录（但不过度限制，因为跨会话的相似内容也有价值）
+                    # 这里可以选择是否添加 conversation_id 过滤，为了更好的上下文，我们暂时不加
+                    # 如果需要只检索当前会话，可以取消下面的注释：
+                    # if conversation_id:
+                    #     filter_conditions.append(
+                    #         FieldCondition(
+                    #             key="conversation_id",
+                    #             match=MatchValue(value=conversation_id)
+                    #         )
+                    #     )
+                    
                     search_results = qdrant_client.search(
                         collection_name=CHAT_COLLECTION_NAME,
                         query_vector=query_vector,
                         limit=request.vector_search_limit,
-                        filter=Filter(
-                            must=[
-                                FieldCondition(
-                                    key="user_id",
-                                    match=MatchValue(value=user_id)
-                                )
-                            ]
-                        ) if user_id else None,
+                        filter=Filter(must=filter_conditions) if filter_conditions else None,
                         score_threshold=0.7  # 相似度阈值
                     )
                     
