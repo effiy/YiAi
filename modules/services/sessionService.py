@@ -156,7 +156,7 @@ class SessionService:
                     await self.mongo_client.update_one(
                         collection_name=self.collection_name,
                         query={"key": session_id},
-                        update={"$set": update_doc}
+                        update=update_doc
                     )
                     logger.info(f"会话 {session_id} 已更新")
                 else:
@@ -462,7 +462,7 @@ class SessionService:
             await self.mongo_client.update_one(
                 collection_name=self.collection_name,
                 query={"key": session_id},
-                update={"$set": update_doc}
+                update=update_doc
             )
             
             logger.info(f"会话 {session_id} 已更新")
