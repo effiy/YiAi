@@ -169,14 +169,14 @@ class SessionService:
             session_id: 会话ID
             session_doc: 会话文档
         """
-        # 获取最大order值
-        max_order_doc = await self.mongo_client.find_one(
+        # 获取最大order值（使用find_many，因为find_one不支持sort参数）
+        max_order_docs = await self.mongo_client.find_many(
             collection_name=self.collection_name,
             query={},
             sort=[("order", -1)],
-            projection={"order": 1}
+            limit=1
         )
-        max_order = max_order_doc.get("order", 0) if max_order_doc else 0
+        max_order = max_order_docs[0].get("order", 0) if max_order_docs else 0
         session_doc["order"] = max_order + 1
         
         # 插入新会话
