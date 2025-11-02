@@ -1,7 +1,9 @@
 import logging, json, os
 import uuid
+import hashlib
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -21,6 +23,34 @@ router = APIRouter(
     tags=["AI prompt generate result"],
     responses={404: {"description": "未找到"}},
 )
+
+
+def normalize_session_id(session_id: str) -> str:
+    """
+    规范化 session_id：如果 session_id 是 URL 格式，则进行 MD5 处理
+    
+    Args:
+        session_id: 原始 session_id
+    
+    Returns:
+        规范化后的 session_id
+    """
+    if not session_id:
+        return session_id
+    
+    # 检查是否是 URL 格式
+    try:
+        result = urlparse(session_id)
+        # 如果包含 scheme 或 netloc，认为是 URL 格式
+        if result.scheme or result.netloc:
+            # 使用 MD5 处理 URL
+            md5_hash = hashlib.md5(session_id.encode('utf-8')).hexdigest()
+            return md5_hash
+    except Exception:
+        # 如果解析失败，可能不是标准 URL，直接返回原值
+        pass
+    
+    return session_id
 
 # 初始化聊天服务
 chat_service = ChatService()
@@ -86,6 +116,9 @@ async def save_chat_to_qdrant(
         # 如果没有 conversation_id，创建新的会话
         if not conversation_id:
             conversation_id = str(uuid.uuid4())
+        
+        # 规范化 conversation_id：如果是 URL 格式，则进行 MD5 处理
+        conversation_id = normalize_session_id(conversation_id)
         
         # 获取 Ollama 配置用于生成 embedding
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
@@ -238,6 +271,10 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
     """生成流式响应，并保存聊天记录"""
     assistant_content = ""
     conversation_id = request.conversation_id
+    
+    # 规范化 conversation_id：如果是 URL 格式，则进行 MD5 处理
+    if conversation_id:
+        conversation_id = normalize_session_id(conversation_id)
     
     # 获取用户ID（从参数、X-User 或默认值）
     user_id = get_user_id(http_request, request.user_id)
@@ -601,6 +638,9 @@ async def get_chats_by_conversation(
 ):
     """根据会话ID获取所有聊天记录"""
     try:
+        # 规范化 conversation_id：如果是 URL 格式，则进行 MD5 处理
+        conversation_id = normalize_session_id(conversation_id)
+        
         await chat_service.initialize()
         chats = await chat_service.get_chats_by_conversation(
             conversation_id=conversation_id,
@@ -705,6 +745,9 @@ async def delete_chat(doc_id: str):
 async def delete_conversation(conversation_id: str):
     """删除整个会话的所有聊天记录"""
     try:
+        # 规范化 conversation_id：如果是 URL 格式，则进行 MD5 处理
+        conversation_id = normalize_session_id(conversation_id)
+        
         await chat_service.initialize()
         deleted_count = await chat_service.delete_conversation(conversation_id)
         return JSONResponse(content={

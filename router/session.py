@@ -1,11 +1,13 @@
 import logging
 import uuid
+import hashlib
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Request, Query
 from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 import re
+from urllib.parse import urlparse
 
 from database import db
 
@@ -24,6 +26,34 @@ async def ensure_db_initialized():
     """确保数据库已初始化"""
     if not hasattr(db, '_initialized') or not db._initialized:
         await db.initialize()
+
+
+def normalize_session_id(session_id: str) -> str:
+    """
+    规范化 session_id：如果 session_id 是 URL 格式，则进行 MD5 处理
+    
+    Args:
+        session_id: 原始 session_id
+    
+    Returns:
+        规范化后的 session_id
+    """
+    if not session_id:
+        return session_id
+    
+    # 检查是否是 URL 格式
+    try:
+        result = urlparse(session_id)
+        # 如果包含 scheme 或 netloc，认为是 URL 格式
+        if result.scheme or result.netloc:
+            # 使用 MD5 处理 URL
+            md5_hash = hashlib.md5(session_id.encode('utf-8')).hexdigest()
+            return md5_hash
+    except Exception:
+        # 如果解析失败，可能不是标准 URL，直接返回原值
+        pass
+    
+    return session_id
 
 
 def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
@@ -95,6 +125,9 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         session_id = request.id
         if not session_id:
             session_id = str(uuid.uuid4())
+        
+        # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+        session_id = normalize_session_id(session_id)
         
         # 获取当前时间
         current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
@@ -183,6 +216,9 @@ async def get_session(
     try:
         await ensure_db_initialized()
         user_id = get_user_id(http_request, user_id)
+        
+        # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+        session_id = normalize_session_id(session_id)
         
         collection = db.mongodb.db[COLLECTION_NAME]
         session_doc = await collection.find_one(
@@ -337,6 +373,9 @@ async def delete_session(
         await ensure_db_initialized()
         user_id = get_user_id(http_request, user_id)
         
+        # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+        session_id = normalize_session_id(session_id)
+        
         collection = db.mongodb.db[COLLECTION_NAME]
         
         # 构建删除条件
@@ -366,6 +405,9 @@ async def update_session(
     try:
         await ensure_db_initialized()
         user_id = get_user_id(http_request, request.user_id)
+        
+        # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+        session_id = normalize_session_id(session_id)
         
         collection = db.mongodb.db[COLLECTION_NAME]
         
