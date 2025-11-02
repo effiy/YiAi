@@ -282,9 +282,25 @@ async def list_sessions(
         
         session_docs = await cursor.to_list(length=limit)
         
+        # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
+        session_map = {}
+        for doc in session_docs:
+            session_key = doc.get("key")
+            if not session_key:
+                continue
+            
+            # 如果该 key 已存在，比较 updatedAt，保留更新的
+            if session_key in session_map:
+                existing_updated_at = session_map[session_key].get("updatedAt", 0)
+                current_updated_at = doc.get("updatedAt", 0)
+                if current_updated_at > existing_updated_at:
+                    session_map[session_key] = doc
+            else:
+                session_map[session_key] = doc
+        
         # 转换为API响应格式
         sessions = []
-        for doc in session_docs:
+        for doc in session_map.values():
             sessions.append({
                 "id": doc.get("key"),
                 "url": doc.get("url", ""),
@@ -295,6 +311,9 @@ async def list_sessions(
                 "updatedAt": doc.get("updatedAt"),
                 "lastAccessTime": doc.get("lastAccessTime")
             })
+        
+        # 重新排序，确保顺序正确（按 updatedAt 倒序）
+        sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
         
         return JSONResponse(content={
             "success": True,
@@ -337,9 +356,25 @@ async def search_sessions(request: SearchSessionRequest, http_request: Request):
         
         session_docs = await cursor.to_list(length=request.limit)
         
+        # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
+        session_map = {}
+        for doc in session_docs:
+            session_key = doc.get("key")
+            if not session_key:
+                continue
+            
+            # 如果该 key 已存在，比较 updatedAt，保留更新的
+            if session_key in session_map:
+                existing_updated_at = session_map[session_key].get("updatedAt", 0)
+                current_updated_at = doc.get("updatedAt", 0)
+                if current_updated_at > existing_updated_at:
+                    session_map[session_key] = doc
+            else:
+                session_map[session_key] = doc
+        
         # 转换为API响应格式
         sessions = []
-        for doc in session_docs:
+        for doc in session_map.values():
             sessions.append({
                 "id": doc.get("key"),
                 "url": doc.get("url", ""),
@@ -350,6 +385,9 @@ async def search_sessions(request: SearchSessionRequest, http_request: Request):
                 "updatedAt": doc.get("updatedAt"),
                 "lastAccessTime": doc.get("lastAccessTime")
             })
+        
+        # 重新排序，确保顺序正确（按 updatedAt 倒序）
+        sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
         
         return JSONResponse(content={
             "success": True,
