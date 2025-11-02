@@ -51,10 +51,10 @@ def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
 
 
 class ContentRequest(BaseModel):
-    fromSystem: str
-    fromUser: str
-    model: Optional[str] = None
-    images: Optional[List[str]] = None
+    fromSystem: Optional[str] = "你是一个有用的AI助手。"  # 系统提示词，默认为通用助手
+    fromUser: Optional[str] = ""  # 用户消息，默认为空
+    model: Optional[str] = None  # 模型名称，默认使用环境变量或 "qwen3"
+    images: Optional[List[str]] = None  # 图片列表
     user_id: Optional[str] = None  # 用户ID，用于存储聊天记录
     conversation_id: Optional[str] = None  # 会话ID，用于关联多轮对话
     save_chat: bool = True  # 是否保存聊天记录
@@ -272,7 +272,7 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         search_results = []
         
         # 1. 使用 Mem0 检索相关记忆
-        if request.use_memory and mem0_client.is_available() and user_id:
+        if request.use_memory and mem0_client.is_available() and user_id and request.fromUser:
             try:
                 memories = mem0_client.search_memories(
                     query=request.fromUser,
@@ -303,7 +303,7 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 logger.warning(f"Mem0 记忆检索失败: {str(e)}")
         
         # 2. 使用 Qdrant 检索相关聊天记录（如果 Mem0 不可用或需要更直接的检索）
-        if request.use_vector_search and user_id:
+        if request.use_vector_search and user_id and request.fromUser:
             try:
                 # 生成用户查询的 embedding（重用已创建的 client）
                 embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
@@ -457,7 +457,7 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 yield f"data: {chunk_data}\n\n"
             
             # 保存聊天记录到 Qdrant
-            if request.save_chat and user_id and assistant_content:
+            if request.save_chat and user_id and assistant_content and request.fromUser:
                 try:
                     chat_messages = [
                         {"role": "user", "content": request.fromUser},
@@ -504,13 +504,26 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
 
 @router.post("/")
 async def generate_role_ai_json(request: ContentRequest, http_request: Request):
-    """处理 /prompt/ 路由，支持流式响应和聊天记录存储"""
-    # 参数验证
-    if not request.fromSystem or not request.fromUser:
-        raise HTTPException(
-            status_code=400, 
-            detail="fromSystem和fromUser参数不能为空"
-        )
+    """处理 /prompt/ 路由，支持流式响应和聊天记录存储
+    
+    所有参数都是可选的，如果未提供将使用默认值：
+    - fromSystem: 默认 "你是一个有用的AI助手。"
+    - fromUser: 默认为空字符串（如果为空，可能无法正常对话）
+    - model: 默认使用环境变量或 "qwen3"
+    - images: 默认为 None
+    - user_id: 默认从 X-User 请求头获取，或使用 "bigboom"
+    - conversation_id: 默认为 None，会自动生成新的会话ID
+    - save_chat: 默认 True
+    - use_memory: 默认 True
+    - memory_limit: 默认 5
+    - use_vector_search: 默认 True
+    - vector_search_limit: 默认 5
+    """
+    # 确保 fromSystem 和 fromUser 有默认值
+    if not request.fromSystem:
+        request.fromSystem = "你是一个有用的AI助手。"
+    if request.fromUser is None:
+        request.fromUser = ""
     
     return StreamingResponse(
         stream_ollama_response(request, chat_service, http_request),
