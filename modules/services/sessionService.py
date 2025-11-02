@@ -1,7 +1,9 @@
 import logging
 import uuid
+import hashlib
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from modules.services.chatService import ChatService
 
 logger = logging.getLogger(__name__)
@@ -16,6 +18,34 @@ class SessionService:
     async def initialize(self):
         """初始化服务"""
         await self.chat_service.initialize()
+    
+    @staticmethod
+    def normalize_session_id(session_id: str) -> str:
+        """
+        规范化 session_id：如果 session_id 是 URL 格式，则进行 MD5 处理
+        
+        Args:
+            session_id: 原始 session_id
+        
+        Returns:
+            规范化后的 session_id
+        """
+        if not session_id:
+            return session_id
+        
+        # 检查是否是 URL 格式
+        try:
+            result = urlparse(session_id)
+            # 如果包含 scheme 或 netloc，认为是 URL 格式
+            if result.scheme or result.netloc:
+                # 使用 MD5 处理 URL
+                md5_hash = hashlib.md5(session_id.encode('utf-8')).hexdigest()
+                return md5_hash
+        except Exception:
+            # 如果解析失败，可能不是标准 URL，直接返回原值
+            pass
+        
+        return session_id
     
     def _convert_messages_format(self, pet_messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
@@ -82,7 +112,10 @@ class SessionService:
             session_id = session_data.get("id")
             if not session_id:
                 session_id = str(uuid.uuid4())
-                session_data["id"] = session_id
+            
+            # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+            session_id = self.normalize_session_id(session_id)
+            session_data["id"] = session_id
             
             # 使用session_id作为user_id（如果没有提供user_id）
             if not user_id:
@@ -149,6 +182,9 @@ class SessionService:
             会话数据，如果不存在返回None
         """
         try:
+            # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+            session_id = self.normalize_session_id(session_id)
+            
             # 从ChatService获取会话的所有聊天记录
             if not user_id:
                 # 尝试从会话中推断user_id
@@ -305,6 +341,9 @@ class SessionService:
             是否删除成功
         """
         try:
+            # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+            session_id = self.normalize_session_id(session_id)
+            
             result = await self.chat_service.delete_conversation(conversation_id=session_id)
             return result > 0
         except Exception as e:
