@@ -154,35 +154,67 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         existing = await collection.find_one({"key": session_id})
         
         if existing:
-            # 更新现有会话（保留createdAt和order）
-            update_doc = {
-                "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-            }
-            if request.url is not None:
-                update_doc["url"] = request.url or ""
-            if request.title is not None:
-                update_doc["title"] = request.title or ""
-            if request.pageTitle is not None:
-                update_doc["pageTitle"] = request.pageTitle or ""
-            if request.pageDescription is not None:
-                update_doc["pageDescription"] = request.pageDescription or ""
-            if request.pageContent is not None:
-                update_doc["pageContent"] = request.pageContent or ""
-            if request.messages is not None:
-                update_doc["messages"] = request.messages or []
-            if request.updatedAt is not None:
-                update_doc["updatedAt"] = request.updatedAt
-            else:
-                update_doc["updatedAt"] = current_time
-            if request.lastAccessTime is not None:
-                update_doc["lastAccessTime"] = request.lastAccessTime
-            else:
-                update_doc["lastAccessTime"] = current_time
+            # 更新现有会话（保留createdAt和order，增量更新）
+            # 优化：只在有变化时才更新
+            update_doc = {}
+            needs_update = False
             
-            await collection.update_one(
-                {"key": session_id},
-                {"$set": update_doc}
-            )
+            # 检查是否需要更新时间戳（如果消息或其他关键字段有变化）
+            should_update_timestamp = False
+            
+            if request.messages is not None:
+                existing_messages = existing.get("messages", [])
+                if len(request.messages) != len(existing_messages):
+                    update_doc["messages"] = request.messages or []
+                    needs_update = True
+                    should_update_timestamp = True
+                elif request.messages != existing_messages:
+                    update_doc["messages"] = request.messages or []
+                    needs_update = True
+                    should_update_timestamp = True
+            
+            if request.url is not None and request.url != existing.get("url", ""):
+                update_doc["url"] = request.url or ""
+                needs_update = True
+            if request.title is not None and request.title != existing.get("title", ""):
+                update_doc["title"] = request.title or ""
+                needs_update = True
+            if request.pageTitle is not None and request.pageTitle != existing.get("pageTitle", ""):
+                update_doc["pageTitle"] = request.pageTitle or ""
+                needs_update = True
+            if request.pageDescription is not None and request.pageDescription != existing.get("pageDescription", ""):
+                update_doc["pageDescription"] = request.pageDescription or ""
+                needs_update = True
+            if request.pageContent is not None and request.pageContent != existing.get("pageContent", ""):
+                update_doc["pageContent"] = request.pageContent or ""
+                needs_update = True
+            
+            # 更新时间戳
+            if request.updatedAt is not None:
+                if request.updatedAt != existing.get("updatedAt", 0):
+                    update_doc["updatedAt"] = request.updatedAt
+                    needs_update = True
+            elif should_update_timestamp:
+                update_doc["updatedAt"] = current_time
+                needs_update = True
+            
+            if request.lastAccessTime is not None:
+                if request.lastAccessTime != existing.get("lastAccessTime", 0):
+                    update_doc["lastAccessTime"] = request.lastAccessTime
+                    needs_update = True
+            elif should_update_timestamp:
+                update_doc["lastAccessTime"] = current_time
+                needs_update = True
+            
+            if should_update_timestamp:
+                update_doc["updatedTime"] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            
+            # 只在有变化时才执行更新
+            if needs_update:
+                await collection.update_one(
+                    {"key": session_id},
+                    {"$set": update_doc}
+                )
         else:
             # 插入新会话，设置order字段
             max_order_doc = await collection.find_one(
