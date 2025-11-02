@@ -63,7 +63,7 @@ class DataSyncService:
                         "user_id": user_id,
                         "data_type": data_type
                     },
-                    update={"$set": document}
+                    update=document
                 )
                 logger.info(f"已更新数据同步记录: user_id={user_id}, data_type={data_type}")
             else:
