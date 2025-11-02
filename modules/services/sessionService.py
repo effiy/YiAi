@@ -45,25 +45,189 @@ class SessionService:
         """规范化 session_id"""
         return normalize_session_id(session_id)
     
+    def generate_session_id(self, url: Optional[str] = None) -> str:
+        """
+        生成会话ID
+        
+        Args:
+            url: 页面URL（可选），如果提供则基于URL生成，否则生成UUID
+        
+        Returns:
+            会话ID
+        """
+        if url:
+            # 基于URL生成会话ID（会被normalize_session_id处理）
+            return self.normalize_session_id(url)
+        else:
+            # 生成新的UUID
+            return str(uuid.uuid4())
+    
+    def _prepare_session_doc(
+        self,
+        session_id: str,
+        session_data: Dict[str, Any],
+        user_id: str,
+        current_time: int
+    ) -> Dict[str, Any]:
+        """
+        准备会话文档数据
+        
+        Args:
+            session_id: 会话ID
+            session_data: 会话数据
+            user_id: 用户ID
+            current_time: 当前时间戳（毫秒）
+        
+        Returns:
+            会话文档字典
+        """
+        return {
+            "key": session_id,
+            "user_id": user_id,
+            "url": session_data.get("url", ""),
+            "title": session_data.get("title", ""),
+            "pageTitle": session_data.get("pageTitle", ""),
+            "pageDescription": session_data.get("pageDescription", ""),
+            "pageContent": session_data.get("pageContent", ""),
+            "messages": session_data.get("messages", []),
+            "createdAt": session_data.get("createdAt") or current_time,
+            "updatedAt": session_data.get("updatedAt") or current_time,
+            "lastAccessTime": session_data.get("lastAccessTime") or current_time,
+            "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        }
+    
+    def _prepare_update_doc(
+        self,
+        session_data: Dict[str, Any],
+        existing: Dict[str, Any],
+        current_time: int
+    ) -> Dict[str, Any]:
+        """
+        准备更新文档（仅包含有变化的字段）
+        
+        Args:
+            session_data: 新的会话数据
+            existing: 现有会话数据
+            current_time: 当前时间戳（毫秒）
+        
+        Returns:
+            更新文档字典（如果没有变化则返回空字典）
+        """
+        update_doc = {}
+        has_changes = False
+        should_update_timestamp = False
+        
+        # 检查消息是否有变化
+        messages = session_data.get("messages")
+        if messages is not None:
+            existing_messages = existing.get("messages", [])
+            if messages != existing_messages:
+                update_doc["messages"] = messages
+                has_changes = True
+                should_update_timestamp = True
+        
+        # 检查其他字段是否有变化
+        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent"]:
+            if field in session_data and session_data[field] is not None:
+                existing_value = existing.get(field, "")
+                if session_data[field] != existing_value:
+                    update_doc[field] = session_data[field]
+                    has_changes = True
+        
+        # 更新时间戳
+        updated_at = session_data.get("updatedAt")
+        if updated_at is not None and updated_at != existing.get("updatedAt", 0):
+            update_doc["updatedAt"] = updated_at
+            has_changes = True
+        elif should_update_timestamp:
+            update_doc["updatedAt"] = current_time
+            has_changes = True
+        
+        last_access_time = session_data.get("lastAccessTime")
+        if last_access_time is not None and last_access_time != existing.get("lastAccessTime", 0):
+            update_doc["lastAccessTime"] = last_access_time
+            has_changes = True
+        elif should_update_timestamp:
+            update_doc["lastAccessTime"] = current_time
+            has_changes = True
+        
+        if should_update_timestamp:
+            update_doc["updatedTime"] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        
+        return update_doc if has_changes else {}
+    
+    async def _create_session(
+        self,
+        session_id: str,
+        session_doc: Dict[str, Any]
+    ) -> None:
+        """
+        创建新会话
+        
+        Args:
+            session_id: 会话ID
+            session_doc: 会话文档
+        """
+        # 获取最大order值
+        max_order_doc = await self.mongo_client.find_one(
+            collection_name=self.collection_name,
+            query={},
+            sort=[("order", -1)],
+            projection={"order": 1}
+        )
+        max_order = max_order_doc.get("order", 0) if max_order_doc else 0
+        session_doc["order"] = max_order + 1
+        
+        # 插入新会话
+        await self.mongo_client.insert_one(
+            collection_name=self.collection_name,
+            document=session_doc
+        )
+        logger.info(f"新会话 {session_id} 已创建")
+    
+    async def _update_session(
+        self,
+        session_id: str,
+        update_doc: Dict[str, Any]
+    ) -> None:
+        """
+        更新现有会话
+        
+        Args:
+            session_id: 会话ID
+            update_doc: 更新文档
+        """
+        if not update_doc:
+            logger.debug(f"会话 {session_id} 无变化，跳过更新")
+            return
+        
+        await self.mongo_client.update_one(
+            collection_name=self.collection_name,
+            query={"key": session_id},
+            update=update_doc
+        )
+        logger.info(f"会话 {session_id} 已更新")
+    
     async def save_session(
         self,
         session_data: Dict[str, Any],
         user_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        保存会话数据
+        保存会话数据（自动判断创建或更新）
         
         Args:
             session_data: 会话数据，包含：
-                - id: 会话ID（可选）
-                - url: 页面URL
+                - id: 会话ID（可选，如果不提供则自动生成）
+                - url: 页面URL（可选，用于生成会话ID）
                 - title: 会话标题
                 - messages: 消息列表
                 - pageContent: 页面内容
                 - createdAt: 创建时间
                 - updatedAt: 更新时间
                 - lastAccessTime: 最后访问时间
-            user_id: 用户ID（可选，默认从请求头获取）
+            user_id: 用户ID（可选，如果不提供则自动生成）
         
         Returns:
             保存结果，包含session_id和success状态
@@ -74,10 +238,12 @@ class SessionService:
             # 生成或使用现有的会话ID
             session_id = session_data.get("id")
             if not session_id:
-                session_id = str(uuid.uuid4())
-            
-            # 规范化 session_id
-            session_id = self.normalize_session_id(session_id)
+                # 如果没有提供ID，尝试基于URL生成，否则生成UUID
+                url = session_data.get("url")
+                session_id = self.generate_session_id(url)
+            else:
+                # 规范化提供的会话ID
+                session_id = self.normalize_session_id(session_id)
             
             # 如果没有提供user_id，生成一个
             if not user_id:
@@ -86,23 +252,6 @@ class SessionService:
             # 获取当前时间
             current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
             
-            # 构建会话文档
-            session_doc = {
-                "key": session_id,
-                "user_id": user_id,
-                "url": session_data.get("url", ""),
-                "title": session_data.get("title", ""),
-                "pageTitle": session_data.get("pageTitle", ""),
-                "pageDescription": session_data.get("pageDescription", ""),
-                "pageContent": session_data.get("pageContent", ""),
-                "messages": session_data.get("messages", []),
-                "createdAt": session_data.get("createdAt") or current_time,
-                "updatedAt": session_data.get("updatedAt") or current_time,
-                "lastAccessTime": session_data.get("lastAccessTime") or current_time,
-                "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-                "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
             # 检查是否已存在
             existing = await self.mongo_client.find_one(
                 collection_name=self.collection_name,
@@ -110,72 +259,15 @@ class SessionService:
             )
             
             if existing:
-                # 更新现有会话（保留createdAt和order，增量更新）
-                update_doc = {}
-                needs_update = False
-                should_update_timestamp = False
-                
-                # 检查消息是否有变化
-                messages = session_data.get("messages")
-                if messages is not None:
-                    existing_messages = existing.get("messages", [])
-                    if len(messages) != len(existing_messages) or messages != existing_messages:
-                        update_doc["messages"] = messages
-                        needs_update = True
-                        should_update_timestamp = True
-                
-                # 检查其他字段
-                for field in ["url", "title", "pageTitle", "pageDescription", "pageContent"]:
-                    if field in session_data and session_data[field] is not None:
-                        if session_data[field] != existing.get(field, ""):
-                            update_doc[field] = session_data[field]
-                            needs_update = True
-                
-                # 更新时间戳
-                if session_data.get("updatedAt") is not None:
-                    if session_data["updatedAt"] != existing.get("updatedAt", 0):
-                        update_doc["updatedAt"] = session_data["updatedAt"]
-                        needs_update = True
-                elif should_update_timestamp:
-                    update_doc["updatedAt"] = current_time
-                    needs_update = True
-                
-                if session_data.get("lastAccessTime") is not None:
-                    if session_data["lastAccessTime"] != existing.get("lastAccessTime", 0):
-                        update_doc["lastAccessTime"] = session_data["lastAccessTime"]
-                        needs_update = True
-                elif should_update_timestamp:
-                    update_doc["lastAccessTime"] = current_time
-                    needs_update = True
-                
-                if should_update_timestamp:
-                    update_doc["updatedTime"] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-                
-                # 只在有变化时才执行更新
-                if needs_update:
-                    await self.mongo_client.update_one(
-                        collection_name=self.collection_name,
-                        query={"key": session_id},
-                        update=update_doc
-                    )
-                    logger.info(f"会话 {session_id} 已更新")
-                else:
-                    logger.debug(f"会话 {session_id} 无变化，跳过更新")
+                # 更新现有会话
+                update_doc = self._prepare_update_doc(session_data, existing, current_time)
+                await self._update_session(session_id, update_doc)
             else:
-                # 插入新会话，设置order字段
-                max_order_doc = await self.mongo_client.find_one(
-                    collection_name=self.collection_name,
-                    query={},
-                    sort=[("order", -1)],
-                    projection={"order": 1}
+                # 创建新会话
+                session_doc = self._prepare_session_doc(
+                    session_id, session_data, user_id, current_time
                 )
-                max_order = max_order_doc.get("order", 0) if max_order_doc else 0
-                session_doc["order"] = max_order + 1
-                await self.mongo_client.insert_one(
-                    collection_name=self.collection_name,
-                    document=session_doc
-                )
-                logger.info(f"新会话 {session_id} 已创建")
+                await self._create_session(session_id, session_doc)
             
             return {
                 "session_id": session_id,
