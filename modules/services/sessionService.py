@@ -1,90 +1,49 @@
+"""
+会话管理服务 - 统一管理YiPet会话数据
+
+职责：
+- 管理YiPet扩展的会话数据（包含页面内容、消息等）
+- 提供会话的CRUD操作
+- 与ChatService的区别：
+  - SessionService: 管理完整的会话上下文（页面内容、标题、URL等），用于YiPet扩展
+  - ChatService: 管理聊天记录和向量搜索，用于AI对话服务
+"""
 import logging
 import uuid
-import hashlib
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
-from urllib.parse import urlparse
-from modules.services.chatService import ChatService
+from modules.database.mongoClient import MongoClient
+from modules.utils.session_utils import normalize_session_id
+from modules.models.session_model import (
+    session_to_api_format,
+    session_to_list_item
+)
 
 logger = logging.getLogger(__name__)
 
+
 class SessionService:
-    """会话管理服务 - 对接YiPet的会话管理"""
+    """会话管理服务"""
     
     def __init__(self):
-        self.chat_service = ChatService()
-        self.collection_name = "pet_sessions"
+        self.mongo_client = MongoClient()
+        self.collection_name = "sessions"
+        self._initialized = False
         
     async def initialize(self):
         """初始化服务"""
-        await self.chat_service.initialize()
+        if not self._initialized:
+            await self.mongo_client.initialize()
+            self._initialized = True
     
-    @staticmethod
-    def normalize_session_id(session_id: str) -> str:
-        """
-        规范化 session_id：如果 session_id 是 URL 格式，则进行 MD5 处理
-        
-        Args:
-            session_id: 原始 session_id
-        
-        Returns:
-            规范化后的 session_id
-        """
-        if not session_id:
-            return session_id
-        
-        # 检查是否是 URL 格式
-        try:
-            result = urlparse(session_id)
-            # 如果包含 scheme 或 netloc，认为是 URL 格式
-            if result.scheme or result.netloc:
-                # 使用 MD5 处理 URL
-                md5_hash = hashlib.md5(session_id.encode('utf-8')).hexdigest()
-                return md5_hash
-        except Exception:
-            # 如果解析失败，可能不是标准 URL，直接返回原值
-            pass
-        
-        return session_id
+    async def _ensure_initialized(self):
+        """确保服务已初始化"""
+        if not self._initialized:
+            await self.initialize()
     
-    def _convert_messages_format(self, pet_messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """
-        将YiPet的消息格式转换为ChatService的格式
-        
-        YiPet格式: [{"type": "user", "content": "...", "timestamp": ...}, ...]
-        ChatService格式: [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
-        """
-        chat_messages = []
-        current_pair = None
-        
-        for msg in pet_messages:
-            msg_type = msg.get("type", "")
-            content = msg.get("content", "").strip()
-            
-            if not content:
-                continue
-            
-            if msg_type == "user":
-                # 如果已经有未配对的用户消息，先保存它
-                if current_pair and current_pair.get("role") == "user":
-                    chat_messages.append(current_pair)
-                current_pair = {"role": "user", "content": content}
-            elif msg_type == "pet":
-                # pet消息对应assistant角色
-                if current_pair and current_pair.get("role") == "user":
-                    # 配对：用户消息 + 助手回复
-                    chat_messages.append(current_pair)
-                    chat_messages.append({"role": "assistant", "content": content})
-                    current_pair = None
-                else:
-                    # 单独的助手消息（可能是欢迎消息等）
-                    chat_messages.append({"role": "assistant", "content": content})
-        
-        # 如果还有未配对的用户消息，添加它
-        if current_pair and current_pair.get("role") == "user":
-            chat_messages.append(current_pair)
-        
-        return chat_messages
+    def normalize_session_id(self, session_id: str) -> str:
+        """规范化 session_id"""
+        return normalize_session_id(session_id)
     
     async def save_session(
         self,
@@ -92,75 +51,136 @@ class SessionService:
         user_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        保存YiPet会话数据到后端
+        保存会话数据
         
         Args:
-            session_data: YiPet会话数据，包含：
-                - id: 会话ID
+            session_data: 会话数据，包含：
+                - id: 会话ID（可选）
                 - url: 页面URL
                 - title: 会话标题
                 - messages: 消息列表
                 - pageContent: 页面内容
                 - createdAt: 创建时间
                 - updatedAt: 更新时间
-            user_id: 用户ID（可选，如果不提供则使用session_id）
+                - lastAccessTime: 最后访问时间
+            user_id: 用户ID（可选，默认从请求头获取）
         
         Returns:
             保存结果，包含session_id和success状态
         """
+        await self._ensure_initialized()
+        
         try:
+            # 生成或使用现有的会话ID
             session_id = session_data.get("id")
             if not session_id:
                 session_id = str(uuid.uuid4())
             
-            # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+            # 规范化 session_id
             session_id = self.normalize_session_id(session_id)
-            session_data["id"] = session_id
             
-            # 使用session_id作为user_id（如果没有提供user_id）
+            # 如果没有提供user_id，生成一个
             if not user_id:
                 user_id = f"pet_user_{session_id[:16]}"
             
-            # 转换消息格式
-            pet_messages = session_data.get("messages", [])
-            chat_messages = self._convert_messages_format(pet_messages)
+            # 获取当前时间
+            current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
             
-            if not chat_messages:
-                logger.debug(f"会话 {session_id} 没有有效消息，跳过保存")
-                return {
-                    "session_id": session_id,
-                    "success": True,
-                    "message": "会话无有效消息，已跳过"
-                }
-            
-            # 构建元数据
-            metadata = {
-                "session_id": session_id,
+            # 构建会话文档
+            session_doc = {
+                "key": session_id,
+                "user_id": user_id,
                 "url": session_data.get("url", ""),
                 "title": session_data.get("title", ""),
                 "pageTitle": session_data.get("pageTitle", ""),
                 "pageDescription": session_data.get("pageDescription", ""),
-                "createdAt": session_data.get("createdAt"),
-                "updatedAt": session_data.get("updatedAt"),
-                "lastAccessTime": session_data.get("lastAccessTime")
+                "pageContent": session_data.get("pageContent", ""),
+                "messages": session_data.get("messages", []),
+                "createdAt": session_data.get("createdAt") or current_time,
+                "updatedAt": session_data.get("updatedAt") or current_time,
+                "lastAccessTime": session_data.get("lastAccessTime") or current_time,
+                "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             }
             
-            # 保存到ChatService（使用conversation_id作为session_id）
-            result = await self.chat_service.save_chat(
-                user_id=user_id,
-                conversation_id=session_id,
-                messages=chat_messages,
-                metadata=metadata
+            # 检查是否已存在
+            existing = await self.mongo_client.find_one(
+                collection_name=self.collection_name,
+                query={"key": session_id}
             )
             
-            logger.info(f"会话 {session_id} 已保存到后端，包含 {len(chat_messages)} 条消息")
+            if existing:
+                # 更新现有会话（保留createdAt和order，增量更新）
+                update_doc = {}
+                needs_update = False
+                should_update_timestamp = False
+                
+                # 检查消息是否有变化
+                messages = session_data.get("messages")
+                if messages is not None:
+                    existing_messages = existing.get("messages", [])
+                    if len(messages) != len(existing_messages) or messages != existing_messages:
+                        update_doc["messages"] = messages
+                        needs_update = True
+                        should_update_timestamp = True
+                
+                # 检查其他字段
+                for field in ["url", "title", "pageTitle", "pageDescription", "pageContent"]:
+                    if field in session_data and session_data[field] is not None:
+                        if session_data[field] != existing.get(field, ""):
+                            update_doc[field] = session_data[field]
+                            needs_update = True
+                
+                # 更新时间戳
+                if session_data.get("updatedAt") is not None:
+                    if session_data["updatedAt"] != existing.get("updatedAt", 0):
+                        update_doc["updatedAt"] = session_data["updatedAt"]
+                        needs_update = True
+                elif should_update_timestamp:
+                    update_doc["updatedAt"] = current_time
+                    needs_update = True
+                
+                if session_data.get("lastAccessTime") is not None:
+                    if session_data["lastAccessTime"] != existing.get("lastAccessTime", 0):
+                        update_doc["lastAccessTime"] = session_data["lastAccessTime"]
+                        needs_update = True
+                elif should_update_timestamp:
+                    update_doc["lastAccessTime"] = current_time
+                    needs_update = True
+                
+                if should_update_timestamp:
+                    update_doc["updatedTime"] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 只在有变化时才执行更新
+                if needs_update:
+                    await self.mongo_client.update_one(
+                        collection_name=self.collection_name,
+                        query={"key": session_id},
+                        update={"$set": update_doc}
+                    )
+                    logger.info(f"会话 {session_id} 已更新")
+                else:
+                    logger.debug(f"会话 {session_id} 无变化，跳过更新")
+            else:
+                # 插入新会话，设置order字段
+                max_order_doc = await self.mongo_client.find_one(
+                    collection_name=self.collection_name,
+                    query={},
+                    sort=[("order", -1)],
+                    projection={"order": 1}
+                )
+                max_order = max_order_doc.get("order", 0) if max_order_doc else 0
+                session_doc["order"] = max_order + 1
+                await self.mongo_client.insert_one(
+                    collection_name=self.collection_name,
+                    document=session_doc
+                )
+                logger.info(f"新会话 {session_id} 已创建")
             
             return {
                 "session_id": session_id,
-                "conversation_id": result.get("conversation_id"),
-                "doc_id": result.get("id"),
-                "success": True,
-                "message_count": len(chat_messages)
+                "id": session_id,
+                "success": True
             }
         except Exception as e:
             logger.error(f"保存会话失败: {str(e)}", exc_info=True)
@@ -176,75 +196,33 @@ class SessionService:
         
         Args:
             session_id: 会话ID
-            user_id: 用户ID（可选）
+            user_id: 用户ID（可选，用于权限检查）
         
         Returns:
             会话数据，如果不存在返回None
         """
+        await self._ensure_initialized()
+        
         try:
-            # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+            # 规范化 session_id
             session_id = self.normalize_session_id(session_id)
             
-            # 从ChatService获取会话的所有聊天记录
-            if not user_id:
-                # 尝试从会话中推断user_id
-                chats = await self.chat_service.get_chats_by_conversation(
-                    conversation_id=session_id,
-                    limit=1
-                )
-                if chats:
-                    user_id = chats[0].get("user_id")
+            # 构建查询条件
+            query = {"key": session_id}
+            if user_id and user_id != "default_user":
+                query["user_id"] = user_id
             
-            chats = await self.chat_service.get_chats_by_conversation(
-                conversation_id=session_id,
-                limit=100
+            # 查询会话
+            session_doc = await self.mongo_client.find_one(
+                collection_name=self.collection_name,
+                query=query
             )
             
-            if not chats:
+            if not session_doc:
                 return None
             
-            # 合并所有聊天记录
-            all_messages = []
-            metadata = {}
-            for chat in chats:
-                chat_messages = chat.get("messages", [])
-                all_messages.extend(chat_messages)
-                # 使用最新的metadata
-                if chat.get("metadata"):
-                    metadata = chat.get("metadata", {})
-            
-            # 转换为YiPet格式
-            pet_messages = []
-            for msg in all_messages:
-                role = msg.get("role", "")
-                content = msg.get("content", "")
-                if role == "user":
-                    pet_messages.append({
-                        "type": "user",
-                        "content": content,
-                        "timestamp": metadata.get("updatedAt") or int(datetime.now(timezone.utc).timestamp() * 1000)
-                    })
-                elif role == "assistant":
-                    pet_messages.append({
-                        "type": "pet",
-                        "content": content,
-                        "timestamp": metadata.get("updatedAt") or int(datetime.now(timezone.utc).timestamp() * 1000)
-                    })
-            
-            # 构建会话对象
-            session_data = {
-                "id": session_id,
-                "url": metadata.get("url", ""),
-                "title": metadata.get("title", ""),
-                "pageTitle": metadata.get("pageTitle", ""),
-                "pageDescription": metadata.get("pageDescription", ""),
-                "messages": pet_messages,
-                "createdAt": metadata.get("createdAt"),
-                "updatedAt": metadata.get("updatedAt"),
-                "lastAccessTime": metadata.get("lastAccessTime")
-            }
-            
-            return session_data
+            # 使用统一的数据模型转换函数
+            return session_to_api_format(session_doc)
         except Exception as e:
             logger.error(f"获取会话失败: {str(e)}", exc_info=True)
             raise
@@ -266,59 +244,46 @@ class SessionService:
         Returns:
             会话列表
         """
+        await self._ensure_initialized()
+        
         try:
-            if user_id:
-                chats = await self.chat_service.get_chats_by_user(
-                    user_id=user_id,
-                    limit=limit,
-                    skip=skip
-                )
-            else:
-                # 如果没有user_id，返回所有会话（需要从MongoDB直接查询）
-                from modules.database.mongoClient import MongoClient
-                mongo_client = MongoClient()
-                await mongo_client.initialize()
-                
-                # 获取所有唯一的conversation_id
-                pipeline = [
-                    {"$group": {"_id": "$conversation_id", "latest": {"$max": "$updated_time"}}},
-                    {"$sort": {"latest": -1}},
-                    {"$skip": skip},
-                    {"$limit": limit}
-                ]
-                
-                # 由于MongoClient可能没有聚合方法，我们使用find_many然后去重
-                all_chats = await mongo_client.find_many(
-                    collection_name="chat_records",
-                    query={},
-                    limit=limit * 10,  # 获取更多以支持去重
-                    skip=skip,
-                    sort=[("updated_time", -1)]
-                )
-                
-                # 按conversation_id去重，保留最新的
-                conversation_map = {}
-                for chat in all_chats:
-                    conv_id = chat.get("conversation_id")
-                    if conv_id and conv_id not in conversation_map:
-                        conversation_map[conv_id] = chat
-                
-                chats = list(conversation_map.values())[:limit]
+            # 构建查询条件
+            query = {}
+            if user_id and user_id != "default_user":
+                query["user_id"] = user_id
             
-            # 转换为会话列表格式
+            # 查询会话，按更新时间倒序
+            session_docs = await self.mongo_client.find_many(
+                collection_name=self.collection_name,
+                query=query,
+                skip=skip,
+                limit=limit,
+                sort=[("updatedAt", -1), ("order", -1)]
+            )
+            
+            # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
+            session_map = {}
+            for doc in session_docs:
+                session_key = doc.get("key")
+                if not session_key:
+                    continue
+                
+                # 如果该 key 已存在，比较 updatedAt，保留更新的
+                if session_key in session_map:
+                    existing_updated_at = session_map[session_key].get("updatedAt", 0)
+                    current_updated_at = doc.get("updatedAt", 0)
+                    if current_updated_at > existing_updated_at:
+                        session_map[session_key] = doc
+                else:
+                    session_map[session_key] = doc
+            
+            # 使用统一的数据模型转换函数
             sessions = []
-            for chat in chats:
-                metadata = chat.get("metadata", {})
-                sessions.append({
-                    "id": chat.get("conversation_id"),
-                    "url": metadata.get("url", ""),
-                    "title": metadata.get("title", ""),
-                    "pageTitle": metadata.get("pageTitle", ""),
-                    "message_count": chat.get("message_count", 0),
-                    "createdAt": metadata.get("createdAt"),
-                    "updatedAt": metadata.get("updatedAt") or chat.get("updated_time"),
-                    "lastAccessTime": metadata.get("lastAccessTime")
-                })
+            for doc in session_map.values():
+                sessions.append(session_to_list_item(doc))
+            
+            # 重新排序，确保顺序正确（按 updatedAt 倒序）
+            sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
             
             return sessions
         except Exception as e:
@@ -335,16 +300,27 @@ class SessionService:
         
         Args:
             session_id: 会话ID
-            user_id: 用户ID（可选）
+            user_id: 用户ID（可选，用于权限检查）
         
         Returns:
             是否删除成功
         """
+        await self._ensure_initialized()
+        
         try:
-            # 规范化 session_id：如果是 URL 格式，则进行 MD5 处理
+            # 规范化 session_id
             session_id = self.normalize_session_id(session_id)
             
-            result = await self.chat_service.delete_conversation(conversation_id=session_id)
+            # 构建删除条件
+            query = {"key": session_id}
+            if user_id and user_id != "default_user":
+                query["user_id"] = user_id
+            
+            result = await self.mongo_client.delete_one(
+                collection_name=self.collection_name,
+                query=query
+            )
+            
             return result > 0
         except Exception as e:
             logger.error(f"删除会话失败: {str(e)}", exc_info=True)
@@ -357,7 +333,7 @@ class SessionService:
         limit: int = 10
     ) -> List[Dict[str, Any]]:
         """
-        搜索会话
+        搜索会话（基于文本搜索）
         
         Args:
             query: 搜索查询
@@ -367,31 +343,135 @@ class SessionService:
         Returns:
             匹配的会话列表
         """
+        await self._ensure_initialized()
+        
         try:
-            results = await self.chat_service.search_chats(
-                query=query,
-                user_id=user_id,
-                limit=limit
+            import re
+            
+            # 构建搜索条件
+            search_query = {}
+            if user_id and user_id != "default_user":
+                search_query["user_id"] = user_id
+            
+            # 构建文本搜索条件（在title、pageTitle、pageContent中搜索）
+            pattern = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
+            search_query["$or"] = [
+                {"title": pattern},
+                {"pageTitle": pattern},
+                {"pageContent": pattern},
+                {"pageDescription": pattern}
+            ]
+            
+            # 查询会话
+            session_docs = await self.mongo_client.find_many(
+                collection_name=self.collection_name,
+                query=search_query,
+                limit=limit,
+                sort=[("updatedAt", -1), ("order", -1)]
             )
             
-            # 转换为会话列表格式
+            # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
+            session_map = {}
+            for doc in session_docs:
+                session_key = doc.get("key")
+                if not session_key:
+                    continue
+                
+                if session_key in session_map:
+                    existing_updated_at = session_map[session_key].get("updatedAt", 0)
+                    current_updated_at = doc.get("updatedAt", 0)
+                    if current_updated_at > existing_updated_at:
+                        session_map[session_key] = doc
+                else:
+                    session_map[session_key] = doc
+            
+            # 使用统一的数据模型转换函数
             sessions = []
-            for result in results:
-                metadata = result.get("metadata", {})
-                sessions.append({
-                    "id": result.get("conversation_id"),
-                    "url": metadata.get("url", ""),
-                    "title": metadata.get("title", ""),
-                    "pageTitle": metadata.get("pageTitle", ""),
-                    "message_count": result.get("message_count", 0),
-                    "relevance_score": result.get("relevance_score", 0),
-                    "createdAt": metadata.get("createdAt"),
-                    "updatedAt": metadata.get("updatedAt") or result.get("updated_time"),
-                    "lastAccessTime": metadata.get("lastAccessTime")
-                })
+            for doc in session_map.values():
+                sessions.append(session_to_list_item(doc))
+            
+            # 重新排序
+            sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
             
             return sessions
         except Exception as e:
             logger.error(f"搜索会话失败: {str(e)}", exc_info=True)
             raise
-
+    
+    async def update_session(
+        self,
+        session_id: str,
+        session_data: Dict[str, Any],
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        更新会话数据
+        
+        Args:
+            session_id: 会话ID
+            session_data: 要更新的会话数据
+            user_id: 用户ID（可选）
+        
+        Returns:
+            更新结果
+        """
+        await self._ensure_initialized()
+        
+        try:
+            # 规范化 session_id
+            session_id = self.normalize_session_id(session_id)
+            
+            # 检查会话是否存在
+            query = {"key": session_id}
+            if user_id and user_id != "default_user":
+                query["user_id"] = user_id
+            
+            existing = await self.mongo_client.find_one(
+                collection_name=self.collection_name,
+                query=query
+            )
+            
+            if not existing:
+                raise ValueError(f"会话 {session_id} 不存在")
+            
+            # 获取当前时间
+            current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+            
+            # 构建更新数据（保留原有数据，只更新提供的字段）
+            update_doc = {
+                "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            # 更新字段
+            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages"]:
+                if field in session_data and session_data[field] is not None:
+                    update_doc[field] = session_data[field]
+            
+            # 更新时间戳
+            if session_data.get("updatedAt") is not None:
+                update_doc["updatedAt"] = session_data["updatedAt"]
+            else:
+                update_doc["updatedAt"] = current_time
+            
+            if session_data.get("lastAccessTime") is not None:
+                update_doc["lastAccessTime"] = session_data["lastAccessTime"]
+            else:
+                update_doc["lastAccessTime"] = current_time
+            
+            # 更新会话
+            await self.mongo_client.update_one(
+                collection_name=self.collection_name,
+                query={"key": session_id},
+                update={"$set": update_doc}
+            )
+            
+            logger.info(f"会话 {session_id} 已更新")
+            
+            return {
+                "session_id": session_id,
+                "id": session_id,
+                "success": True
+            }
+        except Exception as e:
+            logger.error(f"更新会话失败: {str(e)}", exc_info=True)
+            raise
