@@ -42,7 +42,7 @@ class ContentRequest(BaseModel):
     images: Optional[List[str]] = None  # 图片列表
     user_id: Optional[str] = None  # 用户ID，用于存储聊天记录
     conversation_id: Optional[str] = None  # 会话ID，用于关联多轮对话
-    save_chat: bool = True  # 是否保存聊天记录
+
 
 
 class ChatQueryRequest(BaseModel):
@@ -178,36 +178,6 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 
                 chunk_data = json.dumps(chunk_dict, ensure_ascii=False)
                 yield f"data: {chunk_data}\n\n"
-            
-            # 保存聊天记录
-            if request.save_chat and user_id and assistant_content and request.fromUser:
-                try:
-                    chat_messages = [
-                        {"role": "user", "content": request.fromUser},
-                        {"role": "assistant", "content": assistant_content}
-                    ]
-                    
-                    result = await chat_service.save_chat(
-                        user_id=user_id,
-                        conversation_id=conversation_id,
-                        messages=chat_messages,
-                        metadata={
-                            "model": model_name,
-                            "has_images": bool(request.images and len(request.images) > 0)
-                        }
-                    )
-                    conversation_id = result.get("conversation_id")
-                    
-                    # 发送保存成功的通知
-                    save_notification = json.dumps({
-                        "type": "chat_saved",
-                        "conversation_id": conversation_id,
-                        "doc_id": result.get("doc_id") or result.get("id")
-                    }, ensure_ascii=False)
-                    yield f"data: {save_notification}\n\n"
-                except Exception as e:
-                    logger.error(f"保存聊天记录失败: {str(e)}")
-            
         except Exception as e:
             logger.error(f"Ollama调用失败: {str(e)}")
             error_data = json.dumps({
@@ -236,7 +206,6 @@ async def generate_role_ai_json(request: ContentRequest, http_request: Request):
     - images: 默认为 None
     - user_id: 默认从 X-User 请求头获取，或使用 "bigboom"
     - conversation_id: 默认为 None，会自动生成新的会话ID
-    - save_chat: 默认 True
     """
     # 确保 fromSystem 和 fromUser 有默认值
     if not request.fromSystem:
