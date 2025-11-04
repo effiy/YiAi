@@ -90,6 +90,7 @@ class SessionService:
             "pageDescription": session_data.get("pageDescription", ""),
             "pageContent": session_data.get("pageContent", ""),
             "messages": session_data.get("messages", []),
+            "tags": session_data.get("tags", []),
             "createdAt": session_data.get("createdAt") or current_time,
             "updatedAt": session_data.get("updatedAt") or current_time,
             "lastAccessTime": session_data.get("lastAccessTime") or current_time,
@@ -128,9 +129,9 @@ class SessionService:
                 should_update_timestamp = True
         
         # 检查其他字段是否有变化
-        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent"]:
+        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags"]:
             if field in session_data and session_data[field] is not None:
-                existing_value = existing.get(field, "")
+                existing_value = existing.get(field, [] if field == "tags" else "")
                 if session_data[field] != existing_value:
                     update_doc[field] = session_data[field]
                     has_changes = True
@@ -448,13 +449,14 @@ class SessionService:
             if user_id and user_id != "default_user":
                 search_query["user_id"] = user_id
             
-            # 构建文本搜索条件（在title、pageTitle、pageContent中搜索）
+            # 构建文本搜索条件（在title、pageTitle、pageContent、tags中搜索）
             pattern = re.compile(f'.*{re.escape(query)}.*', re.IGNORECASE)
             search_query["$or"] = [
                 {"title": pattern},
                 {"pageTitle": pattern},
                 {"pageContent": pattern},
-                {"pageDescription": pattern}
+                {"pageDescription": pattern},
+                {"tags": {"$in": [query]}}  # 支持标签精确匹配
             ]
             
             # 查询会话
@@ -538,7 +540,7 @@ class SessionService:
             }
             
             # 更新字段
-            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages"]:
+            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages", "tags"]:
                 if field in session_data and session_data[field] is not None:
                     update_doc[field] = session_data[field]
             
@@ -570,3 +572,4 @@ class SessionService:
         except Exception as e:
             logger.error(f"更新会话失败: {str(e)}", exc_info=True)
             raise
+

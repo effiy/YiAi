@@ -20,6 +20,7 @@ class SessionData(BaseModel):
     pageDescription: Optional[str] = Field(None, description="页面描述")
     pageContent: Optional[str] = Field(None, description="页面内容")
     messages: List[Dict[str, Any]] = Field(default_factory=list, description="消息列表")
+    tags: List[str] = Field(default_factory=list, description="标签列表")
     createdAt: Optional[int] = Field(None, description="创建时间戳(毫秒)")
     updatedAt: Optional[int] = Field(None, description="更新时间戳(毫秒)")
     lastAccessTime: Optional[int] = Field(None, description="最后访问时间戳(毫秒)")
@@ -38,6 +39,7 @@ class SessionData(BaseModel):
                     {"role": "user", "content": "你好"},
                     {"role": "assistant", "content": "你好！有什么可以帮助你的？"}
                 ],
+                "tags": ["重要", "工作"],
                 "createdAt": 1699123456789,
                 "updatedAt": 1699123456789,
                 "lastAccessTime": 1699123456789,
@@ -53,6 +55,7 @@ class SessionListItem(BaseModel):
     title: Optional[str] = Field(None, description="会话标题")
     pageTitle: Optional[str] = Field(None, description="页面标题")
     message_count: int = Field(0, description="消息数量")
+    tags: List[str] = Field(default_factory=list, description="标签列表")
     createdAt: Optional[int] = Field(None, description="创建时间戳(毫秒)")
     updatedAt: Optional[int] = Field(None, description="更新时间戳(毫秒)")
     lastAccessTime: Optional[int] = Field(None, description="最后访问时间戳(毫秒)")
@@ -76,6 +79,7 @@ def session_to_api_format(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "pageDescription": session_doc.get("pageDescription", ""),
         "pageContent": session_doc.get("pageContent", ""),
         "messages": session_doc.get("messages", []),
+        "tags": session_doc.get("tags", []),
         "createdAt": session_doc.get("createdAt"),
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")
@@ -100,6 +104,7 @@ def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "pageTitle": session_doc.get("pageTitle", ""),
         "pageDescription": session_doc.get("pageDescription", ""),
         "message_count": len(messages),
+        "tags": session_doc.get("tags", []),
         # 为了兼容前端，也提供 messages 字段（但为空数组，避免列表接口返回大量数据）
         # 前端如需完整消息，应调用单个会话接口
         "messages": [],  # 列表项不包含完整消息，减少数据传输
@@ -107,4 +112,5 @@ def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")
     }
+
 

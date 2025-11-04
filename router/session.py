@@ -49,6 +49,7 @@ class SaveSessionRequest(BaseModel):
     pageDescription: Optional[str] = None
     pageContent: Optional[str] = None
     messages: list = []
+    tags: list = []
     createdAt: Optional[int] = None
     updatedAt: Optional[int] = None
     lastAccessTime: Optional[int] = None
@@ -103,6 +104,7 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
             "pageDescription": request.pageDescription,
             "pageContent": request.pageContent,
             "messages": request.messages,
+            "tags": request.tags,
             "createdAt": request.createdAt,
             "updatedAt": request.updatedAt,
             "lastAccessTime": request.lastAccessTime
@@ -253,6 +255,7 @@ async def update_session(
             "pageDescription": request.pageDescription,
             "pageContent": request.pageContent,
             "messages": request.messages,
+            "tags": request.tags,
             "updatedAt": request.updatedAt,
             "lastAccessTime": request.lastAccessTime
         }
@@ -274,3 +277,4 @@ async def update_session(
     except Exception as e:
         logger.error(f"更新会话失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"更新会话失败: {str(e)}")
+
