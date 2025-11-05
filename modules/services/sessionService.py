@@ -422,6 +422,56 @@ class SessionService:
             logger.error(f"删除会话失败: {str(e)}", exc_info=True)
             raise
     
+    async def delete_sessions(
+        self,
+        session_ids: List[str],
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        批量删除会话
+        
+        Args:
+            session_ids: 会话ID列表
+            user_id: 用户ID（可选，用于权限检查）
+        
+        Returns:
+            包含成功和失败数量的字典
+        """
+        await self._ensure_initialized()
+        
+        if not session_ids:
+            return {
+                "success_count": 0,
+                "failed_count": 0,
+                "total": 0
+            }
+        
+        try:
+            # 规范化所有会话ID
+            normalized_ids = [self.normalize_session_id(sid) for sid in session_ids]
+            
+            # 构建删除条件
+            query = {"key": {"$in": normalized_ids}}
+            if user_id and user_id != "default_user":
+                query["user_id"] = user_id
+            
+            # 批量删除
+            result = await self.mongo_client.delete_many(
+                collection_name=self.collection_name,
+                query=query
+            )
+            
+            deleted_count = result if isinstance(result, int) else (result.deleted_count if hasattr(result, 'deleted_count') else 0)
+            
+            return {
+                "success_count": deleted_count,
+                "failed_count": len(normalized_ids) - deleted_count,
+                "total": len(normalized_ids)
+            }
+        except Exception as e:
+            logger.error(f"批量删除会话失败: {str(e)}", exc_info=True)
+            raise
+    
     async def search_sessions(
         self,
         query: str,

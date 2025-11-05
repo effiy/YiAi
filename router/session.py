@@ -236,6 +236,40 @@ async def delete_session(
         raise HTTPException(status_code=500, detail=f"删除会话失败: {str(e)}")
 
 
+class BatchDeleteRequest(BaseModel):
+    """批量删除会话请求"""
+    session_ids: list
+    user_id: Optional[str] = None
+
+
+@router.post("/batch/delete")
+async def batch_delete_sessions(
+    request: BatchDeleteRequest,
+    http_request: Request
+):
+    """批量删除会话"""
+    try:
+        service = await get_session_service()
+        user_id = get_user_id(http_request, request.user_id)
+        
+        if not request.session_ids or len(request.session_ids) == 0:
+            raise HTTPException(status_code=400, detail="会话ID列表不能为空")
+        
+        # 调用服务层批量删除会话
+        result = await service.delete_sessions(request.session_ids, user_id=user_id)
+        
+        return JSONResponse(content={
+            "success": True,
+            "data": result,
+            "message": f"成功删除 {result['success_count']} 个会话，失败 {result['failed_count']} 个"
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"批量删除会话失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"批量删除会话失败: {str(e)}")
+
+
 @router.put("/{session_id}")
 async def update_session(
     session_id: str,
