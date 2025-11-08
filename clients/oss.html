@@ -991,6 +991,14 @@
                     if ((getIsLongPressing && getIsLongPressing()) || (getHasMoved && getHasMoved())) {
                         e.preventDefault();
                         e.stopPropagation();
+                        return;
+                    }
+                    
+                    // 处理OSS文件点击，创建会话并打开聊天窗口
+                    const fileIndex = parseInt(fileItem.getAttribute('data-file-index'));
+                    if (window.currentFiles && window.currentFiles[fileIndex]) {
+                        const file = window.currentFiles[fileIndex];
+                        handleOssFileClick(file);
                     }
                 });
             }
@@ -1222,6 +1230,57 @@
             } catch (error) {
                 console.error('删除失败:', error);
                 showStatus('error', `❌ 删除失败: ${error.message}`);
+            }
+        }
+        
+        // 处理OSS文件点击，创建会话并打开聊天窗口
+        async function handleOssFileClick(file) {
+            try {
+                // 判断是否为图片文件
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+                const ext = (file.name || '').toLowerCase().substring((file.name || '').lastIndexOf('.'));
+                const isImage = imageExtensions.includes(ext);
+                
+                // 准备文件信息
+                const fileInfo = {
+                    name: file.name || '',
+                    url: file.url || '',
+                    description: file.description || '',
+                    tags: file.tags || [],
+                    isImage: isImage,
+                    size: file.size || 0,
+                    size_human: file.size_human || '',
+                    last_modified_str: file.last_modified_str || ''
+                };
+                
+                // 通过window.postMessage发送消息到content script
+                // 如果是在iframe中，需要发送到父窗口
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'ossFileClick',
+                        file: fileInfo
+                    }, '*');
+                } else {
+                    // 直接发送到当前窗口（content script会监听）
+                    window.postMessage({
+                        type: 'ossFileClick',
+                        file: fileInfo
+                    }, '*');
+                }
+                
+                // 同时尝试通过chrome.runtime发送消息（如果可用）
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                    try {
+                        chrome.runtime.sendMessage({
+                            action: 'ossFileClick',
+                            file: fileInfo
+                        });
+                    } catch (error) {
+                        console.log('通过chrome.runtime发送消息失败，使用postMessage:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('处理OSS文件点击失败:', error);
             }
         }
         
