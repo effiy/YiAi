@@ -27,24 +27,20 @@ app = FastAPI(
     docs_url="/docs"
 )
 
-# 添加 CORS 中间件
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源，生产环境中应该指定具体域名
-    allow_credentials=True,
-    allow_methods=["*"],  # 允许所有 HTTP 方法
-    allow_headers=["*"],  # 允许所有头部
-)
-
 # 中间件开关，通过环境变量控制
 ENABLE_MIDDLEWARE = True
 
-# 中间件拦截器
+# 中间件拦截器（需要在 CORS 之前添加，以便 CORS 可以处理所有响应）
 @app.middleware("http")
 async def header_verification_middleware(request: Request, call_next):
     try:
         # 记录请求信息
         logger.info(f"收到请求: {request.method} {request.url}")
+        
+        # 跳过 OPTIONS 预检请求，让 CORS 中间件处理
+        if request.method == "OPTIONS":
+            response = await call_next(request)
+            return response
         
         # 如果中间件被禁用，直接通过
         if not ENABLE_MIDDLEWARE:
@@ -70,13 +66,22 @@ async def header_verification_middleware(request: Request, call_next):
         
         if not (token_valid and user_valid):
             logger.warning(f"无效的请求头: X-Token={x_token}, X-User={x_user}")
-            return JSONResponse(
+            # 创建响应并添加 CORS 头
+            response = JSONResponse(
                 status_code=401,
                 content={
                     "detail": "Invalid or missing headers",
                     "message": "请提供有效的X-Token和X-User请求头"
                 },
             )
+            # 添加 CORS 头
+            origin = request.headers.get("origin")
+            if origin:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Allow-Methods"] = "*"
+                response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
 
         response = await call_next(request)
         logger.info(f"请求处理完成: {request.method} {request.url}")
@@ -84,10 +89,28 @@ async def header_verification_middleware(request: Request, call_next):
         
     except Exception as e:
         logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
-        return JSONResponse(
+        # 创建响应并添加 CORS 头
+        response = JSONResponse(
             status_code=500,
             content={"detail": "服务器内部错误", "message": "中间件处理异常"}
         )
+        # 添加 CORS 头
+        origin = request.headers.get("origin")
+        if origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+
+# 添加 CORS 中间件（在自定义中间件之后添加，这样它会先执行）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有来源，生产环境中应该指定具体域名
+    allow_credentials=True,
+    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_headers=["*"],  # 允许所有头部
+)
 
 # 全局异常处理器
 @app.exception_handler(RequestValidationError)
