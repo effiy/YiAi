@@ -694,6 +694,314 @@
     </div>
 
     <script>
+        // ==================== 文件列表渲染模块 ====================
+        const FileListRenderer = {
+            // 渲染单个文件项
+            renderFileItem(file, index) {
+                const showImages = document.getElementById('showImages').checked;
+                const isImage = this.isImageFile(file.name);
+                const imagePreview = isImage && showImages 
+                    ? `<div onclick="openImageModal('${this.escapeHtml(file.url)}')">
+                        <img src="${file.url}" alt="${this.escapeHtml(file.name)}" class="file-preview" />
+                       </div>` 
+                    : '';
+                
+                const tagsHtml = this.renderFileTags(file.tags || [], index);
+                const fileSize = file.size_human || `${(file.size/1024/1024).toFixed(2)}MB`;
+                const fileIcon = this.getFileIcon(file.name);
+                
+                return `
+                    <div class="file-item" data-file-index="${index}" data-file-name="${this.escapeHtml(file.name)}">
+                        <div class="file-info">
+                            <div class="file-name">${fileIcon} ${this.escapeHtml(file.name)}</div>
+                            <div class="file-meta">
+                                📊 大小: ${fileSize} | 
+                                📅 修改时间: ${file.last_modified_str || '未知'}
+                            </div>
+                            ${tagsHtml}
+                            <div class="file-url">🔗 ${this.escapeHtml(file.url)}</div>
+                            ${imagePreview}
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn-success" onclick="copyUrl('${this.escapeHtml(file.url)}')">📋 复制链接</button>
+                            <button class="tag-manager-btn" data-file-index="${index}" onclick="handleTagButtonClick(event, ${index})" title="管理标签">🏷️ 标签</button>
+                            <button class="btn-danger" data-file-index="${index}" title="长按删除">🗑️ 删除</button>
+                        </div>
+                    </div>
+                `;
+            },
+            
+            // 渲染文件标签
+            renderFileTags(tags, index) {
+                if (tags.length > 0) {
+                    return `<div class="file-tags" data-file-index="${index}" onclick="handleTagAreaClick(event, ${index})" title="点击管理标签">
+                        ${tags.map(tag => 
+                            `<span class="file-tag">${this.escapeHtml(tag)}</span>`
+                        ).join('')}
+                    </div>`;
+                } else {
+                    return `<div class="file-tags empty" data-file-index="${index}" onclick="handleTagAreaClick(event, ${index})" title="点击添加标签">
+                        🏷️ 点击添加标签
+                    </div>`;
+                }
+            },
+            
+            // 渲染空状态
+            renderEmptyState(message = '暂无文件') {
+                return `<div class="empty-state">${message}</div>`;
+            },
+            
+            // 渲染文件列表
+            render(files, container) {
+                if (!files || files.length === 0) {
+                    container.innerHTML = this.renderEmptyState();
+                    return;
+                }
+                
+                container.innerHTML = files.map((file, index) => 
+                    this.renderFileItem(file, index)
+                ).join('');
+            },
+            
+            // 判断是否为图片文件
+            isImageFile(filename) {
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+                const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+                return imageExtensions.includes(ext);
+            },
+            
+            // 获取文件类型图标
+            getFileIcon(filename) {
+                const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+                const iconMap = {
+                    '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🖼️', '.webp': '🖼️', '.bmp': '🖼️',
+                    '.pdf': '📄',
+                    '.doc': '📝', '.docx': '📝',
+                    '.txt': '📄',
+                    '.zip': '📦', '.rar': '📦', '.7z': '📦',
+                    '.mp4': '🎬', '.avi': '🎬', '.mov': '🎬',
+                    '.mp3': '🎵', '.wav': '🎵',
+                };
+                return iconMap[ext] || '📄';
+            },
+            
+            // HTML 转义
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        };
+
+        // ==================== 长按删除模块 ====================
+        const LongPressDelete = {
+            config: {
+                threshold: 800,        // 长按时间阈值（毫秒）
+                moveThreshold: 10,     // 移动阈值
+                progressInterval: 50   // 进度更新间隔
+            },
+            
+            // 初始化长按删除功能
+            init(fileItem, file, onDelete) {
+                let longPressTimer = null;
+                let longPressProgressTimer = null;
+                let isLongPressing = false;
+                let hasMoved = false;
+                let startX = 0;
+                let startY = 0;
+                let longPressStartTime = 0;
+                
+                // 创建进度指示器和提示
+                const { progressBar, hintText } = this.createIndicators(fileItem);
+                
+                // 状态获取函数（用于事件处理）
+                const getIsLongPressing = () => isLongPressing;
+                const getHasMoved = () => hasMoved;
+                
+                // 清除长按状态
+                const clearLongPress = () => {
+                    this.clearTimers(longPressTimer, longPressProgressTimer);
+                    this.resetVisualState(fileItem, progressBar, hintText, isLongPressing);
+                    isLongPressing = false;
+                    hasMoved = false;
+                    longPressStartTime = 0;
+                };
+                
+                // 开始长按检测
+                const startLongPress = (e) => {
+                    if (e.target.closest('button')) return;
+                    
+                    hasMoved = false;
+                    startX = e.touches ? e.touches[0].clientX : e.clientX;
+                    startY = e.touches ? e.touches[0].clientY : e.clientY;
+                    longPressStartTime = Date.now();
+                    
+                    fileItem.classList.add('long-press-start');
+                    this.showHint(hintText);
+                    
+                    // 进度条动画
+                    let lastStage = 0;
+                    longPressProgressTimer = setInterval(() => {
+                        if (hasMoved || !longPressStartTime) {
+                            clearInterval(longPressProgressTimer);
+                            return;
+                        }
+                        
+                        const elapsed = Date.now() - longPressStartTime;
+                        const progress = Math.min((elapsed / this.config.threshold) * 100, 100);
+                        progressBar.style.width = progress + '%';
+                        
+                        // 阶段反馈
+                        lastStage = this.updateStage(fileItem, progress, lastStage);
+                        
+                        if (progress >= 100) {
+                            clearInterval(longPressProgressTimer);
+                        }
+                    }, this.config.progressInterval);
+                    
+                    // 触发删除
+                    longPressTimer = setTimeout(async () => {
+                        if (!hasMoved) {
+                            isLongPressing = true;
+                            fileItem.classList.add('long-pressing');
+                            this.triggerHapticFeedback();
+                            
+                            try {
+                                await onDelete(file);
+                            } catch (error) {
+                                console.error('删除文件失败:', error);
+                                showStatus('error', `❌ 删除失败: ${error.message}`);
+                            } finally {
+                                clearLongPress();
+                            }
+                        }
+                    }, this.config.threshold);
+                };
+                
+                // 结束长按
+                const endLongPress = () => clearLongPress();
+                
+                // 移动检测
+                const handleMove = (e) => {
+                    const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const deltaX = Math.abs(currentX - startX);
+                    const deltaY = Math.abs(currentY - startY);
+                    
+                    if (deltaX > this.config.moveThreshold || deltaY > this.config.moveThreshold) {
+                        hasMoved = true;
+                        clearLongPress();
+                    }
+                };
+                
+                // 绑定事件
+                this.bindEvents(fileItem, startLongPress, endLongPress, handleMove, getIsLongPressing, getHasMoved);
+            },
+            
+            // 创建进度指示器
+            createIndicators(fileItem) {
+                const progressBar = document.createElement('div');
+                progressBar.className = 'long-press-progress';
+                fileItem.appendChild(progressBar);
+                
+                const hintText = document.createElement('div');
+                hintText.className = 'long-press-hint';
+                hintText.textContent = '继续按住以删除';
+                fileItem.appendChild(hintText);
+                
+                return { progressBar, hintText };
+            },
+            
+            // 清除定时器
+            clearTimers(timer, progressTimer) {
+                if (timer) clearTimeout(timer);
+                if (progressTimer) clearInterval(progressTimer);
+            },
+            
+            // 重置视觉状态
+            resetVisualState(fileItem, progressBar, hintText, isLongPressing) {
+                const classes = ['long-pressing', 'long-press-start', 
+                    'long-press-stage-1', 'long-press-stage-2', 'long-press-stage-3'];
+                fileItem.classList.remove(...classes);
+                progressBar.style.width = '0%';
+                hintText.style.opacity = '0';
+                hintText.style.transform = 'translate(-50%, -50%) scale(0)';
+            },
+            
+            // 显示提示
+            showHint(hintText) {
+                setTimeout(() => {
+                    hintText.style.opacity = '1';
+                    hintText.style.transform = 'translate(-50%, -50%) scale(1)';
+                }, 200);
+            },
+            
+            // 更新阶段
+            updateStage(fileItem, progress, lastStage) {
+                if (progress >= 30 && progress < 35 && lastStage < 1) {
+                    fileItem.classList.add('long-press-stage-1');
+                    return 1;
+                } else if (progress >= 60 && progress < 65 && lastStage < 2) {
+                    fileItem.classList.remove('long-press-stage-1');
+                    fileItem.classList.add('long-press-stage-2');
+                    this.triggerHapticFeedback();
+                    return 2;
+                } else if (progress >= 90 && progress < 95 && lastStage < 3) {
+                    fileItem.classList.remove('long-press-stage-2');
+                    fileItem.classList.add('long-press-stage-3');
+                    this.triggerHapticFeedback();
+                    return 3;
+                }
+                return lastStage;
+            },
+            
+            // 触觉反馈
+            triggerHapticFeedback() {
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(50);
+                }
+            },
+            
+            // 绑定事件
+            bindEvents(fileItem, startLongPress, endLongPress, handleMove, getIsLongPressing, getHasMoved) {
+                // 触摸事件
+                fileItem.addEventListener('touchstart', startLongPress, { passive: true });
+                fileItem.addEventListener('touchmove', handleMove, { passive: true });
+                fileItem.addEventListener('touchend', endLongPress, { passive: true });
+                fileItem.addEventListener('touchcancel', endLongPress, { passive: true });
+                
+                // 鼠标事件
+                fileItem.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('button')) {
+                        startLongPress(e);
+                    }
+                });
+                fileItem.addEventListener('mousemove', handleMove);
+                fileItem.addEventListener('mouseup', endLongPress);
+                fileItem.addEventListener('mouseleave', endLongPress);
+                
+                // 点击事件处理（防止长按过程中触发其他操作）
+                fileItem.addEventListener('click', (e) => {
+                    // 如果点击的是按钮或标签区域，不阻止
+                    if (e.target.closest('button') || e.target.closest('.file-tags')) {
+                        return;
+                    }
+                    
+                    // 如果正在长按或已移动，阻止点击
+                    if ((getIsLongPressing && getIsLongPressing()) || (getHasMoved && getHasMoved())) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                });
+            }
+        };
+
+        // ==================== 工具函数 ====================
+        // HTML 转义函数（全局，保持向后兼容）
+        function escapeHtml(text) {
+            return FileListRenderer.escapeHtml(text);
+        }
+        
         // 显示状态消息
         function showStatus(type, message) {
             const status = document.getElementById('status');
@@ -831,309 +1139,35 @@
             }
         }
         
-        // 判断是否为图片文件
-        function isImageFile(filename) {
-            const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-            const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
-            return imageExtensions.includes(ext);
-        }
-
-        // 获取文件类型图标
-        function getFileIcon(filename) {
-            const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
-            const iconMap = {
-                '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🖼️', '.webp': '🖼️', '.bmp': '🖼️',
-                '.pdf': '📄',
-                '.doc': '📝', '.docx': '📝',
-                '.txt': '📄',
-                '.zip': '📦', '.rar': '📦', '.7z': '📦',
-                '.mp4': '🎬', '.avi': '🎬', '.mov': '🎬',
-                '.mp3': '🎵', '.wav': '🎵',
-            };
-            return iconMap[ext] || '📄';
-        }
-
         // 切换图片显示
         function toggleImageDisplay() {
-            const showImages = document.getElementById('showImages').checked;
-            // 重新渲染文件列表
             const currentFiles = window.currentFiles;
             if (currentFiles) {
                 displayFiles(currentFiles);
             }
         }
 
-        // 显示文件列表
+        // 显示文件列表（使用模块化渲染器）
         function displayFiles(files) {
             const fileList = document.getElementById('fileList');
             
             // 保存当前文件列表
             window.currentFiles = files;
             
-            if (!files || files.length === 0) {
-                fileList.innerHTML = '<div class="empty-state">暂无文件</div>';
-                return;
-            }
-            
-            const showImages = document.getElementById('showImages').checked;
-            
-            fileList.innerHTML = files.map((file, index) => {
-                const isImage = isImageFile(file.name);
-                const imagePreview = isImage && showImages ? `<img src="${file.url}" alt="${file.name}" class="file-preview" />` : '';
-                
-                // 显示文件标签（可点击管理）
-                const tags = file.tags || [];
-                const tagsHtml = tags.length > 0 
-                    ? `<div class="file-tags" data-file-index="${index}" onclick="handleTagAreaClick(event, ${index})" title="点击管理标签">
-                        ${tags.map(tag => 
-                            `<span class="file-tag">${escapeHtml(tag)}</span>`
-                        ).join('')}
-                    </div>` 
-                    : `<div class="file-tags empty" data-file-index="${index}" onclick="handleTagAreaClick(event, ${index})" title="点击添加标签">
-                        🏷️ 点击添加标签
-                    </div>`;
-                
-                return `
-                <div class="file-item" data-file-index="${index}">
-                    <div class="file-info">
-                        <div class="file-name">${getFileIcon(file.name)} ${escapeHtml(file.name)}</div>
-                        <div class="file-meta">
-                            📊 大小: ${file.size_human || `${(file.size/1024/1024).toFixed(2)}MB`} | 
-                            📅 修改时间: ${file.last_modified_str || '未知'}
-                        </div>
-                        ${tagsHtml}
-                        <div class="file-url">🔗 ${escapeHtml(file.url)}</div>
-                        ${imagePreview ? `<div onclick="openImageModal('${escapeHtml(file.url)}')">${imagePreview}</div>` : ''}
-                    </div>
-                    <div class="file-actions">
-                        <button class="btn-success" onclick="copyUrl('${escapeHtml(file.url)}')">📋 复制链接</button>
-                        <button class="tag-manager-btn" data-file-index="${index}" onclick="handleTagButtonClick(event, ${index})" title="管理标签">🏷️ 标签</button>
-                        <button class="btn-danger" data-file-index="${index}" title="长按删除">🗑️ 删除</button>
-                    </div>
-                </div>
-            `;
-            }).join('');
+            // 使用渲染器渲染文件列表
+            FileListRenderer.render(files, fileList);
             
             // 为每个文件项添加长按删除功能
-            files.forEach((file, index) => {
-                const fileItem = fileList.querySelector(`.file-item[data-file-index="${index}"]`);
-                if (fileItem) {
-                    setupLongPressDelete(fileItem, file, index);
-                }
-            });
-        }
-
-        // 设置长按删除功能
-        function setupLongPressDelete(fileItem, file, fileIndex) {
-            // 长按删除相关变量
-            let longPressTimer = null;
-            let longPressProgressTimer = null;
-            let longPressThreshold = 800; // 长按时间阈值（毫秒）
-            let isLongPressing = false;
-            let hasMoved = false;
-            let startX = 0;
-            let startY = 0;
-            let longPressStartTime = 0;
-            const moveThreshold = 10; // 移动阈值，超过此值则取消长按
-            
-            // 创建长按进度指示器
-            const progressBar = document.createElement('div');
-            progressBar.className = 'long-press-progress';
-            fileItem.appendChild(progressBar);
-            
-            // 创建长按提示文本
-            const hintText = document.createElement('div');
-            hintText.className = 'long-press-hint';
-            hintText.textContent = '继续按住以删除';
-            fileItem.appendChild(hintText);
-            
-            // 清除长按定时器
-            const clearLongPress = () => {
-                if (longPressTimer) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-                if (longPressProgressTimer) {
-                    clearInterval(longPressProgressTimer);
-                    longPressProgressTimer = null;
-                }
-                if (isLongPressing) {
-                    fileItem.classList.remove('long-pressing', 'long-press-start', 
-                        'long-press-stage-1', 'long-press-stage-2', 'long-press-stage-3');
-                    isLongPressing = false;
-                } else {
-                    fileItem.classList.remove('long-press-start', 
-                        'long-press-stage-1', 'long-press-stage-2', 'long-press-stage-3');
-                }
-                hasMoved = false;
-                progressBar.style.width = '0%';
-                hintText.style.opacity = '0';
-                hintText.style.transform = 'translate(-50%, -50%) scale(0)';
-                longPressStartTime = 0;
-            };
-            
-            // 触觉反馈（如果支持）
-            const triggerHapticFeedback = () => {
-                if ('vibrate' in navigator) {
-                    navigator.vibrate(50); // 短震动
-                }
-            };
-            
-            // 开始长按检测
-            const startLongPress = (e) => {
-                // 如果点击的是按钮，不触发长按
-                if (e.target.closest('button')) {
-                    return;
-                }
-                
-                hasMoved = false;
-                startX = e.touches ? e.touches[0].clientX : e.clientX;
-                startY = e.touches ? e.touches[0].clientY : e.clientY;
-                longPressStartTime = Date.now();
-                
-                // 添加开始长按的视觉反馈
-                fileItem.classList.add('long-press-start');
-                
-                // 显示提示文本（延迟一点，避免立即显示）
-                setTimeout(() => {
-                    if (longPressStartTime && !hasMoved) {
-                        hintText.style.opacity = '1';
-                        hintText.style.transform = 'translate(-50%, -50%) scale(1)';
-                    }
-                }, 200);
-                
-                // 开始进度条动画
-                let lastStage = 0;
-                const progressInterval = 50; // 每50ms更新一次
-                longPressProgressTimer = setInterval(() => {
-                    if (hasMoved || !longPressStartTime) {
-                        clearInterval(longPressProgressTimer);
-                        return;
-                    }
-                    
-                    const elapsed = Date.now() - longPressStartTime;
-                    const progress = Math.min((elapsed / longPressThreshold) * 100, 100);
-                    progressBar.style.width = progress + '%';
-                    
-                    // 在不同阶段添加反馈（确保每个阶段只触发一次）
-                    if (progress >= 30 && progress < 35 && lastStage < 1) {
-                        fileItem.classList.add('long-press-stage-1');
-                        lastStage = 1;
-                    } else if (progress >= 60 && progress < 65 && lastStage < 2) {
-                        fileItem.classList.remove('long-press-stage-1');
-                        fileItem.classList.add('long-press-stage-2');
-                        lastStage = 2;
-                        triggerHapticFeedback(); // 中期震动
-                    } else if (progress >= 90 && progress < 95 && lastStage < 3) {
-                        fileItem.classList.remove('long-press-stage-2');
-                        fileItem.classList.add('long-press-stage-3');
-                        lastStage = 3;
-                        triggerHapticFeedback(); // 接近完成时的震动
-                    }
-                    
-                    if (progress >= 100) {
-                        clearInterval(longPressProgressTimer);
-                    }
-                }, progressInterval);
-                
-                longPressTimer = setTimeout(async () => {
-                    if (!hasMoved) {
-                        isLongPressing = true;
-                        fileItem.classList.add('long-pressing');
-                        triggerHapticFeedback(); // 触发删除前的震动
-                        
-                        // 触发删除（异步执行，删除完成后清除状态）
-                        try {
+            if (files && files.length > 0) {
+                files.forEach((file, index) => {
+                    const fileItem = fileList.querySelector(`.file-item[data-file-index="${index}"]`);
+                    if (fileItem) {
+                        LongPressDelete.init(fileItem, file, async (file) => {
                             await deleteFile(file.name);
-                        } catch (error) {
-                            console.error('删除文件失败:', error);
-                            showStatus('error', `❌ 删除失败: ${error.message}`);
-                        } finally {
-                            // 清除长按状态
-                            clearLongPress();
-                        }
+                        });
                     }
-                }, longPressThreshold);
-            };
-            
-            // 结束长按检测
-            const endLongPress = () => {
-                clearLongPress();
-            };
-            
-            // 移动检测（取消长按）
-            const handleMove = (e) => {
-                const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-                const currentY = e.touches ? e.touches[0].clientY : e.clientY;
-                const deltaX = Math.abs(currentX - startX);
-                const deltaY = Math.abs(currentY - startY);
-                
-                if (deltaX > moveThreshold || deltaY > moveThreshold) {
-                    hasMoved = true;
-                    clearLongPress();
-                }
-            };
-            
-            // 触摸事件（移动设备）
-            fileItem.addEventListener('touchstart', (e) => {
-                startLongPress(e);
-            }, { passive: true });
-            
-            fileItem.addEventListener('touchmove', (e) => {
-                handleMove(e);
-            }, { passive: true });
-            
-            fileItem.addEventListener('touchend', () => {
-                endLongPress();
-            }, { passive: true });
-            
-            fileItem.addEventListener('touchcancel', () => {
-                endLongPress();
-            }, { passive: true });
-            
-            // 鼠标事件（桌面设备）
-            fileItem.addEventListener('mousedown', (e) => {
-                // 如果点击的是按钮，不触发长按
-                if (e.target.closest('button')) {
-                    return;
-                }
-                startLongPress(e);
-            });
-            
-            fileItem.addEventListener('mousemove', (e) => {
-                if (longPressTimer) {
-                    handleMove(e);
-                }
-            });
-            
-            fileItem.addEventListener('mouseup', () => {
-                endLongPress();
-            });
-            
-            fileItem.addEventListener('mouseleave', () => {
-                endLongPress();
-            });
-            
-            // 点击文件项时，如果正在长按，不执行其他操作
-            fileItem.addEventListener('click', (e) => {
-                // 如果点击的是按钮或标签区域，不阻止
-                if (e.target.closest('button') || e.target.closest('.file-tags')) {
-                    return;
-                }
-                
-                // 如果正在长按，不执行点击
-                if (isLongPressing || hasMoved) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
-        }
-
-        // HTML 转义函数
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+                });
+            }
         }
 
         // 处理标签区域点击
