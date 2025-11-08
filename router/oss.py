@@ -62,7 +62,8 @@ router = APIRouter(
 )
 
 # 文件上传配置
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+# 从环境变量读取最大文件大小，默认 50MB
+MAX_FILE_SIZE = int(os.getenv("OSS_MAX_FILE_SIZE", "50")) * 1024 * 1024  # 默认 50MB
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx'}
 
 class OSSConfig:
