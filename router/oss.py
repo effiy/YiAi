@@ -1,9 +1,9 @@
 from fastapi.responses import JSONResponse
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Body
 
 import oss2, os, logging
 from datetime import datetime, timezone
-from typing import Optional, Any
+from typing import Optional, Any, List
 from functools import lru_cache, wraps
 
 from database import db
@@ -155,13 +155,167 @@ async def upload_file(
         logger.error(f"文件上传失败: {str(e)}")
         return handle_error(e, 500)
 
+@router.delete("/delete/{object_name:path}")
+async def delete_file(
+    object_name: str,
+    bucket: oss2.Bucket = Depends(get_bucket)
+) -> JSONResponse:
+    """删除OSS中的单个文件"""
+    try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件名不能为空")
+        
+        exists = bucket.object_exists(object_name)
+        if not exists:
+            raise HTTPException(status_code=404, detail="文件不存在")
+
+        bucket.delete_object(object_name)
+        
+        # 同时删除文件的标签信息
+        try:
+            await db.mongodb.delete_one("oss_file_tags", {"object_name": object_name})
+        except Exception as tag_error:
+            logger.warning(f"删除文件标签失败: {str(tag_error)}")
+        
+        logger.info(f"文件删除成功: {object_name}")
+
+        return create_response(
+            code=200,
+            message="删除成功",
+            data={"object_name": object_name}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"删除文件失败: {str(e)}")
+        return handle_error(e, 500)
+
+@router.post("/tags")
+@ensure_initialized()
+async def set_file_tags(
+    object_name: str = Body(..., description="文件对象名"),
+    tags: List[str] = Body(..., description="标签列表")
+) -> JSONResponse:
+    """为文件设置标签"""
+    try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件对象名不能为空")
+        
+        # 验证标签格式（去重、去空）
+        tags = [tag.strip() for tag in tags if tag.strip()]
+        tags = list(set(tags))  # 去重
+        
+        # 使用 upsert 操作
+        await db.mongodb.initialize()
+        collection = db.mongodb.db["oss_file_tags"]
+        
+        await collection.update_one(
+            {"object_name": object_name},
+            {
+                "$set": {
+                    "object_name": object_name,
+                    "tags": tags,
+                    "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                }
+            },
+            upsert=True
+        )
+        
+        logger.info(f"文件标签设置成功: {object_name}, 标签: {tags}")
+        return create_response(
+            code=200,
+            message="标签设置成功",
+            data={"object_name": object_name, "tags": tags}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"设置文件标签失败: {str(e)}")
+        return handle_error(e, 500)
+
+@router.get("/tags/{object_name:path}")
+@ensure_initialized()
+async def get_file_tags(object_name: str) -> JSONResponse:
+    """获取文件的标签"""
+    try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件对象名不能为空")
+        
+        await db.mongodb.initialize()
+        tag_doc = await db.mongodb.find_one("oss_file_tags", {"object_name": object_name})
+        
+        tags = tag_doc.get("tags", []) if tag_doc else []
+        
+        return create_response(
+            code=200,
+            message="获取成功",
+            data={"object_name": object_name, "tags": tags}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取文件标签失败: {str(e)}")
+        return handle_error(e, 500)
+
+@router.delete("/tags/{object_name:path}")
+@ensure_initialized()
+async def delete_file_tags(object_name: str) -> JSONResponse:
+    """删除文件的所有标签"""
+    try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件对象名不能为空")
+        
+        await db.mongodb.initialize()
+        deleted_count = await db.mongodb.delete_one("oss_file_tags", {"object_name": object_name})
+        
+        logger.info(f"文件标签删除成功: {object_name}")
+        return create_response(
+            code=200,
+            message="标签删除成功",
+            data={"object_name": object_name, "deleted": deleted_count > 0}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"删除文件标签失败: {str(e)}")
+        return handle_error(e, 500)
+
+@router.get("/tags")
+@ensure_initialized()
+async def get_all_tags() -> JSONResponse:
+    """获取所有标签列表"""
+    try:
+        await db.mongodb.initialize()
+        tag_docs = await db.mongodb.find_many("oss_file_tags", {})
+        
+        # 收集所有标签并统计使用次数
+        tag_count = {}
+        for doc in tag_docs:
+            for tag in doc.get("tags", []):
+                tag_count[tag] = tag_count.get(tag, 0) + 1
+        
+        # 按使用次数排序
+        sorted_tags = sorted(tag_count.items(), key=lambda x: x[1], reverse=True)
+        
+        tags_list = [{"name": tag, "count": count} for tag, count in sorted_tags]
+        
+        return create_response(
+            code=200,
+            message="获取成功",
+            data=tags_list
+        )
+    except Exception as e:
+        logger.error(f"获取所有标签失败: {str(e)}")
+        return handle_error(e, 500)
+
 @router.get("/files")
 async def list_files(
     directory: Optional[str] = None,
     max_keys: int = 100,
+    tags: Optional[str] = None,
     bucket: oss2.Bucket = Depends(get_bucket)
 ) -> JSONResponse:
-    """列出OSS中的文件"""
+    """列出OSS中的文件（支持标签筛选）"""
     try:
         if max_keys > 1000:
             raise HTTPException(status_code=400, detail="max_keys不能超过1000")
@@ -183,14 +337,33 @@ async def list_files(
                 except (ValueError, TypeError, OSError):
                     last_modified_str = str(obj.last_modified)
             
-            files.append({
+            # 获取文件的标签
+            file_tags = []
+            try:
+                await db.initialize()
+                tag_doc = await db.mongodb.find_one("oss_file_tags", {"object_name": obj.key})
+                if tag_doc:
+                    file_tags = tag_doc.get("tags", [])
+            except Exception as tag_error:
+                logger.warning(f"获取文件标签失败: {str(tag_error)}")
+            
+            file_data = {
                 "name": obj.key,
                 "size": obj.size,
                 "size_human": f"{obj.size/1024/1024:.2f}MB",
                 "last_modified": obj.last_modified,
                 "last_modified_str": last_modified_str,
-                "url": build_oss_url(bucket.bucket_name, bucket.endpoint, obj.key)
-            })
+                "url": build_oss_url(bucket.bucket_name, bucket.endpoint, obj.key),
+                "tags": file_tags
+            }
+            
+            # 如果指定了标签筛选，则只返回包含该标签的文件
+            if tags:
+                filter_tags = [t.strip() for t in tags.split(",") if t.strip()]
+                if not any(tag in file_tags for tag in filter_tags):
+                    continue
+            
+            files.append(file_data)
 
         logger.info(f"成功获取文件列表，共{len(files)}个文件")
         return create_response(code=200, message="获取成功", data=files)
@@ -198,32 +371,4 @@ async def list_files(
         raise
     except Exception as e:
         logger.error(f"获取文件列表失败: {str(e)}")
-        return handle_error(e, 500)
-
-@router.delete("/delete/{object_name:path}")
-async def delete_file(
-    object_name: str,
-    bucket: oss2.Bucket = Depends(get_bucket)
-) -> JSONResponse:
-    """删除OSS中的单个文件"""
-    try:
-        if not object_name:
-            raise HTTPException(status_code=400, detail="文件名不能为空")
-        
-        exists = bucket.object_exists(object_name)
-        if not exists:
-            raise HTTPException(status_code=404, detail="文件不存在")
-
-        bucket.delete_object(object_name)
-        logger.info(f"文件删除成功: {object_name}")
-
-        return create_response(
-            code=200,
-            message="删除成功",
-            data={"object_name": object_name}
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"删除文件失败: {str(e)}")
         return handle_error(e, 500)
