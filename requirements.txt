@@ -7,7 +7,7 @@ python-dotenv>=1.0.0
 ollama>=0.1.0
 qdrant-client>=1.7.0
 mem0ai>=1.0.0
-# Qwen3-VL 相关依赖（可选，如果使用 transformers/vLLM 而不是 Ollama 时需要）
-# qwen-vl-utils>=0.0.14
-# transformers>=4.37.0
+# Qwen3-VL 相关依赖（用于处理多模态消息格式）
+qwen-vl-utils>=0.0.14
+transformers>=4.37.0
 

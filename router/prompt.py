@@ -1,6 +1,6 @@
 import logging, json, os
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Union, Dict, Any
 
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -12,6 +12,14 @@ from modules.utils.session_utils import normalize_session_id
 
 # 设置日志
 logger = logging.getLogger(__name__)
+
+# 尝试导入 Qwen3-VL 相关工具（可选）
+try:
+    from qwen_vl_utils import process_vision_info
+    QWEN_VL_AVAILABLE = True
+except ImportError:
+    QWEN_VL_AVAILABLE = False
+    logger.warning("qwen-vl-utils 未安装，将使用基础的多模态支持")
 
 router = APIRouter(
     prefix="/prompt",
@@ -39,10 +47,11 @@ class ContentRequest(BaseModel):
     fromSystem: Optional[str] = "你是一个有用的AI助手。"  # 系统提示词，默认为通用助手
     fromUser: Optional[str] = ""  # 用户消息，默认为空
     model: Optional[str] = None  # 模型名称，默认使用环境变量或 "qwen3"
-    images: Optional[List[str]] = None  # 图片列表
+    images: Optional[List[str]] = None  # 图片列表（支持 data URL 或 URL）
+    videos: Optional[List[str]] = None  # 视频列表（支持 URL，参考 Qwen3-VL 格式）
     user_id: Optional[str] = None  # 用户ID，用于存储聊天记录
     conversation_id: Optional[str] = None  # 会话ID，用于关联多轮对话
-
+    use_qwen_format: Optional[bool] = None  # 是否使用 Qwen3-VL 格式（None 时自动检测）
 
 
 class ChatQueryRequest(BaseModel):
@@ -54,6 +63,182 @@ class ChatQueryRequest(BaseModel):
 class ChatUpdateRequest(BaseModel):
     messages: List[dict]
     metadata: Optional[dict] = None
+
+
+def build_qwen_vl_message(
+    text: str,
+    images: Optional[List[str]] = None,
+    videos: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
+    """
+    构建 Qwen3-VL 格式的消息内容
+    
+    Qwen3-VL 格式示例：
+    [
+        {"type": "image", "image": "https://..."},
+        {"type": "video", "video": "https://..."},
+        {"type": "text", "text": "用户消息"}
+    ]
+    """
+    content = []
+    
+    # 添加图片
+    if images:
+        for img in images:
+            content.append({
+                "type": "image",
+                "image": img
+            })
+    
+    # 添加视频
+    if videos:
+        for video in videos:
+            content.append({
+                "type": "video",
+                "video": video
+            })
+    
+    # 添加文本（如果有）
+    if text:
+        content.append({
+            "type": "text",
+            "text": text
+        })
+    
+    return content
+
+
+def normalize_image_url(img: str) -> str:
+    """规范化图片 URL，支持 data URL 和普通 URL"""
+    if img.startswith('data:'):
+        return img
+    elif img.startswith('http://') or img.startswith('https://'):
+        return img
+    else:
+        # 假设是 base64 字符串
+        return img
+
+
+def convert_to_qwen_vl_messages(
+    messages: List[Dict[str, Any]],
+    is_multimodal: bool = False
+) -> List[Dict[str, Any]]:
+    """
+    将消息转换为 Qwen3-VL 格式
+    
+    Qwen3-VL 格式：
+    [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": "..."},
+                {"type": "text", "text": "..."}
+            ]
+        }
+    ]
+    """
+    qwen_messages = []
+    
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        images = msg.get("images", [])
+        
+        # 如果已经是 Qwen3-VL 格式（content 是列表）
+        if isinstance(content, list):
+            qwen_messages.append({
+                "role": role,
+                "content": content
+            })
+        else:
+            # 转换为 Qwen3-VL 格式
+            qwen_content = build_qwen_vl_message(
+                text=str(content) if content else "",
+                images=[normalize_image_url(img) for img in images] if images else None
+            )
+            
+            qwen_messages.append({
+                "role": role,
+                "content": qwen_content
+            })
+    
+    return qwen_messages
+
+
+def convert_to_ollama_messages(
+    messages: List[Dict[str, Any]],
+    is_multimodal: bool = False
+) -> List[Dict[str, Any]]:
+    """
+    将消息转换为 Ollama 格式
+    
+    Ollama 格式：
+    [
+        {
+            "role": "user",
+            "content": "文本内容",
+            "images": ["base64..."]  # 仅 base64，不含 data: 前缀
+        }
+    ]
+    """
+    ollama_messages = []
+    
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        images = msg.get("images", [])
+        
+        # 如果 content 是 Qwen3-VL 格式（列表），需要转换
+        if isinstance(content, list):
+            text_parts = []
+            images_base64 = []
+            
+            for item in content:
+                if isinstance(item, dict):
+                    if item.get("type") == "text":
+                        text_parts.append(item.get("text", ""))
+                    elif item.get("type") == "image":
+                        img_data = item.get("image", "")
+                        # 提取 base64 部分（如果是 data URL）
+                        if img_data.startswith('data:'):
+                            base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
+                            images_base64.append(base64_data)
+                        else:
+                            # URL 或 base64 字符串
+                            images_base64.append(img_data)
+                elif isinstance(item, str):
+                    text_parts.append(item)
+            
+            ollama_msg = {
+                "role": role,
+                "content": " ".join(text_parts) if text_parts else ""
+            }
+            
+            if images_base64 and is_multimodal:
+                ollama_msg["images"] = images_base64
+            
+            ollama_messages.append(ollama_msg)
+        else:
+            # 已经是 Ollama 格式或纯文本
+            ollama_msg = {
+                "role": role,
+                "content": str(content) if content else ""
+            }
+            
+            if images and is_multimodal:
+                # 提取 base64 部分
+                images_base64 = []
+                for img in images:
+                    if img.startswith('data:'):
+                        base64_data = img.split(',', 1)[1] if ',' in img else img
+                        images_base64.append(base64_data)
+                    else:
+                        images_base64.append(img)
+                ollama_msg["images"] = images_base64
+            
+            ollama_messages.append(ollama_msg)
+    
+    return ollama_messages
 
 
 async def stream_ollama_response(request: ContentRequest, chat_service: ChatService, http_request: Request):
@@ -74,16 +259,28 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         
         # 创建Ollama客户端
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-        # 如果请求中包含图片且未指定模型，则默认使用 qwen3-vl 模型
-        if request.images and len(request.images) > 0:
+        
+        # 检测多模态输入
+        has_images = request.images and len(request.images) > 0
+        has_videos = request.videos and len(request.videos) > 0
+        has_multimodal = has_images or has_videos
+        
+        # 如果请求中包含图片/视频且未指定模型，则默认使用 qwen3-vl 模型
+        if has_multimodal:
             model_name = request.model if request.model else "qwen3-vl"
-            logger.info(f"检测到图片输入，使用模型: {model_name} (共 {len(request.images)} 张图片)")
+            logger.info(f"检测到多模态输入，使用模型: {model_name} (图片: {len(request.images) if request.images else 0}, 视频: {len(request.videos) if request.videos else 0})")
         else:
             model_name = request.model if request.model else "qwen3"
             logger.info(f"使用模型: {model_name}")
         
-        # 判断模型是否支持多模态（图片）
-        is_multimodal = "-vl" in model_name.lower() or "vision" in model_name.lower() or (request.images and len(request.images) > 0)
+        # 判断模型是否支持多模态
+        is_multimodal = "-vl" in model_name.lower() or "vision" in model_name.lower() or has_multimodal
+        
+        # 决定是否使用 Qwen3-VL 格式
+        # 如果明确指定或检测到多模态且 qwen-vl-utils 可用，使用 Qwen3-VL 格式
+        use_qwen_format = request.use_qwen_format
+        if use_qwen_format is None:
+            use_qwen_format = (has_multimodal and QWEN_VL_AVAILABLE) or model_name.startswith("qwen")
         
         # 获取认证信息
         ollama_auth = os.getenv("OLLAMA_AUTH", "")
@@ -102,34 +299,43 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         # 使用系统提示
         enhanced_system_prompt = request.fromSystem
         
-        # 准备消息 - Ollama 格式：content 必须是字符串，图片通过 images 参数传递
-        if request.images and len(request.images) > 0:
-            # 提取图片的 base64 数据（如果前端发送的是 data URL，需要提取 base64 部分）
-            images_base64 = []
-            for img in request.images:
-                # 如果是 data URL (data:image/...;base64,xxx)，提取 base64 部分
-                if img.startswith('data:'):
-                    # 提取 base64 部分（在逗号之后）
-                    base64_data = img.split(',', 1)[1] if ',' in img else img
-                    images_base64.append(base64_data)
-                else:
-                    # 如果已经是 base64 字符串，直接使用
-                    images_base64.append(img)
-            
-            # content 必须是字符串（文本部分）
-            user_content = request.fromUser if request.fromUser else ""
-            
-            messages = [
-                {"role": "system", "content": enhanced_system_prompt},
-                {"role": "user", "content": user_content, "images": images_base64}
-            ]
+        # 准备当前用户消息
+        if use_qwen_format:
+            # 使用 Qwen3-VL 格式
+            user_content = build_qwen_vl_message(
+                text=request.fromUser if request.fromUser else "",
+                images=request.images,
+                videos=request.videos
+            )
+            current_user_message = {
+                "role": "user",
+                "content": user_content
+            }
         else:
-            messages = [
-                {"role": "system", "content": enhanced_system_prompt},
-                {"role": "user", "content": request.fromUser}
-            ]
+            # 使用 Ollama 格式
+            user_content = request.fromUser if request.fromUser else ""
+            current_user_message = {
+                "role": "user",
+                "content": user_content
+            }
+            if has_images and is_multimodal:
+                # 提取图片的 base64 数据
+                images_base64 = []
+                for img in request.images:
+                    if img.startswith('data:'):
+                        base64_data = img.split(',', 1)[1] if ',' in img else img
+                        images_base64.append(base64_data)
+                    else:
+                        images_base64.append(img)
+                current_user_message["images"] = images_base64
         
-        # 4. 如果有会话ID，获取历史消息构建完整的对话上下文
+        # 构建消息列表
+        messages = [
+            {"role": "system", "content": enhanced_system_prompt},
+            current_user_message
+        ]
+        
+        # 如果有会话ID，获取历史消息构建完整的对话上下文
         if conversation_id and user_id:
             try:
                 # 获取会话的所有历史消息（限制最多 20 条记录，每条记录包含一对消息）
@@ -149,34 +355,43 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                             normalized_msg = {"role": msg.get("role", "user")}
                             msg_content = msg.get("content", "")
                             
-                            # 根据模型是否支持多模态来处理 content
+                            # 根据消息格式处理
                             if isinstance(msg_content, list):
-                                # 列表格式（图片消息）- 转换为 Ollama 格式
-                                text_parts = []
-                                images_base64 = []
-                                for item in msg_content:
-                                    if isinstance(item, dict):
-                                        if item.get("type") == "text":
-                                            text_parts.append(item.get("text", ""))
-                                        elif item.get("type") == "image":
-                                            # 提取图片的 base64 数据
-                                            img_data = item.get("image", "")
-                                            if img_data.startswith('data:'):
-                                                base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
-                                                images_base64.append(base64_data)
-                                            else:
-                                                images_base64.append(img_data)
-                                    elif isinstance(item, str):
-                                        text_parts.append(item)
-                                
-                                # content 必须是字符串
-                                normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
-                                # 如果有图片，添加到 images 参数
-                                if images_base64 and is_multimodal:
-                                    normalized_msg["images"] = images_base64
+                                # 已经是 Qwen3-VL 格式（列表）
+                                if use_qwen_format:
+                                    normalized_msg["content"] = msg_content
+                                else:
+                                    # 转换为 Ollama 格式
+                                    text_parts = []
+                                    images_base64 = []
+                                    for item in msg_content:
+                                        if isinstance(item, dict):
+                                            if item.get("type") == "text":
+                                                text_parts.append(item.get("text", ""))
+                                            elif item.get("type") == "image":
+                                                img_data = item.get("image", "")
+                                                if img_data.startswith('data:'):
+                                                    base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
+                                                    images_base64.append(base64_data)
+                                                else:
+                                                    images_base64.append(img_data)
+                                    normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
+                                    if images_base64 and is_multimodal:
+                                        normalized_msg["images"] = images_base64
                             elif isinstance(msg_content, str):
-                                # 字符串格式，保持原样
+                                # 字符串格式
                                 normalized_msg["content"] = msg_content
+                                # 检查是否有单独的 images 字段
+                                if "images" in msg:
+                                    if use_qwen_format:
+                                        # 转换为 Qwen3-VL 格式
+                                        content_list = build_qwen_vl_message(
+                                            text=msg_content,
+                                            images=msg.get("images", [])
+                                        )
+                                        normalized_msg["content"] = content_list
+                                    else:
+                                        normalized_msg["images"] = msg.get("images", [])
                             else:
                                 # 其他类型，转换为字符串
                                 normalized_msg["content"] = str(msg_content) if msg_content else ""
@@ -193,25 +408,19 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     messages = history_messages.copy()
                     # 在历史消息后添加当前的系统提示和用户消息
                     messages.append({"role": "system", "content": enhanced_system_prompt})
-                    # 如果有图片，使用正确的 Ollama 格式；否则使用文本字符串
-                    if request.images and len(request.images) > 0:
-                        # 提取图片的 base64 数据
-                        images_base64 = []
-                        for img in request.images:
-                            if img.startswith('data:'):
-                                base64_data = img.split(',', 1)[1] if ',' in img else img
-                                images_base64.append(base64_data)
-                            else:
-                                images_base64.append(img)
-                        user_content = request.fromUser if request.fromUser else ""
-                        messages.append({"role": "user", "content": user_content, "images": images_base64})
-                    else:
-                        messages.append({"role": "user", "content": request.fromUser})
+                    messages.append(current_user_message)
                     logger.info(f"已加载会话 {conversation_id} 的 {len(history_messages)} 条历史消息")
                 else:
                     logger.debug(f"会话 {conversation_id} 暂无历史消息")
             except Exception as e:
                 logger.warning(f"获取历史消息失败: {str(e)}")
+        
+        # 如果使用 Qwen3-VL 格式但需要转换为 Ollama 格式（因为 Ollama 可能不支持 Qwen3-VL 格式）
+        # 注意：这里我们假设 Ollama 支持 Qwen3-VL 格式，如果不支持，需要转换
+        # 为了兼容性，如果检测到使用 Qwen3-VL 格式，我们仍然转换为 Ollama 格式发送
+        if use_qwen_format:
+            # 对于 Ollama，我们需要将 Qwen3-VL 格式转换为 Ollama 格式
+            messages = convert_to_ollama_messages(messages, is_multimodal)
         
         # 调用Ollama流式API
         try:
@@ -272,10 +481,29 @@ async def generate_role_ai_json(request: ContentRequest, http_request: Request):
     所有参数都是可选的，如果未提供将使用默认值：
     - fromSystem: 默认 "你是一个有用的AI助手。"
     - fromUser: 默认为空字符串（如果为空，可能无法正常对话）
-    - model: 默认使用环境变量或 "qwen3"；如果请求中包含图片且未指定模型，则默认使用 "qwen3-vl"
-    - images: 默认为 None，支持图片URL列表（如果提供图片，会自动使用 qwen3-vl 模型）
+    - model: 默认使用环境变量或 "qwen3"；如果请求中包含图片/视频且未指定模型，则默认使用 "qwen3-vl"
+    - images: 默认为 None，支持图片URL列表或 data URL（如果提供图片，会自动使用 qwen3-vl 模型）
+    - videos: 默认为 None，支持视频URL列表（参考 Qwen3-VL 格式）
     - user_id: 默认从 X-User 请求头获取，或使用 "bigboom"
     - conversation_id: 默认为 None，会自动生成新的会话ID
+    - use_qwen_format: 是否使用 Qwen3-VL 格式（None 时自动检测，如果检测到多模态且 qwen-vl-utils 可用则使用）
+    
+    消息格式：
+    - Qwen3-VL 格式（当 use_qwen_format=True 时）：
+      {
+        "role": "user",
+        "content": [
+          {"type": "image", "image": "https://..."},
+          {"type": "video", "video": "https://..."},
+          {"type": "text", "text": "用户消息"}
+        ]
+      }
+    - Ollama 格式（默认）：
+      {
+        "role": "user",
+        "content": "用户消息",
+        "images": ["base64..."]
+      }
     """
     # 确保 fromSystem 和 fromUser 有默认值
     if not request.fromSystem:
@@ -483,7 +711,8 @@ async def get_service_status():
         await chat_service.initialize()
         return JSONResponse(content={
             "success": True,
-            "message": "服务正常运行"
+            "message": "服务正常运行",
+            "qwen_vl_available": QWEN_VL_AVAILABLE
         })
     except Exception as e:
         logger.error(f"获取服务状态失败: {str(e)}")

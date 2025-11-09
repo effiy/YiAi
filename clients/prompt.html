@@ -375,7 +375,8 @@
             font-family: 'Consolas', 'Monaco', monospace;
         }
         
-        .message-images {
+        .message-images,
+        .message-videos {
             display: flex;
             gap: 10px;
             margin-top: 10px;
@@ -387,6 +388,53 @@
             max-height: 200px;
             border-radius: var(--radius);
             object-fit: cover;
+        }
+        
+        .message-video {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: var(--radius);
+            object-fit: cover;
+        }
+        
+        .video-preview {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .video-preview-item {
+            position: relative;
+            width: 150px;
+            height: 100px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+            background: #000;
+        }
+        
+        .video-preview-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .video-preview-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .chat-input-area {
@@ -598,7 +646,7 @@
                     <select id="model" class="form-select">
                         <option value="">默认 (qwen3)</option>
                         <option value="qwen3">qwen3</option>
-                        <option value="qwen3-vl">qwen3-vl (支持图片)</option>
+                        <option value="qwen3-vl">qwen3-vl (支持图片和视频，Qwen3-VL 格式)</option>
                         <option value="llama3">llama3</option>
                         <option value="llama3.1">llama3.1</option>
                     </select>
@@ -656,6 +704,12 @@
                             <div class="image-preview" id="imagePreview"></div>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="videoInput" class="form-label">视频（支持多个，仅多模态模型支持，参考 Qwen3-VL 格式）：</label>
+                            <input type="file" id="videoInput" class="form-input" accept="video/*" multiple>
+                            <div class="video-preview" id="videoPreview"></div>
+                        </div>
+                        
                         <div class="button-group">
                             <button class="btn btn-primary" id="btnSend" onclick="app.sendMessage()">📤 发送消息</button>
                             <button class="btn btn-secondary" onclick="app.clearChat()">🧹 清空对话</button>
@@ -678,6 +732,7 @@
                 this.configManager = new ConfigManager();
                 this.currentConversationId = null;
                 this.imageUrls = [];
+                this.videoUrls = [];
                 this.init();
             }
             
@@ -694,6 +749,11 @@
                 // 监听图片选择
                 document.getElementById('imageInput').addEventListener('change', (e) => {
                     this.handleImageSelect(e);
+                });
+                
+                // 监听视频选择
+                document.getElementById('videoInput').addEventListener('change', (e) => {
+                    this.handleVideoSelect(e);
                 });
                 
                 // 监听回车发送（Ctrl+Enter）
@@ -731,10 +791,15 @@
                     const data = await this.apiClient.get(`${baseUrl}/prompt/status`);
                     const statusClass = data.success ? 'available' : 'unavailable';
                     const icon = data.success ? '✅' : '❌';
+                    const qwenVlStatus = data.qwen_vl_available ? '✅' : '⚠️';
+                    const qwenVlText = data.qwen_vl_available ? 'Qwen3-VL 可用' : 'Qwen3-VL 不可用';
                     statusContainer.innerHTML = `
                         <span class="status-badge ${statusClass}">
                             ${icon} Prompt 服务
                             <small style="margin-left: 8px;">${data.message || '服务正常运行'}</small>
+                        </span>
+                        <span class="status-badge ${data.qwen_vl_available ? 'available' : 'checking'}">
+                            ${qwenVlStatus} ${qwenVlText}
                         </span>
                     `;
                 } catch (error) {
@@ -793,6 +858,52 @@
                 });
             }
             
+            handleVideoSelect(event) {
+                const files = event.target.files;
+                const preview = document.getElementById('videoPreview');
+                preview.innerHTML = '';
+                this.videoUrls = [];
+                
+                if (files.length === 0) return;
+                
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const videoUrl = e.target.result;
+                        this.videoUrls.push(videoUrl);
+                        
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'video-preview-item';
+                        previewItem.innerHTML = `
+                            <video src="${videoUrl}" controls></video>
+                            <button class="remove-btn" onclick="app.removeVideo(${this.videoUrls.length - 1})">×</button>
+                        `;
+                        preview.appendChild(previewItem);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            removeVideo(index) {
+                this.videoUrls.splice(index, 1);
+                this.updateVideoPreview();
+            }
+            
+            updateVideoPreview() {
+                const preview = document.getElementById('videoPreview');
+                preview.innerHTML = '';
+                
+                this.videoUrls.forEach((url, index) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'video-preview-item';
+                    previewItem.innerHTML = `
+                        <video src="${url}" controls></video>
+                        <button class="remove-btn" onclick="app.removeVideo(${index})">×</button>
+                    `;
+                    preview.appendChild(previewItem);
+                });
+            }
+            
             newConversation() {
                 this.currentConversationId = null;
                 this.clearChat();
@@ -837,9 +948,16 @@
                         if (typeof content === 'string') {
                             return content.substring(0, 30) + (content.length > 30 ? '...' : '');
                         } else if (Array.isArray(content)) {
-                            const textItem = content.find(item => item.type === 'text');
-                            if (textItem) {
+                            // Qwen3-VL 格式：查找 text 类型的项
+                            const textItem = content.find(item => item && item.type === 'text');
+                            if (textItem && textItem.text) {
                                 return textItem.text.substring(0, 30) + (textItem.text.length > 30 ? '...' : '');
+                            }
+                            // 如果没有文本，使用图片或视频提示
+                            const hasImage = content.some(item => item && item.type === 'image');
+                            const hasVideo = content.some(item => item && item.type === 'video');
+                            if (hasImage || hasVideo) {
+                                return (hasImage ? '📷' : '') + (hasVideo ? '🎥' : '') + ' 多媒体消息';
                             }
                         }
                     }
@@ -912,20 +1030,25 @@
                 const baseUrl = this.getBaseUrl();
                 const userId = this.getUserId();
                 
-                if (!userMessage && this.imageUrls.length === 0) {
-                    this.ui.showStatus('error', '请输入消息或上传图片！');
+                if (!userMessage && this.imageUrls.length === 0 && this.videoUrls.length === 0) {
+                    this.ui.showStatus('error', '请输入消息或上传图片/视频！');
                     return;
                 }
                 
-                // 添加用户消息到聊天界面
-                this.addMessageToChat('user', userMessage, true);
+                // 添加用户消息到聊天界面（使用 Qwen3-VL 格式显示）
+                const userContent = this.buildUserContent(userMessage, this.imageUrls, this.videoUrls);
+                this.addMessageToChat('user', userContent, true);
                 
                 // 清空输入框
                 document.getElementById('userMessage').value = '';
                 const imagesToSend = [...this.imageUrls];
+                const videosToSend = [...this.videoUrls];
                 this.imageUrls = [];
+                this.videoUrls = [];
                 this.updateImagePreview();
+                this.updateVideoPreview();
                 document.getElementById('imageInput').value = '';
+                document.getElementById('videoInput').value = '';
                 
                 // 禁用发送按钮
                 const btnSend = document.getElementById('btnSend');
@@ -944,6 +1067,7 @@
                         fromUser: userMessage,
                         model: model,
                         images: imagesToSend.length > 0 ? imagesToSend : null,
+                        videos: videosToSend.length > 0 ? videosToSend : null,
                         user_id: userId,
                         conversation_id: this.currentConversationId
                     };
@@ -1028,6 +1152,29 @@
                 }
             }
             
+            buildUserContent(text, images, videos) {
+                // 构建 Qwen3-VL 格式的内容
+                const content = [];
+                
+                if (images && images.length > 0) {
+                    images.forEach(img => {
+                        content.push({ type: 'image', image: img });
+                    });
+                }
+                
+                if (videos && videos.length > 0) {
+                    videos.forEach(video => {
+                        content.push({ type: 'video', video: video });
+                    });
+                }
+                
+                if (text && text.trim()) {
+                    content.push({ type: 'text', text: text });
+                }
+                
+                return content.length > 0 ? content : text || '';
+            }
+            
             addMessageToChat(role, content, isNew = false) {
                 const container = document.getElementById('chatMessages');
                 
@@ -1043,23 +1190,45 @@
                 
                 let contentHtml = '';
                 if (typeof content === 'string') {
+                    // 纯文本消息
                     contentHtml = this.ui.escapeHtml(content);
                 } else if (Array.isArray(content)) {
-                    // 处理多模态内容
+                    // Qwen3-VL 格式：处理多模态内容
                     const textParts = [];
                     const images = [];
+                    const videos = [];
+                    
                     content.forEach(item => {
-                        if (item.type === 'text') {
-                            textParts.push(item.text);
-                        } else if (item.type === 'image') {
-                            images.push(item.image);
+                        if (item && typeof item === 'object') {
+                            if (item.type === 'text' && item.text) {
+                                textParts.push(item.text);
+                            } else if (item.type === 'image' && item.image) {
+                                images.push(item.image);
+                            } else if (item.type === 'video' && item.video) {
+                                videos.push(item.video);
+                            }
                         }
                     });
-                    contentHtml = this.ui.escapeHtml(textParts.join(' '));
+                    
+                    // 添加文本内容
+                    if (textParts.length > 0) {
+                        contentHtml = this.ui.escapeHtml(textParts.join(' '));
+                    }
+                    
+                    // 添加图片
                     if (images.length > 0) {
                         contentHtml += '<div class="message-images">';
                         images.forEach(img => {
-                            contentHtml += `<img src="${img}" class="message-image" alt="图片">`;
+                            contentHtml += `<img src="${this.ui.escapeHtml(img)}" class="message-image" alt="图片">`;
+                        });
+                        contentHtml += '</div>';
+                    }
+                    
+                    // 添加视频
+                    if (videos.length > 0) {
+                        contentHtml += '<div class="message-videos">';
+                        videos.forEach(video => {
+                            contentHtml += `<video src="${this.ui.escapeHtml(video)}" class="message-video" controls></video>`;
                         });
                         contentHtml += '</div>';
                     }
@@ -1124,22 +1293,37 @@
                     const role = msgEl.classList.contains('user') ? 'user' : 'assistant';
                     const contentEl = msgEl.querySelector('.message-content');
                     const images = msgEl.querySelectorAll('.message-image');
+                    const videos = msgEl.querySelectorAll('.message-video');
                     
                     let content;
-                    if (images.length > 0) {
+                    // 如果有图片或视频，使用 Qwen3-VL 格式
+                    if (images.length > 0 || videos.length > 0) {
                         content = [];
                         const text = contentEl.textContent.trim();
-                        if (text) {
-                            content.push({ type: 'text', text: text });
+                        // 移除图片和视频后获取纯文本
+                        const textOnly = Array.from(contentEl.childNodes)
+                            .filter(node => node.nodeType === Node.TEXT_NODE)
+                            .map(node => node.textContent)
+                            .join(' ')
+                            .trim();
+                        
+                        if (textOnly) {
+                            content.push({ type: 'text', text: textOnly });
                         }
+                        
                         images.forEach(img => {
                             content.push({ type: 'image', image: img.src });
                         });
+                        
+                        videos.forEach(video => {
+                            content.push({ type: 'video', video: video.src });
+                        });
                     } else {
+                        // 纯文本消息
                         content = contentEl.textContent.trim();
                     }
                     
-                    if (content) {
+                    if (content && (typeof content === 'string' ? content.length > 0 : content.length > 0)) {
                         messages.push({ role, content });
                     }
                 });
