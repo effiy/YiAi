@@ -82,6 +82,9 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
             model_name = request.model if request.model else "qwen3"
             logger.info(f"使用模型: {model_name}")
         
+        # 判断模型是否支持多模态（图片）
+        is_multimodal = "-vl" in model_name.lower() or "vision" in model_name.lower() or (request.images and len(request.images) > 0)
+        
         # 获取认证信息
         ollama_auth = os.getenv("OLLAMA_AUTH", "")
         
@@ -133,8 +136,39 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 for chat in reversed(history_chats):
                     chat_messages = chat.get("messages", [])
                     if chat_messages:
-                        # 合并历史消息
-                        history_messages.extend(chat_messages)
+                        # 规范化历史消息的 content 格式
+                        for msg in chat_messages:
+                            # 确保消息格式正确
+                            normalized_msg = {"role": msg.get("role", "user")}
+                            msg_content = msg.get("content", "")
+                            
+                            # 根据模型是否支持多模态来处理 content
+                            if isinstance(msg_content, list):
+                                # 列表格式（图片消息）
+                                if is_multimodal:
+                                    # 多模态模型支持列表格式，保持原样
+                                    normalized_msg["content"] = msg_content
+                                else:
+                                    # 非多模态模型不支持列表格式，提取文本内容
+                                    text_parts = []
+                                    for item in msg_content:
+                                        if isinstance(item, dict):
+                                            if item.get("type") == "text":
+                                                text_parts.append(item.get("text", ""))
+                                            elif item.get("type") == "image":
+                                                # 对于图片，添加占位符或忽略
+                                                text_parts.append("[图片]")
+                                        elif isinstance(item, str):
+                                            text_parts.append(item)
+                                    normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
+                            elif isinstance(msg_content, str):
+                                # 字符串格式，保持原样
+                                normalized_msg["content"] = msg_content
+                            else:
+                                # 其他类型，转换为字符串
+                                normalized_msg["content"] = str(msg_content) if msg_content else ""
+                            
+                            history_messages.append(normalized_msg)
                 
                 # 如果历史消息过多，只保留最近的（保留最后 30 条消息，约 15 轮对话）
                 if len(history_messages) > 30:
