@@ -171,6 +171,60 @@ async def filter_valid_images(images: List[str]) -> List[str]:
     return valid_images
 
 
+async def clean_messages_images(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    清理消息列表中的所有无效图片 URL
+    
+    Args:
+        messages: 消息列表
+    
+    Returns:
+        清理后的消息列表
+    """
+    cleaned_messages = []
+    
+    for msg in messages:
+        cleaned_msg = msg.copy()
+        content = cleaned_msg.get("content", "")
+        images = cleaned_msg.get("images", [])
+        
+        # 处理 content 字段中的图片（Qwen3-VL 格式）
+        if isinstance(content, list):
+            cleaned_content = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "image":
+                    img_url = item.get("image", "")
+                    if await validate_image_url(img_url):
+                        cleaned_content.append(item)
+                    else:
+                        logger.warning(f"清理消息时发现无效图片 URL，已跳过: {img_url}")
+                else:
+                    cleaned_content.append(item)
+            cleaned_msg["content"] = cleaned_content
+        
+        # 处理独立的 images 字段（Ollama 格式）
+        if images:
+            valid_images = []
+            for img in images:
+                # base64 字符串和 data URL 不需要验证，直接保留
+                if img.startswith('data:') or (not img.startswith('http://') and not img.startswith('https://')):
+                    valid_images.append(img)
+                elif await validate_image_url(img):
+                    valid_images.append(img)
+                else:
+                    logger.warning(f"清理消息时发现无效图片 URL，已跳过: {img}")
+            
+            if valid_images:
+                cleaned_msg["images"] = valid_images
+            else:
+                # 如果没有有效图片，移除 images 字段
+                cleaned_msg.pop("images", None)
+        
+        cleaned_messages.append(cleaned_msg)
+    
+    return cleaned_messages
+
+
 def convert_to_qwen_vl_messages(
     messages: List[Dict[str, Any]],
     is_multimodal: bool = False
@@ -505,6 +559,10 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         if use_qwen_format:
             # 对于 Ollama，我们需要将 Qwen3-VL 格式转换为 Ollama 格式
             messages = convert_to_ollama_messages(messages, is_multimodal)
+        
+        # 在发送给 Ollama 之前，最后清理一次所有消息中的无效图片 URL
+        # 这确保即使之前的验证有遗漏，也不会导致 Ollama 调用失败
+        messages = await clean_messages_images(messages)
         
         # 调用Ollama流式API
         try:
