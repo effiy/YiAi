@@ -1,11 +1,16 @@
 """会话管理路由 - 处理YiPet会话相关的HTTP请求"""
 import logging
+import base64
+import os
+import oss2
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Request, Query
 from fastapi.responses import JSONResponse
+from datetime import datetime
 
 from modules.services.sessionService import SessionService
+from router.oss import get_oss_config, build_oss_url
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +45,75 @@ def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
     return "default_user"
 
 
+async def upload_base64_image_to_oss(image_data_url: str, directory: str = "session_images") -> Optional[str]:
+    """
+    将 base64 格式的图片上传到 OSS
+    
+    Args:
+        image_data_url: data:image/png;base64,xxx 格式的图片数据
+        directory: OSS 存储目录，默认为 session_images
+    
+    Returns:
+        上传成功返回 OSS URL，失败返回 None
+    """
+    try:
+        # 检查是否是 base64 格式的 data URL
+        if not image_data_url or not image_data_url.startswith("data:image/"):
+            return None
+        
+        # 提取 MIME 类型和 base64 数据
+        if ";" in image_data_url and "," in image_data_url:
+            # 格式: data:image/png;base64,xxxxx
+            header, data = image_data_url.split(",", 1)
+            mime_type = header.split(":")[1].split(";")[0]  # image/png
+        else:
+            logger.warning(f"无效的 data URL 格式: {image_data_url[:50]}...")
+            return None
+        
+        # 确定文件扩展名
+        ext_map = {
+            "image/png": ".png",
+            "image/jpeg": ".jpg",
+            "image/jpg": ".jpg",
+            "image/gif": ".gif",
+            "image/webp": ".webp"
+        }
+        file_ext = ext_map.get(mime_type, ".png")
+        
+        # 解码 base64 数据
+        try:
+            image_data = base64.b64decode(data)
+        except Exception as e:
+            logger.error(f"Base64 解码失败: {str(e)}")
+            return None
+        
+        # 检查文件大小（默认限制 50MB）
+        max_size = int(os.getenv("OSS_MAX_FILE_SIZE", "50")) * 1024 * 1024
+        if len(image_data) > max_size:
+            logger.error(f"图片大小超过限制: {len(image_data)} 字节")
+            return None
+        
+        # 生成文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        object_name = f"{directory}/{timestamp}{file_ext}"
+        
+        # 获取 OSS 配置并创建 bucket
+        config = get_oss_config()
+        auth = oss2.Auth(config.access_key_id, config.access_key_secret)
+        bucket = oss2.Bucket(auth, config.endpoint, config.bucket_name)
+        
+        # 上传到 OSS
+        bucket.put_object(object_name, image_data)
+        file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
+        
+        logger.info(f"Base64 图片上传成功: {object_name} (大小: {len(image_data)} 字节)")
+        return file_url
+        
+    except Exception as e:
+        logger.error(f"上传 base64 图片到 OSS 失败: {str(e)}", exc_info=True)
+        return None
+
+
 class SaveSessionRequest(BaseModel):
     """保存会话请求"""
     id: Optional[str] = None
@@ -54,6 +128,7 @@ class SaveSessionRequest(BaseModel):
     updatedAt: Optional[int] = None
     lastAccessTime: Optional[int] = None
     user_id: Optional[str] = None
+    imageDataUrl: Optional[str] = None
 
 
 class SearchSessionRequest(BaseModel):
@@ -89,11 +164,23 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
     - 如果提供了 id 且会话存在，则更新
     - 否则创建新会话
     
+    如果提供了 imageDataUrl 且为 base64 格式，会自动上传到 OSS 并替换为 URL
+    
     返回完整的会话数据，便于前端更新缓存
     """
     try:
         service = await get_session_service()
         user_id = get_user_id(http_request, request.user_id)
+        
+        # 处理 imageDataUrl：如果是 base64 格式，上传到 OSS 并替换为 URL
+        image_url = request.imageDataUrl
+        if image_url and image_url.startswith("data:image/"):
+            oss_url = await upload_base64_image_to_oss(image_url)
+            if oss_url:
+                image_url = oss_url
+                logger.info(f"图片已上传到 OSS: {oss_url}")
+            else:
+                logger.warning(f"图片上传到 OSS 失败，保留原始 data URL")
         
         # 构建会话数据
         session_data = {
@@ -109,6 +196,10 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
             "updatedAt": request.updatedAt,
             "lastAccessTime": request.lastAccessTime
         }
+        
+        # 如果 imageDataUrl 已处理，添加到会话数据中
+        if image_url:
+            session_data["imageDataUrl"] = image_url
         
         # 调用服务层保存会话
         result = await service.save_session(session_data, user_id=user_id)
@@ -276,10 +367,24 @@ async def update_session(
     request: SaveSessionRequest,
     http_request: Request
 ):
-    """更新会话数据"""
+    """
+    更新会话数据
+    
+    如果提供了 imageDataUrl 且为 base64 格式，会自动上传到 OSS 并替换为 URL
+    """
     try:
         service = await get_session_service()
         user_id = get_user_id(http_request, request.user_id)
+        
+        # 处理 imageDataUrl：如果是 base64 格式，上传到 OSS 并替换为 URL
+        image_url = request.imageDataUrl
+        if image_url and image_url.startswith("data:image/"):
+            oss_url = await upload_base64_image_to_oss(image_url)
+            if oss_url:
+                image_url = oss_url
+                logger.info(f"图片已上传到 OSS: {oss_url}")
+            else:
+                logger.warning(f"图片上传到 OSS 失败，保留原始 data URL")
         
         # 构建会话数据
         session_data = {
@@ -293,6 +398,10 @@ async def update_session(
             "updatedAt": request.updatedAt,
             "lastAccessTime": request.lastAccessTime
         }
+        
+        # 如果 imageDataUrl 已处理，添加到会话数据中
+        if image_url:
+            session_data["imageDataUrl"] = image_url
         
         # 调用服务层更新会话
         result = await service.update_session(session_id, session_data, user_id=user_id)
