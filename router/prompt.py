@@ -266,9 +266,14 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         has_multimodal = has_images or has_videos
         
         # 如果请求中包含图片/视频且未指定模型，则默认使用 qwen3-vl 模型
+        # 如果用户明确指定了模型，则使用用户指定的模型
         if has_multimodal:
-            model_name = request.model if request.model else "qwen3-vl"
-            logger.info(f"检测到多模态输入，使用模型: {model_name} (图片: {len(request.images) if request.images else 0}, 视频: {len(request.videos) if request.videos else 0})")
+            if request.model:
+                model_name = request.model
+                logger.info(f"检测到多模态输入，使用用户指定的模型: {model_name} (图片: {len(request.images) if request.images else 0}, 视频: {len(request.videos) if request.videos else 0})")
+            else:
+                model_name = "qwen3-vl"
+                logger.info(f"检测到多模态输入，默认使用 qwen3-vl 模型 (图片: {len(request.images) if request.images else 0}, 视频: {len(request.videos) if request.videos else 0})")
         else:
             model_name = request.model if request.model else "qwen3"
             logger.info(f"使用模型: {model_name}")
