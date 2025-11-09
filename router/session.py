@@ -59,13 +59,17 @@ async def upload_base64_image_to_oss(image_data_url: str, directory: str = "sess
     try:
         # 检查是否是 base64 格式的 data URL
         if not image_data_url or not image_data_url.startswith("data:image/"):
+            logger.debug(f"不是 base64 图片格式，跳过上传: {image_data_url[:50] if image_data_url else 'None'}...")
             return None
+        
+        logger.info(f"开始处理 base64 图片上传，数据长度: {len(image_data_url)} 字符")
         
         # 提取 MIME 类型和 base64 数据
         if ";" in image_data_url and "," in image_data_url:
             # 格式: data:image/png;base64,xxxxx
             header, data = image_data_url.split(",", 1)
             mime_type = header.split(":")[1].split(";")[0]  # image/png
+            logger.debug(f"检测到 MIME 类型: {mime_type}")
         else:
             logger.warning(f"无效的 data URL 格式: {image_data_url[:50]}...")
             return None
@@ -83,6 +87,7 @@ async def upload_base64_image_to_oss(image_data_url: str, directory: str = "sess
         # 解码 base64 数据
         try:
             image_data = base64.b64decode(data)
+            logger.debug(f"Base64 解码成功，图片大小: {len(image_data)} 字节")
         except Exception as e:
             logger.error(f"Base64 解码失败: {str(e)}")
             return None
@@ -90,24 +95,35 @@ async def upload_base64_image_to_oss(image_data_url: str, directory: str = "sess
         # 检查文件大小（默认限制 50MB）
         max_size = int(os.getenv("OSS_MAX_FILE_SIZE", "50")) * 1024 * 1024
         if len(image_data) > max_size:
-            logger.error(f"图片大小超过限制: {len(image_data)} 字节")
+            logger.error(f"图片大小超过限制: {len(image_data)} 字节，最大允许: {max_size} 字节")
             return None
         
         # 生成文件名
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         object_name = f"{directory}/{timestamp}{file_ext}"
+        logger.debug(f"准备上传到 OSS，对象名: {object_name}")
         
         # 获取 OSS 配置并创建 bucket
-        config = get_oss_config()
-        auth = oss2.Auth(config.access_key_id, config.access_key_secret)
-        bucket = oss2.Bucket(auth, config.endpoint, config.bucket_name)
+        try:
+            config = get_oss_config()
+            logger.debug(f"OSS 配置获取成功，bucket: {config.bucket_name}, endpoint: {config.endpoint}")
+        except Exception as e:
+            logger.error(f"获取 OSS 配置失败: {str(e)}，请检查环境变量 OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET, OSS_ENDPOINT, OSS_BUCKET_NAME")
+            return None
         
-        # 上传到 OSS
-        bucket.put_object(object_name, image_data)
-        file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
-        
-        logger.info(f"Base64 图片上传成功: {object_name} (大小: {len(image_data)} 字节)")
-        return file_url
+        try:
+            auth = oss2.Auth(config.access_key_id, config.access_key_secret)
+            bucket = oss2.Bucket(auth, config.endpoint, config.bucket_name)
+            
+            # 上传到 OSS
+            bucket.put_object(object_name, image_data)
+            file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
+            
+            logger.info(f"Base64 图片上传成功: {object_name} (大小: {len(image_data)} 字节) -> {file_url}")
+            return file_url
+        except Exception as e:
+            logger.error(f"OSS 上传操作失败: {str(e)}", exc_info=True)
+            return None
         
     except Exception as e:
         logger.error(f"上传 base64 图片到 OSS 失败: {str(e)}", exc_info=True)
@@ -175,12 +191,15 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         # 处理 imageDataUrl：如果是 base64 格式，上传到 OSS 并替换为 URL
         image_url = request.imageDataUrl
         if image_url and image_url.startswith("data:image/"):
+            logger.info(f"检测到 base64 格式的 imageDataUrl，开始上传到 OSS...")
             oss_url = await upload_base64_image_to_oss(image_url)
             if oss_url:
                 image_url = oss_url
-                logger.info(f"图片已上传到 OSS: {oss_url}")
+                logger.info(f"图片已成功上传到 OSS，URL: {oss_url}")
             else:
-                logger.warning(f"图片上传到 OSS 失败，保留原始 data URL")
+                logger.error(f"图片上传到 OSS 失败！将保留原始 base64 数据。请检查 OSS 配置和日志。")
+                # 如果上传失败，可以选择抛出异常或者保留原始数据
+                # 这里我们保留原始数据，但记录错误日志
         
         # 构建会话数据
         session_data = {
@@ -199,7 +218,13 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         
         # 如果 imageDataUrl 已处理，添加到会话数据中
         if image_url:
+            # 验证：如果仍然是 base64 格式，说明上传失败，记录警告
+            if image_url.startswith("data:image/"):
+                logger.warning(f"警告：imageDataUrl 仍然是 base64 格式，可能上传失败。数据长度: {len(image_url)} 字符")
+            else:
+                logger.info(f"imageDataUrl 已优化为 OSS URL: {image_url}")
             session_data["imageDataUrl"] = image_url
+            logger.debug(f"imageDataUrl 已添加到 session_data: {image_url[:100] if len(image_url) > 100 else image_url}...")
         
         # 调用服务层保存会话
         result = await service.save_session(session_data, user_id=user_id)
