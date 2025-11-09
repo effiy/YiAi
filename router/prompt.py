@@ -102,19 +102,26 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         # 使用系统提示
         enhanced_system_prompt = request.fromSystem
         
-        # 准备消息 - 使用 Qwen3-VL 格式
+        # 准备消息 - Ollama 格式：content 必须是字符串，图片通过 images 参数传递
         if request.images and len(request.images) > 0:
-            # Qwen3-VL 格式：content 是一个数组，包含文本和图片
-            content = []
-            # 先添加文本
-            if request.fromUser:
-                content.append({"type": "text", "text": request.fromUser})
-            # 然后添加图片（Qwen3-VL 格式：{"type": "image", "image": "url"}）
+            # 提取图片的 base64 数据（如果前端发送的是 data URL，需要提取 base64 部分）
+            images_base64 = []
             for img in request.images:
-                content.append({"type": "image", "image": img})
+                # 如果是 data URL (data:image/...;base64,xxx)，提取 base64 部分
+                if img.startswith('data:'):
+                    # 提取 base64 部分（在逗号之后）
+                    base64_data = img.split(',', 1)[1] if ',' in img else img
+                    images_base64.append(base64_data)
+                else:
+                    # 如果已经是 base64 字符串，直接使用
+                    images_base64.append(img)
+            
+            # content 必须是字符串（文本部分）
+            user_content = request.fromUser if request.fromUser else ""
+            
             messages = [
                 {"role": "system", "content": enhanced_system_prompt},
-                {"role": "user", "content": content}
+                {"role": "user", "content": user_content, "images": images_base64}
             ]
         else:
             messages = [
@@ -144,23 +151,29 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                             
                             # 根据模型是否支持多模态来处理 content
                             if isinstance(msg_content, list):
-                                # 列表格式（图片消息）
-                                if is_multimodal:
-                                    # 多模态模型支持列表格式，保持原样
-                                    normalized_msg["content"] = msg_content
-                                else:
-                                    # 非多模态模型不支持列表格式，提取文本内容
-                                    text_parts = []
-                                    for item in msg_content:
-                                        if isinstance(item, dict):
-                                            if item.get("type") == "text":
-                                                text_parts.append(item.get("text", ""))
-                                            elif item.get("type") == "image":
-                                                # 对于图片，添加占位符或忽略
-                                                text_parts.append("[图片]")
-                                        elif isinstance(item, str):
-                                            text_parts.append(item)
-                                    normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
+                                # 列表格式（图片消息）- 转换为 Ollama 格式
+                                text_parts = []
+                                images_base64 = []
+                                for item in msg_content:
+                                    if isinstance(item, dict):
+                                        if item.get("type") == "text":
+                                            text_parts.append(item.get("text", ""))
+                                        elif item.get("type") == "image":
+                                            # 提取图片的 base64 数据
+                                            img_data = item.get("image", "")
+                                            if img_data.startswith('data:'):
+                                                base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
+                                                images_base64.append(base64_data)
+                                            else:
+                                                images_base64.append(img_data)
+                                    elif isinstance(item, str):
+                                        text_parts.append(item)
+                                
+                                # content 必须是字符串
+                                normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
+                                # 如果有图片，添加到 images 参数
+                                if images_base64 and is_multimodal:
+                                    normalized_msg["images"] = images_base64
                             elif isinstance(msg_content, str):
                                 # 字符串格式，保持原样
                                 normalized_msg["content"] = msg_content
@@ -180,9 +193,18 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     messages = history_messages.copy()
                     # 在历史消息后添加当前的系统提示和用户消息
                     messages.append({"role": "system", "content": enhanced_system_prompt})
-                    # 如果有图片，使用 content 数组；否则使用文本字符串
+                    # 如果有图片，使用正确的 Ollama 格式；否则使用文本字符串
                     if request.images and len(request.images) > 0:
-                        messages.append({"role": "user", "content": content})
+                        # 提取图片的 base64 数据
+                        images_base64 = []
+                        for img in request.images:
+                            if img.startswith('data:'):
+                                base64_data = img.split(',', 1)[1] if ',' in img else img
+                                images_base64.append(base64_data)
+                            else:
+                                images_base64.append(img)
+                        user_content = request.fromUser if request.fromUser else ""
+                        messages.append({"role": "user", "content": user_content, "images": images_base64})
                     else:
                         messages.append({"role": "user", "content": request.fromUser})
                     logger.info(f"已加载会话 {conversation_id} 的 {len(history_messages)} 条历史消息")
