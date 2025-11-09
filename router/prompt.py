@@ -1,5 +1,6 @@
 import logging, json, os
 import uuid
+import base64
 from typing import Optional, List, Union, Dict, Any
 import aiohttp
 
@@ -145,6 +146,65 @@ async def validate_image_url(img_url: str, timeout: int = 5) -> bool:
         return False
 
 
+async def download_image_to_base64(img_url: str, timeout: int = 10) -> Optional[str]:
+    """
+    下载 http/https 图片并转换为 base64 字符串
+    
+    Args:
+        img_url: 图片 URL
+        timeout: 超时时间（秒）
+    
+    Returns:
+        base64 编码的图片数据（不含 data: 前缀），如果下载失败则返回 None
+    """
+    if not (img_url.startswith('http://') or img_url.startswith('https://')):
+        return None
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(img_url, timeout=aiohttp.ClientTimeout(total=timeout), allow_redirects=True) as response:
+                if response.status != 200:
+                    logger.warning(f"下载图片失败，状态码: {response.status}, URL: {img_url}")
+                    return None
+                
+                # 读取图片数据
+                image_data = await response.read()
+                
+                # 转换为 base64
+                base64_data = base64.b64encode(image_data).decode('utf-8')
+                logger.info(f"成功下载并转换图片为 base64: {img_url} (大小: {len(image_data)} 字节)")
+                return base64_data
+    except Exception as e:
+        logger.warning(f"下载图片失败: {img_url}, 错误: {str(e)}")
+        return None
+
+
+async def convert_image_to_base64(img: str) -> Optional[str]:
+    """
+    将图片转换为 base64 格式
+    
+    Args:
+        img: 图片数据，可以是 data URL、http/https URL 或 base64 字符串
+    
+    Returns:
+        base64 编码的图片数据（不含 data: 前缀），如果转换失败则返回 None
+    """
+    # 如果是 data URL，提取 base64 部分
+    if img.startswith('data:'):
+        if ',' in img:
+            base64_data = img.split(',', 1)[1]
+            return base64_data
+        else:
+            return None
+    
+    # 如果是 http/https URL，下载并转换为 base64
+    if img.startswith('http://') or img.startswith('https://'):
+        return await download_image_to_base64(img)
+    
+    # 如果已经是 base64 字符串（不含 data: 前缀），直接返回
+    return img
+
+
 async def filter_valid_images(images: List[str]) -> List[str]:
     """
     过滤出可访问的图片 URL
@@ -194,10 +254,23 @@ async def clean_messages_images(messages: List[Dict[str, Any]]) -> List[Dict[str
             for item in content:
                 if isinstance(item, dict) and item.get("type") == "image":
                     img_url = item.get("image", "")
-                    if await validate_image_url(img_url):
-                        cleaned_content.append(item)
+                    # 如果是 http/https URL，转换为 base64
+                    if img_url.startswith('http://') or img_url.startswith('https://'):
+                        if await validate_image_url(img_url):
+                            # 转换为 base64
+                            base64_data = await convert_image_to_base64(img_url)
+                            if base64_data:
+                                # 更新为 base64 数据（保持 Qwen3-VL 格式，但使用 base64）
+                                cleaned_item = item.copy()
+                                cleaned_item["image"] = base64_data
+                                cleaned_content.append(cleaned_item)
+                            else:
+                                logger.warning(f"清理消息时无法转换图片 URL 为 base64，已跳过: {img_url}")
+                        else:
+                            logger.warning(f"清理消息时发现无效图片 URL，已跳过: {img_url}")
                     else:
-                        logger.warning(f"清理消息时发现无效图片 URL，已跳过: {img_url}")
+                        # 非 URL 图片（data URL 或 base64），直接保留
+                        cleaned_content.append(item)
                 else:
                     cleaned_content.append(item)
             cleaned_msg["content"] = cleaned_content
@@ -206,13 +279,21 @@ async def clean_messages_images(messages: List[Dict[str, Any]]) -> List[Dict[str
         if images:
             valid_images = []
             for img in images:
-                # base64 字符串和 data URL 不需要验证，直接保留
-                if img.startswith('data:') or (not img.startswith('http://') and not img.startswith('https://')):
-                    valid_images.append(img)
-                elif await validate_image_url(img):
-                    valid_images.append(img)
+                # 如果是 http/https URL，转换为 base64
+                if img.startswith('http://') or img.startswith('https://'):
+                    # 验证 URL 是否可访问
+                    if await validate_image_url(img):
+                        # 转换为 base64
+                        base64_data = await convert_image_to_base64(img)
+                        if base64_data:
+                            valid_images.append(base64_data)
+                        else:
+                            logger.warning(f"清理消息时无法转换图片 URL 为 base64，已跳过: {img}")
+                    else:
+                        logger.warning(f"清理消息时发现无效图片 URL，已跳过: {img}")
                 else:
-                    logger.warning(f"清理消息时发现无效图片 URL，已跳过: {img}")
+                    # base64 字符串和 data URL 直接保留
+                    valid_images.append(img)
             
             if valid_images:
                 cleaned_msg["images"] = valid_images
@@ -271,7 +352,7 @@ def convert_to_qwen_vl_messages(
     return qwen_messages
 
 
-def convert_to_ollama_messages(
+async def convert_to_ollama_messages(
     messages: List[Dict[str, Any]],
     is_multimodal: bool = False
 ) -> List[Dict[str, Any]]:
@@ -305,13 +386,12 @@ def convert_to_ollama_messages(
                         text_parts.append(item.get("text", ""))
                     elif item.get("type") == "image":
                         img_data = item.get("image", "")
-                        # 提取 base64 部分（如果是 data URL）
-                        if img_data.startswith('data:'):
-                            base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
+                        # 转换为 base64（如果是 http/https URL，会下载并转换）
+                        base64_data = await convert_image_to_base64(img_data)
+                        if base64_data:
                             images_base64.append(base64_data)
                         else:
-                            # URL 或 base64 字符串
-                            images_base64.append(img_data)
+                            logger.warning(f"无法转换图片为 base64，已跳过: {img_data}")
                 elif isinstance(item, str):
                     text_parts.append(item)
             
@@ -332,15 +412,17 @@ def convert_to_ollama_messages(
             }
             
             if images and is_multimodal:
-                # 提取 base64 部分
+                # 转换为 base64（如果是 http/https URL，会下载并转换）
                 images_base64 = []
                 for img in images:
-                    if img.startswith('data:'):
-                        base64_data = img.split(',', 1)[1] if ',' in img else img
+                    base64_data = await convert_image_to_base64(img)
+                    if base64_data:
                         images_base64.append(base64_data)
                     else:
-                        images_base64.append(img)
-                ollama_msg["images"] = images_base64
+                        logger.warning(f"无法转换图片为 base64，已跳过: {img}")
+                
+                if images_base64:
+                    ollama_msg["images"] = images_base64
             
             ollama_messages.append(ollama_msg)
     
@@ -437,15 +519,17 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 "content": user_content
             }
             if valid_images and is_multimodal:
-                # 提取图片的 base64 数据
+                # 转换为 base64（如果是 http/https URL，会下载并转换）
                 images_base64 = []
                 for img in valid_images:
-                    if img.startswith('data:'):
-                        base64_data = img.split(',', 1)[1] if ',' in img else img
+                    base64_data = await convert_image_to_base64(img)
+                    if base64_data:
                         images_base64.append(base64_data)
                     else:
-                        images_base64.append(img)
-                current_user_message["images"] = images_base64
+                        logger.warning(f"无法转换图片为 base64，已跳过: {img}")
+                
+                if images_base64:
+                    current_user_message["images"] = images_base64
         
         # 构建消息列表
         messages = [
@@ -499,15 +583,17 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                                                 text_parts.append(item.get("text", ""))
                                             elif item.get("type") == "image":
                                                 img_data = item.get("image", "")
-                                                # 验证图片 URL
-                                                if not await validate_image_url(img_data):
-                                                    logger.warning(f"历史消息中的图片 URL 不可访问，已跳过: {img_data}")
-                                                    continue
-                                                if img_data.startswith('data:'):
-                                                    base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
+                                                # 验证图片 URL（仅对 http/https URL 进行验证）
+                                                if img_data.startswith('http://') or img_data.startswith('https://'):
+                                                    if not await validate_image_url(img_data):
+                                                        logger.warning(f"历史消息中的图片 URL 不可访问，已跳过: {img_data}")
+                                                        continue
+                                                # 转换为 base64（如果是 http/https URL，会下载并转换）
+                                                base64_data = await convert_image_to_base64(img_data)
+                                                if base64_data:
                                                     images_base64.append(base64_data)
                                                 else:
-                                                    images_base64.append(img_data)
+                                                    logger.warning(f"无法转换历史消息中的图片为 base64，已跳过: {img_data}")
                                         elif isinstance(item, str):
                                             text_parts.append(item)
                                     normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
@@ -529,7 +615,17 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                                         )
                                         normalized_msg["content"] = content_list
                                     else:
-                                        normalized_msg["images"] = valid_msg_images
+                                        # 转换为 base64（如果是 http/https URL，会下载并转换）
+                                        images_base64 = []
+                                        for img in valid_msg_images:
+                                            base64_data = await convert_image_to_base64(img)
+                                            if base64_data:
+                                                images_base64.append(base64_data)
+                                            else:
+                                                logger.warning(f"无法转换历史消息中的图片为 base64，已跳过: {img}")
+                                        
+                                        if images_base64:
+                                            normalized_msg["images"] = images_base64
                             else:
                                 # 其他类型，转换为字符串
                                 normalized_msg["content"] = str(msg_content) if msg_content else ""
@@ -558,7 +654,8 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         # 为了兼容性，如果检测到使用 Qwen3-VL 格式，我们仍然转换为 Ollama 格式发送
         if use_qwen_format:
             # 对于 Ollama，我们需要将 Qwen3-VL 格式转换为 Ollama 格式
-            messages = convert_to_ollama_messages(messages, is_multimodal)
+            # 注意：convert_to_ollama_messages 现在是异步函数，需要 await
+            messages = await convert_to_ollama_messages(messages, is_multimodal)
         
         # 在发送给 Ollama 之前，最后清理一次所有消息中的无效图片 URL
         # 这确保即使之前的验证有遗漏，也不会导致 Ollama 调用失败
