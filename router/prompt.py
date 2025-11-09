@@ -1,6 +1,7 @@
 import logging, json, os
 import uuid
 from typing import Optional, List, Union, Dict, Any
+import aiohttp
 
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -117,6 +118,57 @@ def normalize_image_url(img: str) -> str:
     else:
         # 假设是 base64 字符串
         return img
+
+
+async def validate_image_url(img_url: str, timeout: int = 5) -> bool:
+    """
+    验证图片 URL 是否可访问
+    
+    Args:
+        img_url: 图片 URL
+        timeout: 超时时间（秒）
+    
+    Returns:
+        True 如果 URL 可访问，False 否则
+    """
+    # data URL 和 base64 字符串不需要验证
+    if img_url.startswith('data:') or not (img_url.startswith('http://') or img_url.startswith('https://')):
+        return True
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.head(img_url, timeout=aiohttp.ClientTimeout(total=timeout), allow_redirects=True) as response:
+                # 检查状态码，200-299 表示成功
+                return 200 <= response.status < 300
+    except Exception as e:
+        logger.warning(f"验证图片 URL 失败: {img_url}, 错误: {str(e)}")
+        return False
+
+
+async def filter_valid_images(images: List[str]) -> List[str]:
+    """
+    过滤出可访问的图片 URL
+    
+    Args:
+        images: 图片 URL 列表
+    
+    Returns:
+        可访问的图片 URL 列表
+    """
+    if not images:
+        return []
+    
+    valid_images = []
+    for img in images:
+        if await validate_image_url(img):
+            valid_images.append(img)
+        else:
+            logger.warning(f"图片 URL 不可访问，已跳过: {img}")
+    
+    if len(valid_images) < len(images):
+        logger.info(f"过滤图片: {len(images)} -> {len(valid_images)} (移除了 {len(images) - len(valid_images)} 个不可访问的图片)")
+    
+    return valid_images
 
 
 def convert_to_qwen_vl_messages(
@@ -304,12 +356,19 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         # 使用系统提示
         enhanced_system_prompt = request.fromSystem
         
+        # 验证并过滤当前请求中的图片
+        valid_images = []
+        if request.images:
+            valid_images = await filter_valid_images(request.images)
+            if len(valid_images) < len(request.images):
+                logger.warning(f"当前请求中有 {len(request.images) - len(valid_images)} 个图片 URL 不可访问")
+        
         # 准备当前用户消息
         if use_qwen_format:
             # 使用 Qwen3-VL 格式
             user_content = build_qwen_vl_message(
                 text=request.fromUser if request.fromUser else "",
-                images=request.images,
+                images=valid_images if valid_images else None,
                 videos=request.videos
             )
             current_user_message = {
@@ -323,10 +382,10 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                 "role": "user",
                 "content": user_content
             }
-            if has_images and is_multimodal:
+            if valid_images and is_multimodal:
                 # 提取图片的 base64 数据
                 images_base64 = []
-                for img in request.images:
+                for img in valid_images:
                     if img.startswith('data:'):
                         base64_data = img.split(',', 1)[1] if ',' in img else img
                         images_base64.append(base64_data)
@@ -364,7 +423,18 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                             if isinstance(msg_content, list):
                                 # 已经是 Qwen3-VL 格式（列表）
                                 if use_qwen_format:
-                                    normalized_msg["content"] = msg_content
+                                    # 验证并过滤图片 URL
+                                    filtered_content = []
+                                    for item in msg_content:
+                                        if isinstance(item, dict) and item.get("type") == "image":
+                                            img_url = item.get("image", "")
+                                            if await validate_image_url(img_url):
+                                                filtered_content.append(item)
+                                            else:
+                                                logger.warning(f"历史消息中的图片 URL 不可访问，已跳过: {img_url}")
+                                        else:
+                                            filtered_content.append(item)
+                                    normalized_msg["content"] = filtered_content
                                 else:
                                     # 转换为 Ollama 格式
                                     text_parts = []
@@ -375,11 +445,17 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                                                 text_parts.append(item.get("text", ""))
                                             elif item.get("type") == "image":
                                                 img_data = item.get("image", "")
+                                                # 验证图片 URL
+                                                if not await validate_image_url(img_data):
+                                                    logger.warning(f"历史消息中的图片 URL 不可访问，已跳过: {img_data}")
+                                                    continue
                                                 if img_data.startswith('data:'):
                                                     base64_data = img_data.split(',', 1)[1] if ',' in img_data else img_data
                                                     images_base64.append(base64_data)
                                                 else:
                                                     images_base64.append(img_data)
+                                        elif isinstance(item, str):
+                                            text_parts.append(item)
                                     normalized_msg["content"] = " ".join(text_parts) if text_parts else ""
                                     if images_base64 and is_multimodal:
                                         normalized_msg["images"] = images_base64
@@ -388,15 +464,18 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                                 normalized_msg["content"] = msg_content
                                 # 检查是否有单独的 images 字段
                                 if "images" in msg:
+                                    # 验证并过滤图片
+                                    msg_images = msg.get("images", [])
+                                    valid_msg_images = await filter_valid_images(msg_images)
                                     if use_qwen_format:
                                         # 转换为 Qwen3-VL 格式
                                         content_list = build_qwen_vl_message(
                                             text=msg_content,
-                                            images=msg.get("images", [])
+                                            images=valid_msg_images if valid_msg_images else None
                                         )
                                         normalized_msg["content"] = content_list
                                     else:
-                                        normalized_msg["images"] = msg.get("images", [])
+                                        normalized_msg["images"] = valid_msg_images
                             else:
                                 # 其他类型，转换为字符串
                                 normalized_msg["content"] = str(msg_content) if msg_content else ""
