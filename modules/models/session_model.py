@@ -71,7 +71,7 @@ def session_to_api_format(session_doc: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         API格式的会话数据
     """
-    return {
+    result = {
         "id": session_doc.get("key") or session_doc.get("_id"),
         "url": session_doc.get("url", ""),
         "title": session_doc.get("title", ""),
@@ -84,6 +84,12 @@ def session_to_api_format(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")
     }
+    
+    # 添加 imageDataUrl 字段（如果存在）
+    if "imageDataUrl" in session_doc:
+        result["imageDataUrl"] = session_doc.get("imageDataUrl")
+    
+    return result
 
 
 def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:

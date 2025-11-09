@@ -81,7 +81,7 @@ class SessionService:
         Returns:
             会话文档字典
         """
-        return {
+        doc = {
             "key": session_id,
             "user_id": user_id,
             "url": session_data.get("url", ""),
@@ -97,6 +97,12 @@ class SessionService:
             "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
             "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
         }
+        
+        # 添加 imageDataUrl 字段（如果存在）
+        if "imageDataUrl" in session_data and session_data["imageDataUrl"] is not None:
+            doc["imageDataUrl"] = session_data["imageDataUrl"]
+        
+        return doc
     
     def _prepare_update_doc(
         self,
@@ -129,7 +135,7 @@ class SessionService:
                 should_update_timestamp = True
         
         # 检查其他字段是否有变化
-        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags"]:
+        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl"]:
             if field in session_data and session_data[field] is not None:
                 existing_value = existing.get(field, [] if field == "tags" else "")
                 if session_data[field] != existing_value:
@@ -590,7 +596,7 @@ class SessionService:
             }
             
             # 更新字段
-            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages", "tags"]:
+            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages", "tags", "imageDataUrl"]:
                 if field in session_data and session_data[field] is not None:
                     update_doc[field] = session_data[field]
             
