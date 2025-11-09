@@ -775,7 +775,45 @@
             }
             
             getModel() {
-                return document.getElementById('model').value.trim() || null;
+                // 如果请求中有图片或视频，默认使用 qwen3-vl 模型
+                const hasImages = this.imageUrls && this.imageUrls.length > 0;
+                const hasVideos = this.videoUrls && this.videoUrls.length > 0;
+                const hasMultimodal = hasImages || hasVideos;
+                
+                const selectedModel = document.getElementById('model').value.trim();
+                
+                // 如果检测到图片或视频，且用户未明确选择模型，则使用 qwen3-vl
+                if (hasMultimodal && !selectedModel) {
+                    return 'qwen3-vl';
+                }
+                
+                // 如果检测到图片或视频，但用户选择了其他模型，仍然使用 qwen3-vl（因为多模态需要）
+                if (hasMultimodal) {
+                    return 'qwen3-vl';
+                }
+                
+                return selectedModel || null;
+            }
+            
+            updateModelSelection() {
+                // 根据是否有图片或视频，自动更新模型选择器
+                const hasImages = this.imageUrls && this.imageUrls.length > 0;
+                const hasVideos = this.videoUrls && this.videoUrls.length > 0;
+                const hasMultimodal = hasImages || hasVideos;
+                
+                const modelSelect = document.getElementById('model');
+                
+                if (hasMultimodal) {
+                    // 如果有图片或视频，自动设置为 qwen3-vl
+                    if (modelSelect.value !== 'qwen3-vl') {
+                        modelSelect.value = 'qwen3-vl';
+                        // 保存配置
+                        this.configManager.saveConfig();
+                        // 显示提示
+                        this.ui.showStatus('info', '检测到图片/视频，已自动切换到 qwen3-vl 模型');
+                    }
+                }
+                // 如果没有图片和视频，不自动切换回其他模型，让用户自己选择
             }
             
             getSystemPrompt() {
@@ -818,7 +856,10 @@
                 preview.innerHTML = '';
                 this.imageUrls = [];
                 
-                if (files.length === 0) return;
+                if (files.length === 0) {
+                    this.updateModelSelection();
+                    return;
+                }
                 
                 Array.from(files).forEach((file, index) => {
                     const reader = new FileReader();
@@ -833,6 +874,11 @@
                             <button class="remove-btn" onclick="app.removeImage(${this.imageUrls.length - 1})">×</button>
                         `;
                         preview.appendChild(previewItem);
+                        
+                        // 当所有图片加载完成后，更新模型选择
+                        if (this.imageUrls.length === files.length) {
+                            this.updateModelSelection();
+                        }
                     };
                     reader.readAsDataURL(file);
                 });
@@ -841,6 +887,7 @@
             removeImage(index) {
                 this.imageUrls.splice(index, 1);
                 this.updateImagePreview();
+                this.updateModelSelection();
             }
             
             updateImagePreview() {
@@ -864,7 +911,10 @@
                 preview.innerHTML = '';
                 this.videoUrls = [];
                 
-                if (files.length === 0) return;
+                if (files.length === 0) {
+                    this.updateModelSelection();
+                    return;
+                }
                 
                 Array.from(files).forEach((file, index) => {
                     const reader = new FileReader();
@@ -879,6 +929,11 @@
                             <button class="remove-btn" onclick="app.removeVideo(${this.videoUrls.length - 1})">×</button>
                         `;
                         preview.appendChild(previewItem);
+                        
+                        // 当所有视频加载完成后，更新模型选择
+                        if (this.videoUrls.length === files.length) {
+                            this.updateModelSelection();
+                        }
                     };
                     reader.readAsDataURL(file);
                 });
@@ -887,6 +942,7 @@
             removeVideo(index) {
                 this.videoUrls.splice(index, 1);
                 this.updateVideoPreview();
+                this.updateModelSelection();
             }
             
             updateVideoPreview() {
@@ -1026,7 +1082,6 @@
             async sendMessage() {
                 const userMessage = document.getElementById('userMessage').value.trim();
                 const systemPrompt = this.getSystemPrompt();
-                const model = this.getModel();
                 const baseUrl = this.getBaseUrl();
                 const userId = this.getUserId();
                 
@@ -1035,14 +1090,26 @@
                     return;
                 }
                 
+                // 检测是否有图片或视频
+                const imagesToSend = [...this.imageUrls];
+                const videosToSend = [...this.videoUrls];
+                const hasMultimodal = imagesToSend.length > 0 || videosToSend.length > 0;
+                
+                // 如果有图片或视频，默认使用 qwen3-vl 模型
+                let model = this.getModel();
+                if (hasMultimodal && !model) {
+                    model = 'qwen3-vl';
+                } else if (hasMultimodal) {
+                    // 即使用户选择了其他模型，如果有图片/视频，也使用 qwen3-vl
+                    model = 'qwen3-vl';
+                }
+                
                 // 添加用户消息到聊天界面（使用 Qwen3-VL 格式显示）
-                const userContent = this.buildUserContent(userMessage, this.imageUrls, this.videoUrls);
+                const userContent = this.buildUserContent(userMessage, imagesToSend, videosToSend);
                 this.addMessageToChat('user', userContent, true);
                 
                 // 清空输入框
                 document.getElementById('userMessage').value = '';
-                const imagesToSend = [...this.imageUrls];
-                const videosToSend = [...this.videoUrls];
                 this.imageUrls = [];
                 this.videoUrls = [];
                 this.updateImagePreview();
