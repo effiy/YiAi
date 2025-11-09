@@ -99,12 +99,16 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         # 使用系统提示
         enhanced_system_prompt = request.fromSystem
         
-        # 准备消息
+        # 准备消息 - 使用 Qwen3-VL 格式
         if request.images and len(request.images) > 0:
+            # Qwen3-VL 格式：content 是一个数组，包含文本和图片
             content = []
-            content.append({"type": "text", "text": request.fromUser})
+            # 先添加文本
+            if request.fromUser:
+                content.append({"type": "text", "text": request.fromUser})
+            # 然后添加图片（Qwen3-VL 格式：{"type": "image", "image": "url"}）
             for img in request.images:
-                content.append({"type": "image_url", "image_url": {"url": img}})
+                content.append({"type": "image", "image": img})
             messages = [
                 {"role": "system", "content": enhanced_system_prompt},
                 {"role": "user", "content": content}
@@ -142,7 +146,11 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
                     messages = history_messages.copy()
                     # 在历史消息后添加当前的系统提示和用户消息
                     messages.append({"role": "system", "content": enhanced_system_prompt})
-                    messages.append({"role": "user", "content": request.fromUser if not request.images else content})
+                    # 如果有图片，使用 content 数组；否则使用文本字符串
+                    if request.images and len(request.images) > 0:
+                        messages.append({"role": "user", "content": content})
+                    else:
+                        messages.append({"role": "user", "content": request.fromUser})
                     logger.info(f"已加载会话 {conversation_id} 的 {len(history_messages)} 条历史消息")
                 else:
                     logger.debug(f"会话 {conversation_id} 暂无历史消息")
