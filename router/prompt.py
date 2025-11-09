@@ -74,7 +74,13 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         
         # 创建Ollama客户端
         ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-        model_name = request.model if request.model else "qwen3"
+        # 如果请求中包含图片且未指定模型，则默认使用 qwen3-vl 模型
+        if request.images and len(request.images) > 0:
+            model_name = request.model if request.model else "qwen3-vl"
+            logger.info(f"检测到图片输入，使用模型: {model_name} (共 {len(request.images)} 张图片)")
+        else:
+            model_name = request.model if request.model else "qwen3"
+            logger.info(f"使用模型: {model_name}")
         
         # 获取认证信息
         ollama_auth = os.getenv("OLLAMA_AUTH", "")
@@ -202,8 +208,8 @@ async def generate_role_ai_json(request: ContentRequest, http_request: Request):
     所有参数都是可选的，如果未提供将使用默认值：
     - fromSystem: 默认 "你是一个有用的AI助手。"
     - fromUser: 默认为空字符串（如果为空，可能无法正常对话）
-    - model: 默认使用环境变量或 "qwen3"
-    - images: 默认为 None
+    - model: 默认使用环境变量或 "qwen3"；如果请求中包含图片且未指定模型，则默认使用 "qwen3-vl"
+    - images: 默认为 None，支持图片URL列表（如果提供图片，会自动使用 qwen3-vl 模型）
     - user_id: 默认从 X-User 请求头获取，或使用 "bigboom"
     - conversation_id: 默认为 None，会自动生成新的会话ID
     """

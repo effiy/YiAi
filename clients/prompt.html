@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 对话客户端 - 增强版</title>
     <style>
-        /* ===== 重置和基础样式 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        /* ===== CSS 变量定义 ===== */
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --primary-color: #667eea;
@@ -34,7 +28,14 @@
             --radius-lg: 10px;
             --transition: all 0.3s ease;
         }
-        
+
+        /* ===== 基础重置 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--primary-gradient);
@@ -42,13 +43,13 @@
             padding: 20px;
             line-height: 1.6;
         }
-        
+
         /* ===== 布局组件 ===== */
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
-        
+
         .card {
             background: white;
             border-radius: var(--radius-lg);
@@ -56,7 +57,7 @@
             padding: 30px;
             margin-bottom: 20px;
         }
-        
+
         .card-title {
             color: var(--text-primary);
             margin-bottom: 20px;
@@ -65,8 +66,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        
+
         .section-title {
             color: var(--text-secondary);
             margin-bottom: 15px;
@@ -75,15 +78,15 @@
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
         }
-        
-        /* ===== 服务状态显示 ===== */
+
+        /* ===== 服务状态 ===== */
         .service-status {
             display: flex;
             gap: 15px;
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-        
+
         .status-badge {
             padding: 8px 16px;
             border-radius: var(--radius);
@@ -93,27 +96,27 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .status-badge.available {
             background: var(--bg-status-ok);
             color: var(--success-color);
         }
-        
+
         .status-badge.unavailable {
             background: var(--bg-status-error);
             color: var(--error-color);
         }
-        
+
         .status-badge.checking {
             background: #fff3cd;
             color: var(--warning-color);
         }
-        
+
         /* ===== 表单组件 ===== */
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         .form-label {
             display: block;
             margin-bottom: 8px;
@@ -121,13 +124,13 @@
             font-weight: 600;
             font-size: 14px;
         }
-        
+
         .form-label small {
             font-weight: 400;
             color: var(--text-muted);
             margin-left: 8px;
         }
-        
+
         .form-input,
         .form-textarea {
             width: 100%;
@@ -138,37 +141,37 @@
             transition: var(--transition);
             font-family: inherit;
         }
-        
+
         .form-textarea {
             min-height: 100px;
             resize: vertical;
             font-family: 'Consolas', 'Monaco', monospace;
         }
-        
+
         .form-input:focus,
         .form-textarea:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
+
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
         }
-        
+
         .form-checkbox-group {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             align-items: center;
         }
-        
+
         .form-checkbox {
             margin-right: 8px;
         }
-        
+
         .form-number {
             width: 80px;
             padding: 8px;
@@ -176,7 +179,7 @@
             border-radius: var(--radius);
             font-size: 14px;
         }
-        
+
         /* ===== 按钮组件 ===== */
         .button-group {
             display: flex;
@@ -184,7 +187,7 @@
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-        
+
         .btn {
             padding: 14px 24px;
             border: none;
@@ -198,59 +201,59 @@
             justify-content: center;
             gap: 8px;
         }
-        
+
         .btn-primary {
             background: var(--primary-gradient);
             color: white;
         }
-        
+
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-        
+
         .btn-secondary {
             background: #f5f5f5;
             color: var(--text-primary);
         }
-        
+
         .btn-secondary:hover:not(:disabled) {
             background: #e0e0e0;
         }
-        
+
         .btn-danger {
             background: #f44336;
             color: white;
         }
-        
+
         .btn-danger:hover:not(:disabled) {
             background: #d32f2f;
         }
-        
+
         .btn-info {
             background: var(--info-color);
             color: white;
         }
-        
+
         .btn-info:hover:not(:disabled) {
             background: #1565c0;
         }
-        
+
         .btn:active:not(:disabled) {
             transform: translateY(0);
         }
-        
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-        
+
         .btn-sm {
             padding: 10px 20px;
             font-size: 14px;
         }
-        
-        /* ===== 状态提示组件 ===== */
+
+        /* ===== 状态提示 ===== */
         .status {
             padding: 12px;
             border-radius: var(--radius);
@@ -258,35 +261,35 @@
             display: none;
             animation: slideIn 0.3s ease;
         }
-        
+
         .status.show {
             display: block;
         }
-        
+
         .status.info {
             background: #e3f2fd;
             color: var(--info-color);
             border-left: 4px solid var(--info-color);
         }
-        
+
         .status.success {
             background: #e8f5e9;
             color: var(--success-color);
             border-left: 4px solid var(--success-color);
         }
-        
+
         .status.error {
             background: #ffebee;
             color: var(--error-color);
             border-left: 4px solid var(--error-color);
         }
-        
+
         .status.warning {
             background: #fff3cd;
             color: var(--warning-color);
             border-left: 4px solid var(--warning-color);
         }
-        
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -297,8 +300,8 @@
                 transform: translateY(0);
             }
         }
-        
-        /* ===== 上下文信息显示 ===== */
+
+        /* ===== 上下文信息 ===== */
         .context-info {
             background: #f5f5f5;
             border-left: 4px solid var(--info-color);
@@ -308,11 +311,11 @@
             font-size: 13px;
             display: none;
         }
-        
+
         .context-info.show {
             display: block;
         }
-        
+
         .context-info-header {
             display: flex;
             justify-content: space-between;
@@ -320,7 +323,7 @@
             margin-bottom: 12px;
             cursor: pointer;
         }
-        
+
         .context-info-title {
             font-weight: 600;
             color: var(--info-color);
@@ -328,18 +331,18 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .context-details {
             display: none;
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid var(--border-color);
         }
-        
+
         .context-details.show {
             display: block;
         }
-        
+
         .context-memory-item,
         .context-chat-item {
             background: white;
@@ -350,15 +353,15 @@
             font-size: 12px;
             line-height: 1.6;
         }
-        
+
         .context-memory-item {
             border-left-color: var(--success-color);
         }
-        
+
         .context-chat-item {
             border-left-color: var(--info-color);
         }
-        
+
         .context-item-header {
             display: flex;
             justify-content: space-between;
@@ -366,13 +369,13 @@
             font-weight: 600;
             color: var(--text-primary);
         }
-        
+
         .context-item-content {
             color: var(--text-secondary);
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        
+
         /* ===== 输出区域 ===== */
         .output {
             background: var(--bg-dark);
@@ -388,24 +391,24 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        
+
         .output::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         .output::-webkit-scrollbar-track {
             background: #2e2e2e;
         }
-        
+
         .output::-webkit-scrollbar-thumb {
             background: #555;
             border-radius: 4px;
         }
-        
+
         .output::-webkit-scrollbar-thumb:hover {
             background: #777;
         }
-        
+
         /* ===== 加载动画 ===== */
         .spinner {
             display: inline-block;
@@ -416,33 +419,33 @@
             border-top-color: white;
             animation: spin 0.8s linear infinite;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        /* ===== 图片预览组件 ===== */
+
+        /* ===== 图片预览 ===== */
         .image-preview {
             margin-top: 10px;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 10px;
         }
-        
+
         .image-preview-item {
             position: relative;
             border-radius: var(--radius);
             overflow: hidden;
             border: 2px solid var(--border-color);
         }
-        
+
         .image-preview-item img {
             width: 100%;
             height: 150px;
             object-fit: cover;
             display: block;
         }
-        
+
         .image-remove-btn {
             position: absolute;
             top: 5px;
@@ -461,12 +464,12 @@
             justify-content: center;
             transition: var(--transition);
         }
-        
+
         .image-remove-btn:hover {
             background: rgba(244, 67, 54, 1);
             transform: scale(1.1);
         }
-        
+
         /* ===== 折叠面板 ===== */
         .collapsible {
             border: 1px solid var(--border-color);
@@ -474,7 +477,7 @@
             margin-bottom: 15px;
             overflow: hidden;
         }
-        
+
         .collapsible-header {
             padding: 12px 16px;
             background: var(--bg-light);
@@ -486,43 +489,43 @@
             user-select: none;
             transition: var(--transition);
         }
-        
+
         .collapsible-header:hover {
             background: #f0f0f0;
         }
-        
+
         .collapsible-content {
             padding: 16px;
             display: none;
         }
-        
+
         .collapsible-content.show {
             display: block;
         }
-        
+
         .collapsible-toggle {
             transition: transform 0.3s ease;
         }
-        
+
         .collapsible.open .collapsible-toggle {
             transform: rotate(180deg);
         }
-        
-        /* ===== 聊天记录组件 ===== */
+
+        /* ===== 聊天记录 ===== */
         .chat-history {
             display: none;
         }
-        
+
         .chat-history.show {
             display: block;
         }
-        
+
         .chat-list {
             max-height: 400px;
             overflow-y: auto;
             margin-top: 10px;
         }
-        
+
         .chat-item {
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
@@ -530,7 +533,7 @@
             margin-bottom: 10px;
             background: var(--bg-light);
         }
-        
+
         .chat-header {
             font-size: 12px;
             color: var(--text-muted);
@@ -541,84 +544,93 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        
+
         .chat-message {
             padding: 8px;
             border-radius: var(--radius);
             margin-bottom: 8px;
         }
-        
+
         .chat-message.user {
             background: #e3f2fd;
         }
-        
+
         .chat-message.assistant {
             background: #f5f5f5;
         }
-        
+
         .chat-message strong {
             display: block;
             margin-bottom: 5px;
         }
-        
+
         .chat-message-content {
             margin-top: 5px;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        
-        /* ===== 响应式设计 ===== */
-        @media (max-width: 768px) {
-            .card {
-                padding: 20px;
-            }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-        
+
         /* ===== 工具类 ===== */
         .flex {
             display: flex;
             gap: 10px;
             align-items: center;
         }
-        
+
         .flex-1 {
             flex: 1;
         }
-        
+
         .hidden {
             display: none !important;
+        }
+
+        /* ===== 响应式设计 ===== */
+        @media (max-width: 768px) {
+            .card {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .card-title {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <h1 class="card-title">
+            <!-- 标题栏 -->
+            <header class="card-title">
                 <span>🤖 AI 对话客户端 - 增强版</span>
-                <button class="btn btn-info btn-sm" onclick="app.checkServiceStatus()">🔄 检查服务状态</button>
-            </h1>
-            
+                <button class="btn btn-info btn-sm" onclick="app.checkServiceStatus()">
+                    🔄 检查服务状态
+                </button>
+            </header>
+
             <!-- 服务状态显示 -->
             <div class="service-status" id="serviceStatus">
                 <span class="status-badge checking">
                     <span class="spinner"></span> 检查中...
                 </span>
             </div>
-            
+
+            <!-- 状态消息 -->
             <div id="status" class="status"></div>
-            
+
             <!-- 上下文信息显示 -->
             <div id="contextInfo" class="context-info">
                 <div class="context-info-header" onclick="toggleContextDetails()">
@@ -626,162 +638,199 @@
                         <span id="contextIcon">📋</span>
                         <span id="contextTitle">检索到的上下文信息</span>
                     </span>
-                    <span id="contextToggle" style="font-size: 12px; color: var(--text-muted);">▼ 展开详情</span>
+                    <span id="contextToggle" style="font-size: 12px; color: var(--text-muted);">
+                        ▼ 展开详情
+                    </span>
                 </div>
                 <div id="contextSummary" style="margin-top: 8px;"></div>
                 <div id="contextDetails" class="context-details"></div>
             </div>
-            
+
             <!-- 请求配置区域 -->
-            <h2 class="section-title">请求配置</h2>
-            
-            <div class="form-group">
-                <label for="baseUrl" class="form-label">API 服务器地址：</label>
-                <input type="text" id="baseUrl" class="form-input" value="https://api.effiy.cn" placeholder="https://api.effiy.cn">
-            </div>
-            
-            <div class="form-row">
+            <section>
+                <h2 class="section-title">请求配置</h2>
+
                 <div class="form-group">
-                    <label for="model" class="form-label">模型名称（可选）：</label>
-                    <input type="text" id="model" class="form-input" placeholder="qwen3" value="qwen3">
+                    <label for="baseUrl" class="form-label">API 服务器地址：</label>
+                    <input type="text" id="baseUrl" class="form-input" 
+                           value="https://api.effiy.cn" placeholder="https://api.effiy.cn">
                 </div>
-                
-                <div class="form-group">
-                    <label for="userId" class="form-label">用户ID（可选）：</label>
-                    <input type="text" id="userId" class="form-input" placeholder="例如：user123">
-                </div>
-                
-                <div class="form-group">
-                    <label for="conversationId" class="form-label">会话ID（可选）：</label>
-                    <input type="text" id="conversationId" class="form-input" placeholder="留空将创建新会话">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="fromSystem" class="form-label">系统提示词：</label>
-                <textarea id="fromSystem" class="form-textarea" placeholder="例如：你是一个有用的助手。">你是一个专业的助手，请用简洁明了的语言回答问题。</textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="fromUser" class="form-label">用户提示词：</label>
-                <textarea id="fromUser" class="form-textarea" placeholder="例如：请介绍一下人工智能。">请用中文简单介绍一下人工智能的发展历史，字数控制在200字左右。</textarea>
-            </div>
-            
-            <!-- 记忆检索配置 -->
-            <div class="collapsible" id="memoryConfigPanel">
-                <div class="collapsible-header" onclick="app.toggleCollapsible('memoryConfigPanel')">
-                    <span>🧠 记忆检索配置</span>
-                    <span class="collapsible-toggle">▼</span>
-                </div>
-                <div class="collapsible-content">
+
+                <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" id="useMemory" class="form-checkbox" checked> 
-                            启用 Mem0 记忆检索
-                            <small>（自动检索相关的用户记忆）</small>
-                        </label>
+                        <label for="model" class="form-label">模型名称（可选）：</label>
+                        <input type="text" id="model" class="form-input" 
+                               placeholder="qwen3" value="qwen3">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" id="useVectorSearch" class="form-checkbox" checked> 
-                            启用 Qdrant 向量检索
-                            <small>（自动检索相关的历史聊天记录）</small>
-                        </label>
+                        <label for="userId" class="form-label">用户ID（可选）：</label>
+                        <input type="text" id="userId" class="form-input" 
+                               placeholder="例如：user123">
                     </div>
-                    
-                    <div class="form-row">
+
+                    <div class="form-group">
+                        <label for="conversationId" class="form-label">会话ID（可选）：</label>
+                        <input type="text" id="conversationId" class="form-input" 
+                               placeholder="留空将创建新会话">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fromSystem" class="form-label">系统提示词：</label>
+                    <textarea id="fromSystem" class="form-textarea" 
+                              placeholder="例如：你是一个有用的助手。">你是一个专业的助手，请用简洁明了的语言回答问题。</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="fromUser" class="form-label">用户提示词：</label>
+                    <textarea id="fromUser" class="form-textarea" 
+                              placeholder="例如：请介绍一下人工智能。">请用中文简单介绍一下人工智能的发展历史，字数控制在200字左右。</textarea>
+                </div>
+
+                <!-- 记忆检索配置 -->
+                <div class="collapsible" id="memoryConfigPanel">
+                    <div class="collapsible-header" onclick="app.toggleCollapsible('memoryConfigPanel')">
+                        <span>🧠 记忆检索配置</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
                         <div class="form-group">
-                            <label for="memoryLimit" class="form-label">记忆检索数量：</label>
-                            <input type="number" id="memoryLimit" class="form-number" value="5" min="1" max="20">
+                            <label class="form-label">
+                                <input type="checkbox" id="useMemory" class="form-checkbox" checked> 
+                                启用 Mem0 记忆检索
+                                <small>（自动检索相关的用户记忆）</small>
+                            </label>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="vectorSearchLimit" class="form-label">向量检索数量：</label>
-                            <input type="number" id="vectorSearchLimit" class="form-number" value="5" min="1" max="20">
+                            <label class="form-label">
+                                <input type="checkbox" id="useVectorSearch" class="form-checkbox" checked> 
+                                启用 Qdrant 向量检索
+                                <small>（自动检索相关的历史聊天记录）</small>
+                            </label>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memoryLimit" class="form-label">记忆检索数量：</label>
+                                <input type="number" id="memoryLimit" class="form-number" 
+                                       value="5" min="1" max="20">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vectorSearchLimit" class="form-label">向量检索数量：</label>
+                                <input type="number" id="vectorSearchLimit" class="form-number" 
+                                       value="5" min="1" max="20">
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="saveChat" class="form-checkbox" checked> 
-                    保存聊天记录
-                </label>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">图片上传（支持视觉模型）：</label>
-                <input type="file" id="imageUpload" accept="image/*" multiple class="hidden">
-                <div class="button-group">
-                    <button type="button" class="btn btn-primary btn-sm" onclick="app.imageManager.selectImages()">
-                        📷 选择图片
-                    </button>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="app.imageManager.clearImages()">
-                        🗑️ 清除图片
-                    </button>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="saveChat" class="form-checkbox" checked> 
+                        保存聊天记录
+                    </label>
                 </div>
-                <div id="imagePreview" class="image-preview"></div>
-            </div>
-            
-            <div class="button-group">
-                <button id="btnStream" class="btn btn-primary flex-1" onclick="app.streamPrompt()">
-                    🚀 流式调用
-                    <span style="font-size: 12px; opacity: 0.8; margin-left: 8px;">(Ctrl+Enter)</span>
-                </button>
-                <button id="btnClear" class="btn btn-secondary flex-1" onclick="app.clearOutput()">
-                    🧹 清空输出
-                </button>
-            </div>
-            
-            <!-- 记忆管理区域 -->
-            <div class="collapsible" id="memoryManagementPanel">
-                <div class="collapsible-header" onclick="app.toggleCollapsible('memoryManagementPanel')">
-                    <span>💾 记忆管理</span>
-                    <span class="collapsible-toggle">▼</span>
-                </div>
-                <div class="collapsible-content">
-                    <div class="form-group">
-                        <label for="memoryText" class="form-label">添加新记忆：</label>
-                        <textarea id="memoryText" class="form-textarea" placeholder="输入要保存的记忆内容..."></textarea>
-                    </div>
+
+                <div class="form-group">
+                    <label class="form-label">图片上传（支持视觉模型）：</label>
+                    <input type="file" id="imageUpload" accept="image/*" multiple class="hidden">
                     <div class="button-group">
-                        <button class="btn btn-primary btn-sm" onclick="app.addMemory()">➕ 添加记忆</button>
-                        <button class="btn btn-secondary btn-sm" onclick="app.loadMemories()">📋 查看我的记忆</button>
-                        <button class="btn btn-danger btn-sm" onclick="app.clearAllMemories()">🗑️ 清空所有记忆</button>
+                        <button type="button" class="btn btn-primary btn-sm" 
+                                onclick="app.imageManager.selectImages()">
+                            📷 选择图片
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" 
+                                onclick="app.imageManager.clearImages()">
+                            🗑️ 清除图片
+                        </button>
                     </div>
-                    <div id="memoriesList" style="margin-top: 15px;"></div>
+                    <div id="imagePreview" class="image-preview"></div>
                 </div>
-            </div>
-            
+
+                <div class="button-group">
+                    <button id="btnStream" class="btn btn-primary flex-1" 
+                            onclick="app.streamPrompt()">
+                        🚀 流式调用
+                        <span style="font-size: 12px; opacity: 0.8; margin-left: 8px;">
+                            (Ctrl+Enter)
+                        </span>
+                    </button>
+                    <button id="btnClear" class="btn btn-secondary flex-1" 
+                            onclick="app.clearOutput()">
+                        🧹 清空输出
+                    </button>
+                </div>
+            </section>
+
+            <!-- 记忆管理区域 -->
+            <section>
+                <div class="collapsible" id="memoryManagementPanel">
+                    <div class="collapsible-header" onclick="app.toggleCollapsible('memoryManagementPanel')">
+                        <span>💾 记忆管理</span>
+                        <span class="collapsible-toggle">▼</span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="form-group">
+                            <label for="memoryText" class="form-label">添加新记忆：</label>
+                            <textarea id="memoryText" class="form-textarea" 
+                                      placeholder="输入要保存的记忆内容..."></textarea>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn btn-primary btn-sm" onclick="app.addMemory()">
+                                ➕ 添加记忆
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="app.loadMemories()">
+                                📋 查看我的记忆
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="app.clearAllMemories()">
+                                🗑️ 清空所有记忆
+                            </button>
+                        </div>
+                        <div id="memoriesList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </section>
+
             <!-- 聊天记录管理区域 -->
-            <h2 class="section-title">聊天记录管理</h2>
-            
-            <div class="form-group">
-                <label for="searchQuery" class="form-label">搜索聊天记录：</label>
-                <div class="flex">
-                    <input type="text" id="searchQuery" class="form-input" placeholder="输入关键词进行语义搜索">
-                    <button class="btn btn-primary btn-sm" onclick="app.searchChats()">🔍 搜索</button>
+            <section>
+                <h2 class="section-title">聊天记录管理</h2>
+
+                <div class="form-group">
+                    <label for="searchQuery" class="form-label">搜索聊天记录：</label>
+                    <div class="flex">
+                        <input type="text" id="searchQuery" class="form-input" 
+                               placeholder="输入关键词进行语义搜索">
+                        <button class="btn btn-primary btn-sm" onclick="app.searchChats()">
+                            🔍 搜索
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="loadUserId" class="form-label">加载用户聊天记录：</label>
-                <div class="flex">
-                    <input type="text" id="loadUserId" class="form-input" placeholder="输入用户ID">
-                    <button class="btn btn-primary btn-sm" onclick="app.loadUserChats()">📋 加载</button>
+
+                <div class="form-group">
+                    <label for="loadUserId" class="form-label">加载用户聊天记录：</label>
+                    <div class="flex">
+                        <input type="text" id="loadUserId" class="form-input" 
+                               placeholder="输入用户ID">
+                        <button class="btn btn-primary btn-sm" onclick="app.loadUserChats()">
+                            📋 加载
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <div id="chatHistory" class="chat-history">
-                <h3 class="section-title">聊天记录列表</h3>
-                <div id="chatList" class="chat-list"></div>
-            </div>
-            
+
+                <div id="chatHistory" class="chat-history">
+                    <h3 class="section-title">聊天记录列表</h3>
+                    <div id="chatList" class="chat-list"></div>
+                </div>
+            </section>
+
             <!-- 输出结果区域 -->
-            <h2 class="section-title">输出结果</h2>
-            <div id="output" class="output">等待调用...</div>
+            <section>
+                <h2 class="section-title">输出结果</h2>
+                <div id="output" class="output">等待调用...</div>
+            </section>
         </div>
     </div>
 
@@ -801,41 +850,23 @@
                 this.configManager = new ConfigManager();
                 this.init();
             }
-            
-            toggleContextDetails() {
-                this.ui.toggleContextDetails();
-                // 如果上下文详情未加载，则加载详细信息
-                const detailsDiv = document.getElementById('contextDetails');
-                if (detailsDiv.classList.contains('show') && this.currentContextInfo && !detailsDiv.innerHTML.includes('相关记忆')) {
-                    this.loadContextDetails();
-                }
-            }
-            
-            async loadContextDetails() {
-                // 这里可以调用API获取更详细的上下文信息
-                // 目前先使用已有的信息
-            }
-            
+
             init() {
-                // 绑定图片上传事件
+                this.bindImageUpload();
+                this.configManager.loadConfig();
+                this.bindKeyboardShortcuts();
+                this.checkServiceStatus();
+            }
+
+            bindImageUpload() {
                 const imageUpload = document.getElementById('imageUpload');
                 imageUpload.addEventListener('change', (e) => {
                     this.imageManager.handleFileSelect(e);
                 });
-                
-                // 加载保存的配置
-                this.configManager.loadConfig();
-                
-                // 绑定键盘快捷键
-                this.bindKeyboardShortcuts();
-                
-                // 检查服务状态
-                this.checkServiceStatus();
             }
-            
+
             bindKeyboardShortcuts() {
                 document.addEventListener('keydown', (e) => {
-                    // Ctrl/Cmd + Enter: 发送消息
                     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                         e.preventDefault();
                         if (!this.isStreaming) {
@@ -844,42 +875,53 @@
                     }
                 });
             }
-            
+
             toggleCollapsible(panelId) {
                 const panel = document.getElementById(panelId);
                 panel.classList.toggle('open');
                 const content = panel.querySelector('.collapsible-content');
                 content.classList.toggle('show');
             }
-            
+
+            toggleContextDetails() {
+                this.ui.toggleContextDetails();
+                const detailsDiv = document.getElementById('contextDetails');
+                if (detailsDiv.classList.contains('show') && 
+                    this.currentContextInfo && 
+                    !detailsDiv.innerHTML.includes('相关记忆')) {
+                    this.loadContextDetails();
+                }
+            }
+
+            async loadContextDetails() {
+                // 可以在这里调用API获取更详细的上下文信息
+            }
+
             async checkServiceStatus() {
                 const baseUrl = this.getInputValue('baseUrl');
                 const statusContainer = document.getElementById('serviceStatus');
-                
+
                 if (!baseUrl) {
-                    statusContainer.innerHTML = `<span class="status-badge unavailable">⚠️ 请先输入API服务器地址</span>`;
+                    statusContainer.innerHTML = 
+                        `<span class="status-badge unavailable">⚠️ 请先输入API服务器地址</span>`;
                     return;
                 }
-                
-                statusContainer.innerHTML = '<span class="status-badge checking"><span class="spinner"></span> 检查中...</span>';
-                
-                // 确保URL格式正确：移除baseUrl末尾的斜杠，确保路径以斜杠开头
+
+                statusContainer.innerHTML = 
+                    '<span class="status-badge checking"><span class="spinner"></span> 检查中...</span>';
+
                 const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
                 const statusUrl = `${normalizedBaseUrl}/prompt/status`;
-                
+
                 try {
-                    // 添加调试信息
                     console.log('正在连接服务器:', statusUrl);
-                    console.log('请求时间:', new Date().toISOString());
-                    
                     const startTime = Date.now();
                     const data = await this.apiClient.get(statusUrl);
                     const duration = Date.now() - startTime;
-                    
+
                     console.log('连接成功，耗时:', duration, 'ms');
-                    console.log('服务器响应:', data);
                     let html = '';
-                    
+
                     if (data.qdrant) {
                         const qdrantStatus = data.qdrant.available ? 'available' : 'unavailable';
                         html += `<span class="status-badge ${qdrantStatus}">`;
@@ -887,7 +929,7 @@
                         html += `<small style="margin-left: 8px;">${data.qdrant.message}</small>`;
                         html += `</span>`;
                     }
-                    
+
                     if (data.mem0) {
                         const mem0Status = data.mem0.available ? 'available' : 'unavailable';
                         html += `<span class="status-badge ${mem0Status}">`;
@@ -895,94 +937,93 @@
                         html += `<small style="margin-left: 8px;">${data.mem0.message}</small>`;
                         html += `</span>`;
                     }
-                    
-                    statusContainer.innerHTML = html || '<span class="status-badge unavailable">⚠️ 服务状态信息为空</span>';
+
+                    statusContainer.innerHTML = html || 
+                        '<span class="status-badge unavailable">⚠️ 服务状态信息为空</span>';
                 } catch (error) {
-                    // 详细的错误日志
-                    console.error('检查服务状态失败:');
-                    console.error('错误对象:', error);
-                    console.error('错误类型:', error?.constructor?.name);
-                    console.error('错误消息:', error?.message);
-                    console.error('错误堆栈:', error?.stack);
-                    console.error('请求URL:', statusUrl);
-                    console.error('请求时间:', new Date().toISOString());
-                    
-                    let errorMessage = '无法连接服务器';
-                    let errorDetails = '';
-                    
-                    if (error?.message) {
-                        // 处理包含换行符的错误消息
-                        const errorMsg = error.message;
-                        if (errorMsg.includes('网络连接失败')) {
-                            errorMessage = '网络连接失败';
-                            // 提取详细原因
-                            const reasonsMatch = errorMsg.match(/可能的原因：([\s\S]+)/);
-                            if (reasonsMatch) {
-                                errorDetails = reasonsMatch[1].trim();
-                            }
-                        } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('fetch')) {
-                            errorMessage = '网络连接失败';
-                            errorDetails = '1. 请检查服务器地址是否正确\n2. 请确认服务器正在运行\n3. 检查网络连接\n4. 如果使用 HTTPS，请确认证书有效\n5. 检查浏览器控制台是否有 CORS 错误';
-                        } else if (errorMsg.includes('CORS') || errorMsg.includes('cors')) {
-                            errorMessage = 'CORS跨域错误';
-                            errorDetails = '浏览器阻止了跨域请求。请检查服务器的 CORS 配置，确保允许来自当前域的请求。';
-                        } else if (errorMsg.includes('HTTP')) {
-                            const httpMatch = errorMsg.match(/HTTP (\d+)/);
-                            if (httpMatch) {
-                                const statusCode = httpMatch[1];
-                                if (statusCode === '404') {
-                                    errorMessage = '接口不存在 (404)';
-                                    errorDetails = `服务器返回 404 错误，请检查接口路径是否正确: ${statusUrl}`;
-                                } else if (statusCode === '401' || statusCode === '403') {
-                                    errorMessage = `认证失败 (${statusCode})`;
-                                    errorDetails = '服务器拒绝了请求，可能需要认证信息或权限不足。';
-                                } else if (statusCode >= 500) {
-                                    errorMessage = `服务器错误 (${statusCode})`;
-                                    errorDetails = '服务器内部错误，请稍后重试或联系管理员。';
-                                } else {
-                                    errorMessage = `服务器返回错误 (${statusCode})`;
-                                    errorDetails = errorMsg;
-                                }
-                            } else {
-                                errorMessage = `服务器返回错误: ${errorMsg}`;
-                            }
-                        } else {
-                            errorMessage = `连接失败: ${errorMsg}`;
-                        }
-                    }
-                    
-                    let statusHtml = `<span class="status-badge unavailable">❌ ${errorMessage}</span>`;
-                    if (errorDetails) {
-                        statusHtml += `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: var(--radius); font-size: 12px; white-space: pre-line; max-width: 600px;">${this.ui.escapeHtml(errorDetails)}</div>`;
-                    }
-                    // 添加调试提示
-                    statusHtml += `<div style="margin-top: 8px; padding: 8px; background: #e3f2fd; border-radius: var(--radius); font-size: 11px; color: #1976d2;">
-                        💡 提示: 打开浏览器控制台 (F12) 查看详细的错误信息和网络请求
-                    </div>`;
-                    statusContainer.innerHTML = statusHtml;
-                    this.ui.showStatus('error', `❌ ${errorMessage}`);
+                    console.error('检查服务状态失败:', error);
+                    const errorMessage = this.parseErrorMessage(error);
+                    statusContainer.innerHTML = this.buildErrorStatusHTML(errorMessage, statusUrl);
+                    this.ui.showStatus('error', `❌ ${errorMessage.message}`);
                 }
             }
-            
+
+            parseErrorMessage(error) {
+                let message = '无法连接服务器';
+                let details = '';
+
+                if (error?.message) {
+                    const errorMsg = error.message;
+                    if (errorMsg.includes('网络连接失败')) {
+                        message = '网络连接失败';
+                        const reasonsMatch = errorMsg.match(/可能的原因：([\s\S]+)/);
+                        if (reasonsMatch) {
+                            details = reasonsMatch[1].trim();
+                        }
+                    } else if (errorMsg.includes('Failed to fetch') || 
+                               errorMsg.includes('NetworkError') || 
+                               errorMsg.includes('fetch')) {
+                        message = '网络连接失败';
+                        details = '1. 请检查服务器地址是否正确\n2. 请确认服务器正在运行\n3. 检查网络连接\n4. 如果使用 HTTPS，请确认证书有效\n5. 检查浏览器控制台是否有 CORS 错误';
+                    } else if (errorMsg.includes('CORS') || errorMsg.includes('cors')) {
+                        message = 'CORS跨域错误';
+                        details = '浏览器阻止了跨域请求。请检查服务器的 CORS 配置，确保允许来自当前域的请求。';
+                    } else if (errorMsg.includes('HTTP')) {
+                        const httpMatch = errorMsg.match(/HTTP (\d+)/);
+                        if (httpMatch) {
+                            const statusCode = httpMatch[1];
+                            if (statusCode === '404') {
+                                message = '接口不存在 (404)';
+                                details = `服务器返回 404 错误，请检查接口路径是否正确`;
+                            } else if (statusCode === '401' || statusCode === '403') {
+                                message = `认证失败 (${statusCode})`;
+                                details = '服务器拒绝了请求，可能需要认证信息或权限不足。';
+                            } else if (statusCode >= 500) {
+                                message = `服务器错误 (${statusCode})`;
+                                details = '服务器内部错误，请稍后重试或联系管理员。';
+                            } else {
+                                message = `服务器返回错误 (${statusCode})`;
+                                details = errorMsg;
+                            }
+                        } else {
+                            message = `服务器返回错误: ${errorMsg}`;
+                        }
+                    } else {
+                        message = `连接失败: ${errorMsg}`;
+                    }
+                }
+
+                return { message, details };
+            }
+
+            buildErrorStatusHTML(errorMessage, statusUrl) {
+                let html = `<span class="status-badge unavailable">❌ ${errorMessage.message}</span>`;
+                if (errorMessage.details) {
+                    html += `<div style="margin-top: 8px; padding: 8px; background: #fff3cd; border-radius: var(--radius); font-size: 12px; white-space: pre-line; max-width: 600px;">${this.ui.escapeHtml(errorMessage.details)}</div>`;
+                }
+                html += `<div style="margin-top: 8px; padding: 8px; background: #e3f2fd; border-radius: var(--radius); font-size: 11px; color: #1976d2;">
+                    💡 提示: 打开浏览器控制台 (F12) 查看详细的错误信息和网络请求
+                </div>`;
+                return html;
+            }
+
             async streamPrompt() {
                 if (this.isStreaming) {
                     this.ui.showStatus('info', '正在处理请求中，请稍候...');
                     return;
                 }
-                
+
                 const config = this.getFormConfig();
-                
-                // 验证输入
                 if (!this.validateConfig(config)) {
                     return;
                 }
-                
+
                 this.isStreaming = true;
                 this.ui.setStreamButtonState(true);
                 this.ui.clearOutput();
                 this.ui.hideContextInfo();
                 this.ui.showStatus('info', '正在连接服务器...');
-                
+
                 try {
                     const payload = this.buildPayload(config);
                     await this.apiClient.streamRequest('/prompt', payload, {
@@ -1002,7 +1043,7 @@
                     this.ui.setStreamButtonState(false);
                 }
             }
-            
+
             getFormConfig() {
                 const config = {
                     baseUrl: this.getInputValue('baseUrl'),
@@ -1018,32 +1059,30 @@
                     vectorSearchLimit: parseInt(document.getElementById('vectorSearchLimit').value) || 5,
                     images: this.imageManager.getImages()
                 };
-                
-                // 保存配置到本地存储
+
                 this.configManager.saveConfig(config);
-                
                 return config;
             }
-            
+
             getInputValue(id) {
                 const element = document.getElementById(id);
                 return element ? element.value.trim() : '';
             }
-            
+
             validateConfig(config) {
                 if (!config.fromSystem || !config.fromUser) {
                     this.ui.showStatus('error', '系统提示词和用户提示词不能为空！');
                     return false;
                 }
-                
+
                 if (!config.baseUrl) {
                     this.ui.showStatus('error', 'API 服务器地址不能为空！');
                     return false;
                 }
-                
+
                 return true;
             }
-            
+
             buildPayload(config) {
                 const payload = {
                     fromSystem: config.fromSystem,
@@ -1054,65 +1093,61 @@
                     use_vector_search: config.useVectorSearch,
                     vector_search_limit: config.vectorSearchLimit
                 };
-                
+
                 if (config.model) payload.model = config.model;
                 if (config.userId) payload.user_id = config.userId;
                 if (config.conversationId) payload.conversation_id = config.conversationId;
                 if (config.images.length > 0) payload.images = config.images;
-                
+
                 return payload;
             }
-            
+
             handleStreamChunk(chunk) {
                 const output = document.getElementById('output');
-                
-                // 处理消息内容
+
                 if (chunk.message?.content) {
                     output.textContent += chunk.message.content;
                     output.scrollTop = output.scrollHeight;
                 }
-                
-                // 处理上下文信息
+
                 if (chunk.type === 'context_info') {
-                    // 存储上下文数据以便后续展示详细信息
                     this.currentContextInfo = chunk.data;
                     this.ui.showContextInfo(chunk.data);
                 }
-                
-                // 处理聊天记录保存
+
                 if (chunk.type === 'chat_saved' && chunk.conversation_id) {
                     this.currentConversationId = chunk.conversation_id;
                     document.getElementById('conversationId').value = chunk.conversation_id;
-                    this.ui.showStatus('success', `✅ 聊天记录已保存，会话ID: ${chunk.conversation_id}`);
+                    this.ui.showStatus('success', 
+                        `✅ 聊天记录已保存，会话ID: ${chunk.conversation_id}`);
                 }
-                
-                // 处理完成状态
+
                 if (chunk.done === true) {
                     this.ui.showStatus('success', '✅ 完成！');
                 }
             }
-            
+
             clearOutput() {
                 this.ui.clearOutput();
                 this.imageManager.clearImages();
                 this.ui.hideContextInfo();
             }
-            
+
             async addMemory() {
                 const baseUrl = this.getInputValue('baseUrl');
                 const userId = this.getInputValue('userId');
                 const memoryText = document.getElementById('memoryText').value.trim();
-                
+
                 if (!memoryText) {
                     this.ui.showStatus('error', '请输入记忆内容！');
                     return;
                 }
-                
+
                 if (!userId) {
                     this.ui.showStatus('error', '请先输入用户ID！');
                     return;
                 }
-                
+
                 try {
                     this.ui.showStatus('info', '正在添加记忆...');
                     await this.apiClient.post(`${baseUrl}/mem0/memory`, {
@@ -1127,19 +1162,20 @@
                     this.ui.showStatus('error', `❌ 添加记忆失败: ${error.message}`);
                 }
             }
-            
+
             async loadMemories() {
                 const baseUrl = this.getInputValue('baseUrl');
                 const userId = this.getInputValue('userId');
-                
+
                 if (!userId) {
                     this.ui.showStatus('error', '请先输入用户ID！');
                     return;
                 }
-                
+
                 try {
                     this.ui.showStatus('info', '正在加载记忆...');
-                    const data = await this.apiClient.get(`${baseUrl}/mem0/memory?user_id=${userId}&limit=50`);
+                    const data = await this.apiClient.get(
+                        `${baseUrl}/mem0/memory?user_id=${userId}&limit=50`);
                     this.displayMemories(data.memories || []);
                     this.ui.showStatus('success', `✅ 加载了 ${data.count} 条记忆`);
                 } catch (error) {
@@ -1147,14 +1183,14 @@
                     this.ui.showStatus('error', `❌ 加载记忆失败: ${error.message}`);
                 }
             }
-            
+
             displayMemories(memories) {
                 const container = document.getElementById('memoriesList');
                 if (memories.length === 0) {
                     container.innerHTML = '<p style="color: var(--text-muted);">暂无记忆</p>';
                     return;
                 }
-                
+
                 let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
                 memories.forEach((mem) => {
                     html += `<div style="padding: 12px; background: var(--bg-light); border-radius: var(--radius); border-left: 3px solid var(--primary-color);">`;
@@ -1166,17 +1202,18 @@
                 html += '</div>';
                 container.innerHTML = html;
             }
-            
+
             async deleteMemory(memoryId) {
                 if (!confirm('确定要删除这条记忆吗？')) {
                     return;
                 }
-                
+
                 const baseUrl = this.getInputValue('baseUrl');
                 const userId = this.getInputValue('userId');
-                
+
                 try {
-                    await this.apiClient.delete(`${baseUrl}/mem0/memory/${memoryId}?user_id=${userId}`);
+                    await this.apiClient.delete(
+                        `${baseUrl}/mem0/memory/${memoryId}?user_id=${userId}`);
                     this.ui.showStatus('success', '✅ 删除成功！');
                     await this.loadMemories();
                 } catch (error) {
@@ -1184,20 +1221,20 @@
                     this.ui.showStatus('error', `❌ 删除失败: ${error.message}`);
                 }
             }
-            
+
             async clearAllMemories() {
                 if (!confirm('确定要清空所有记忆吗？此操作不可恢复！')) {
                     return;
                 }
-                
+
                 const baseUrl = this.getInputValue('baseUrl');
                 const userId = this.getInputValue('userId');
-                
+
                 if (!userId) {
                     this.ui.showStatus('error', '请先输入用户ID！');
                     return;
                 }
-                
+
                 try {
                     await this.apiClient.delete(`${baseUrl}/mem0/memory?user_id=${userId}`);
                     this.ui.showStatus('success', '✅ 清空成功！');
@@ -1207,28 +1244,29 @@
                     this.ui.showStatus('error', `❌ 清空失败: ${error.message}`);
                 }
             }
-            
+
             async searchChats() {
                 const baseUrl = this.getInputValue('baseUrl');
                 const query = this.getInputValue('searchQuery');
                 const userId = this.getInputValue('userId');
-                
+
                 if (!query) {
                     this.ui.showStatus('error', '请输入搜索关键词！');
                     return;
                 }
-                
+
                 if (!baseUrl) {
                     this.ui.showStatus('error', 'API 服务器地址不能为空！');
                     return;
                 }
-                
+
                 try {
                     this.ui.showStatus('info', '正在搜索...');
                     const payload = { query, limit: 10 };
                     if (userId) payload.user_id = userId;
-                    
-                    const data = await this.apiClient.post(`${baseUrl}/prompt/chat/search`, payload);
+
+                    const data = await this.apiClient.post(
+                        `${baseUrl}/prompt/chat/search`, payload);
                     this.ui.displayChatList(data.results || [], '搜索结果');
                     this.ui.showStatus('success', `✅ 找到 ${data.count} 条相关记录`);
                 } catch (error) {
@@ -1236,24 +1274,25 @@
                     this.ui.showStatus('error', `❌ 搜索失败: ${error.message}`);
                 }
             }
-            
+
             async loadUserChats() {
                 const baseUrl = this.getInputValue('baseUrl');
                 const userId = this.getInputValue('loadUserId');
-                
+
                 if (!userId) {
                     this.ui.showStatus('error', '请输入用户ID！');
                     return;
                 }
-                
+
                 if (!baseUrl) {
                     this.ui.showStatus('error', 'API 服务器地址不能为空！');
                     return;
                 }
-                
+
                 try {
                     this.ui.showStatus('info', '正在加载...');
-                    const data = await this.apiClient.get(`${baseUrl}/prompt/chat/user/${userId}?limit=50`);
+                    const data = await this.apiClient.get(
+                        `${baseUrl}/prompt/chat/user/${userId}?limit=50`);
                     this.ui.displayChatList(data.chats || [], `用户 ${userId} 的聊天记录`);
                     this.ui.showStatus('success', `✅ 加载了 ${data.count} 条记录`);
                 } catch (error) {
@@ -1261,19 +1300,18 @@
                     this.ui.showStatus('error', `❌ 加载失败: ${error.message}`);
                 }
             }
-            
+
             async deleteChat(docId) {
                 if (!confirm('确定要删除这条聊天记录吗？')) {
                     return;
                 }
-                
+
                 const baseUrl = this.getInputValue('baseUrl');
-                
+
                 try {
                     await this.apiClient.delete(`${baseUrl}/prompt/chat/${docId}`);
                     this.ui.showStatus('success', '✅ 删除成功！');
-                    
-                    // 重新加载列表
+
                     const userId = this.getInputValue('loadUserId');
                     if (userId) {
                         await this.loadUserChats();
@@ -1289,7 +1327,7 @@
                 }
             }
         }
-        
+
         /**
          * 图片管理器
          */
@@ -1297,21 +1335,21 @@
             constructor() {
                 this.images = [];
             }
-            
+
             selectImages() {
                 document.getElementById('imageUpload').click();
             }
-            
+
             handleFileSelect(event) {
                 const files = event.target.files;
                 if (!files) return;
-                
+
                 Array.from(files).forEach(file => {
                     if (!file.type.startsWith('image/')) {
                         alert('请选择图片文件！');
                         return;
                     }
-                    
+
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         this.images.push(e.target.result);
@@ -1320,22 +1358,22 @@
                     reader.readAsDataURL(file);
                 });
             }
-            
+
             removeImage(index) {
                 this.images.splice(index, 1);
                 this.updatePreview();
             }
-            
+
             clearImages() {
                 this.images = [];
                 this.updatePreview();
                 document.getElementById('imageUpload').value = '';
             }
-            
+
             updatePreview() {
                 const preview = document.getElementById('imagePreview');
                 preview.innerHTML = '';
-                
+
                 this.images.forEach((img, index) => {
                     const div = document.createElement('div');
                     div.className = 'image-preview-item';
@@ -1346,33 +1384,31 @@
                     preview.appendChild(div);
                 });
             }
-            
+
             getImages() {
                 return this.images;
             }
         }
-        
+
         /**
          * API 客户端
          */
         class APIClient {
             normalizeUrl(baseUrl, path) {
-                // 移除baseUrl末尾的斜杠
                 const normalizedBase = baseUrl.replace(/\/+$/, '');
-                // 确保path以斜杠开头
                 const normalizedPath = path.startsWith('/') ? path : '/' + path;
                 return `${normalizedBase}${normalizedPath}`;
             }
-            
+
             async streamRequest(url, payload, callbacks = {}) {
                 const baseUrl = document.getElementById('baseUrl').value.trim();
                 if (!baseUrl) {
                     throw new Error('API服务器地址不能为空');
                 }
-                
+
                 const fullUrl = this.normalizeUrl(baseUrl, url);
                 let response;
-                
+
                 try {
                     response = await fetch(fullUrl, {
                         method: 'POST',
@@ -1384,7 +1420,7 @@
                         mode: 'cors',
                         credentials: 'omit'
                     });
-                    
+
                     if (!response.ok) {
                         let errorText = '';
                         try {
@@ -1395,36 +1431,36 @@
                         throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
                 } catch (error) {
-                    // 处理网络错误
                     if (error instanceof TypeError) {
-                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                            throw new Error(`网络连接失败: 无法连接到服务器 ${fullUrl}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
+                        if (error.message.includes('fetch') || 
+                            error.message.includes('Failed to fetch') || 
+                            error.message.includes('NetworkError')) {
+                            throw new Error(
+                                `网络连接失败: 无法连接到服务器 ${fullUrl}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
                         }
                         throw new Error(`请求失败: ${error.message}`);
                     }
-                    // 如果已经是 Error 对象，直接抛出
                     if (error instanceof Error) {
                         throw error;
                     }
-                    // 其他类型的错误
                     throw new Error(`未知错误: ${String(error)}`);
                 }
-                
+
                 if (callbacks.onStart) callbacks.onStart();
-                
+
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
-                
+
                 try {
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
-                        
+
                         buffer += decoder.decode(value, { stream: true });
                         const messages = buffer.split('\n\n');
                         buffer = messages.pop() || '';
-                        
+
                         for (const message of messages) {
                             if (message.startsWith('data: ')) {
                                 try {
@@ -1450,8 +1486,7 @@
                             }
                         }
                     }
-                    
-                    // 处理最后的缓冲区
+
                     if (buffer.trim() && buffer.trim().startsWith('data: ')) {
                         try {
                             const chunk = JSON.parse(buffer.trim().substring(6));
@@ -1469,129 +1504,66 @@
                     throw error;
                 }
             }
-            
+
+            async request(method, url, payload = null) {
+                try {
+                    const options = {
+                        method,
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        mode: 'cors',
+                        credentials: 'omit'
+                    };
+
+                    if (payload && (method === 'POST' || method === 'PUT')) {
+                        options.body = JSON.stringify(payload);
+                    }
+
+                    const response = await fetch(url, options);
+
+                    if (!response.ok) {
+                        let errorText = '';
+                        try {
+                            errorText = await response.text();
+                        } catch (e) {
+                            errorText = `HTTP ${response.status} ${response.statusText}`;
+                        }
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    if (error instanceof TypeError) {
+                        if (error.message.includes('fetch') || 
+                            error.message.includes('Failed to fetch') || 
+                            error.message.includes('NetworkError')) {
+                            throw new Error(
+                                `网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
+                        }
+                        throw new Error(`请求失败: ${error.message}`);
+                    }
+                    if (error instanceof Error) {
+                        throw error;
+                    }
+                    throw new Error(`未知错误: ${String(error)}`);
+                }
+            }
+
             async post(url, payload) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(payload),
-                        mode: 'cors',
-                        credentials: 'omit'
-                    });
-                    
-                    if (!response.ok) {
-                        let errorText = '';
-                        try {
-                            errorText = await response.text();
-                        } catch (e) {
-                            errorText = `HTTP ${response.status} ${response.statusText}`;
-                        }
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-                    
-                    return await response.json();
-                } catch (error) {
-                    // 处理网络错误
-                    if (error instanceof TypeError) {
-                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                            throw new Error(`网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
-                        }
-                        throw new Error(`请求失败: ${error.message}`);
-                    }
-                    // 如果已经是 Error 对象，直接抛出
-                    if (error instanceof Error) {
-                        throw error;
-                    }
-                    // 其他类型的错误
-                    throw new Error(`未知错误: ${String(error)}`);
-                }
+                return this.request('POST', url, payload);
             }
-            
+
             async get(url) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'GET',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        mode: 'cors',
-                        credentials: 'omit'
-                    });
-                    
-                    if (!response.ok) {
-                        let errorText = '';
-                        try {
-                            errorText = await response.text();
-                        } catch (e) {
-                            errorText = `HTTP ${response.status} ${response.statusText}`;
-                        }
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-                    
-                    return await response.json();
-                } catch (error) {
-                    // 处理网络错误
-                    if (error instanceof TypeError) {
-                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                            throw new Error(`网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
-                        }
-                        throw new Error(`请求失败: ${error.message}`);
-                    }
-                    // 如果已经是 Error 对象，直接抛出
-                    if (error instanceof Error) {
-                        throw error;
-                    }
-                    // 其他类型的错误
-                    throw new Error(`未知错误: ${String(error)}`);
-                }
+                return this.request('GET', url);
             }
-            
+
             async delete(url) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'DELETE',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        mode: 'cors',
-                        credentials: 'omit'
-                    });
-                    
-                    if (!response.ok) {
-                        let errorText = '';
-                        try {
-                            errorText = await response.text();
-                        } catch (e) {
-                            errorText = `HTTP ${response.status} ${response.statusText}`;
-                        }
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
-                    }
-                    
-                    return await response.json();
-                } catch (error) {
-                    // 处理网络错误
-                    if (error instanceof TypeError) {
-                        if (error.message.includes('fetch') || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                            throw new Error(`网络连接失败: 无法连接到服务器 ${url}。可能的原因：\n1. 服务器地址不正确\n2. 服务器未运行\n3. 网络连接问题\n4. CORS 跨域限制（请检查服务器 CORS 配置）`);
-                        }
-                        throw new Error(`请求失败: ${error.message}`);
-                    }
-                    // 如果已经是 Error 对象，直接抛出
-                    if (error instanceof Error) {
-                        throw error;
-                    }
-                    // 其他类型的错误
-                    throw new Error(`未知错误: ${String(error)}`);
-                }
+                return this.request('DELETE', url);
             }
         }
-        
+
         /**
          * 配置管理器（本地存储）
          */
@@ -1599,7 +1571,7 @@
             constructor() {
                 this.storageKey = 'prompt_client_config';
             }
-            
+
             saveConfig(config) {
                 try {
                     const configToSave = {
@@ -1617,7 +1589,7 @@
                     console.warn('保存配置失败:', e);
                 }
             }
-            
+
             loadConfig() {
                 try {
                     const saved = localStorage.getItem(this.storageKey);
@@ -1647,7 +1619,7 @@
                 }
             }
         }
-        
+
         /**
          * UI 管理器
          */
@@ -1656,8 +1628,7 @@
                 const status = document.getElementById('status');
                 status.className = `status ${type} show`;
                 status.textContent = message;
-                
-                // 自动隐藏成功和提示消息
+
                 if (type === 'success' || type === 'info') {
                     setTimeout(() => {
                         if (status.textContent === message) {
@@ -1666,77 +1637,83 @@
                     }, 5000);
                 }
             }
-            
+
             hideStatus() {
                 const status = document.getElementById('status');
                 status.classList.remove('show');
             }
-            
+
             showContextInfo(contextInfo) {
                 const contextDiv = document.getElementById('contextInfo');
                 const summaryDiv = document.getElementById('contextSummary');
-                
-                if (!contextInfo || (contextInfo.memories_count === 0 && contextInfo.chats_count === 0)) {
+
+                if (!contextInfo || 
+                    (contextInfo.memories_count === 0 && contextInfo.chats_count === 0)) {
                     contextDiv.classList.remove('show');
                     return;
                 }
-                
-                // 更新摘要
+
                 let summaryHtml = '';
                 if (contextInfo.memories_count > 0) {
-                    summaryHtml += `<span style="color: var(--success-color);">🧠 相关记忆: ${contextInfo.memories_count} 条</span>`;
+                    summaryHtml += 
+                        `<span style="color: var(--success-color);">🧠 相关记忆: ${contextInfo.memories_count} 条</span>`;
                 }
                 if (contextInfo.chats_count > 0) {
                     if (summaryHtml) summaryHtml += ' | ';
-                    summaryHtml += `<span style="color: var(--info-color);">💬 相关聊天记录: ${contextInfo.chats_count} 条</span>`;
+                    summaryHtml += 
+                        `<span style="color: var(--info-color);">💬 相关聊天记录: ${contextInfo.chats_count} 条</span>`;
                 }
                 summaryDiv.innerHTML = summaryHtml;
-                
-                // 存储详细信息（用于展开时显示）
+
+                const detailsDiv = document.getElementById('contextDetails');
+                let detailsHtml = '';
+
                 if (contextInfo.memories && contextInfo.memories.length > 0) {
-                    let detailsHtml = '<div style="margin-bottom: 12px;"><strong style="color: var(--success-color);">🧠 相关记忆：</strong></div>';
+                    detailsHtml += 
+                        '<div style="margin-bottom: 12px;"><strong style="color: var(--success-color);">🧠 相关记忆：</strong></div>';
                     contextInfo.memories.forEach((mem, idx) => {
                         detailsHtml += `<div class="context-memory-item">`;
                         detailsHtml += `<div class="context-item-header">记忆 #${idx + 1}</div>`;
-                        detailsHtml += `<div class="context-item-content">${this.escapeHtml(mem.memory || mem.content || '')}</div>`;
+                        detailsHtml += 
+                            `<div class="context-item-content">${this.escapeHtml(mem.memory || mem.content || '')}</div>`;
                         if (mem.score !== undefined) {
-                            detailsHtml += `<div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">相似度: ${mem.score.toFixed(4)}</div>`;
+                            detailsHtml += 
+                                `<div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">相似度: ${mem.score.toFixed(4)}</div>`;
                         }
                         detailsHtml += `</div>`;
                     });
-                    
-                    const detailsDiv = document.getElementById('contextDetails');
-                    detailsDiv.innerHTML = (detailsDiv.innerHTML || '') + detailsHtml;
                 }
-                
+
                 if (contextInfo.chats && contextInfo.chats.length > 0) {
-                    let detailsHtml = '<div style="margin-top: 16px; margin-bottom: 12px;"><strong style="color: var(--info-color);">💬 相关聊天记录：</strong></div>';
+                    detailsHtml += 
+                        '<div style="margin-top: 16px; margin-bottom: 12px;"><strong style="color: var(--info-color);">💬 相关聊天记录：</strong></div>';
                     contextInfo.chats.forEach((chat, idx) => {
                         detailsHtml += `<div class="context-chat-item">`;
                         detailsHtml += `<div class="context-item-header">记录 #${idx + 1}`;
                         if (chat.score !== undefined) {
-                            detailsHtml += `<span style="font-size: 11px; color: var(--text-muted);">相似度: ${chat.score.toFixed(4)}</span>`;
+                            detailsHtml += 
+                                `<span style="font-size: 11px; color: var(--text-muted);">相似度: ${chat.score.toFixed(4)}</span>`;
                         }
                         detailsHtml += `</div>`;
                         const textContent = chat.text_content || chat.payload?.text_content || '';
-                        detailsHtml += `<div class="context-item-content">${this.escapeHtml(textContent)}</div>`;
+                        detailsHtml += 
+                            `<div class="context-item-content">${this.escapeHtml(textContent)}</div>`;
                         detailsHtml += `</div>`;
                     });
-                    
-                    const detailsDiv = document.getElementById('contextDetails');
-                    detailsDiv.innerHTML = (detailsDiv.innerHTML || '') + detailsHtml;
                 }
-                
+
+                detailsDiv.innerHTML = detailsHtml;
                 contextDiv.classList.add('show');
             }
-            
+
             toggleContextDetails() {
                 const detailsDiv = document.getElementById('contextDetails');
                 const toggle = document.getElementById('contextToggle');
                 detailsDiv.classList.toggle('show');
-                toggle.textContent = detailsDiv.classList.contains('show') ? '▲ 收起详情' : '▼ 展开详情';
+                toggle.textContent = detailsDiv.classList.contains('show') ? 
+                    '▲ 收起详情' : '▼ 展开详情';
             }
-            
+
             hideContextInfo() {
                 const contextDiv = document.getElementById('contextInfo');
                 const detailsDiv = document.getElementById('contextDetails');
@@ -1747,7 +1724,7 @@
                 detailsDiv.classList.remove('show');
                 document.getElementById('contextToggle').textContent = '▼ 展开详情';
             }
-            
+
             setStreamButtonState(isLoading) {
                 const btn = document.getElementById('btnStream');
                 btn.disabled = isLoading;
@@ -1755,65 +1732,66 @@
                     ? '<span class="spinner"></span> 正在处理...'
                     : '🚀 流式调用 <span style="font-size: 12px; opacity: 0.8; margin-left: 8px;">(Ctrl+Enter)</span>';
             }
-            
+
             clearOutput() {
                 document.getElementById('output').textContent = '等待调用...';
                 this.hideStatus();
             }
-            
+
             displayChatList(chats, title) {
                 const chatList = document.getElementById('chatList');
                 const chatHistory = document.getElementById('chatHistory');
-                
+
                 if (chats.length === 0) {
                     chatList.innerHTML = '<p style="color: var(--text-muted);">暂无聊天记录</p>';
                     chatHistory.classList.add('show');
                     return;
                 }
-                
+
                 let html = `<h4 style="margin-bottom: 15px;">${title} (${chats.length} 条)</h4>`;
-                
+
                 chats.forEach((chat) => {
                     const messages = chat.messages || [];
                     const createdTime = chat.created_time || '未知时间';
                     const conversationId = chat.conversation_id || '无';
-                    
+
                     html += `<div class="chat-item">`;
                     html += `<div class="chat-header">`;
-                    html += `<span>会话ID: ${conversationId} | 时间: ${createdTime} | 消息数: ${messages.length}</span>`;
-                    html += `<button class="btn btn-danger btn-sm" onclick="app.deleteChat('${chat._id}')">删除</button>`;
+                    html += 
+                        `<span>会话ID: ${conversationId} | 时间: ${createdTime} | 消息数: ${messages.length}</span>`;
+                    html += 
+                        `<button class="btn btn-danger btn-sm" onclick="app.deleteChat('${chat._id}')">删除</button>`;
                     html += `</div>`;
-                    
+
                     messages.forEach(msg => {
                         const role = msg.role === 'user' ? '👤 用户' : '🤖 助手';
                         const roleClass = msg.role === 'user' ? 'user' : 'assistant';
                         html += `<div class="chat-message ${roleClass}">`;
                         html += `<strong>${role}:</strong>`;
-                        html += `<div class="chat-message-content">${this.escapeHtml(msg.content || '')}</div>`;
+                        html += 
+                            `<div class="chat-message-content">${this.escapeHtml(msg.content || '')}</div>`;
                         html += `</div>`;
                     });
-                    
+
                     html += `</div>`;
                 });
-                
+
                 chatList.innerHTML = html;
                 chatHistory.classList.add('show');
             }
-            
+
             escapeHtml(text) {
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
             }
         }
-        
+
         // 初始化应用
         const app = new PromptClient();
-        
-        // 将 deleteChat 和 deleteMemory 暴露到全局作用域以便 HTML 中的 onclick 调用
+
+        // 暴露到全局作用域
         window.app = app;
-        
-        // 将 toggleContextDetails 也暴露到全局
         window.toggleContextDetails = () => app.toggleContextDetails();
     </script>
 </body>
