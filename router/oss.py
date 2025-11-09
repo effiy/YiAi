@@ -174,9 +174,17 @@ async def delete_file(
         
         # 同时删除文件的标签信息
         try:
+            await db.mongodb.initialize()
             await db.mongodb.delete_one("oss_file_tags", {"object_name": object_name})
         except Exception as tag_error:
             logger.warning(f"删除文件标签失败: {str(tag_error)}")
+        
+        # 同时删除文件的信息（标题、描述等）
+        try:
+            await db.mongodb.initialize()
+            await db.mongodb.delete_one("oss_file_info", {"object_name": object_name})
+        except Exception as info_error:
+            logger.warning(f"删除文件信息失败: {str(info_error)}")
         
         logger.info(f"文件删除成功: {object_name}")
 
@@ -372,4 +380,95 @@ async def list_files(
         raise
     except Exception as e:
         logger.error(f"获取文件列表失败: {str(e)}")
+        return handle_error(e, 500)
+
+@router.post("/file/info")
+@ensure_initialized()
+async def update_file_info(
+    object_name: str = Body(..., description="文件对象名"),
+    title: Optional[str] = Body(None, description="文件标题"),
+    description: Optional[str] = Body(None, description="文件描述")
+) -> JSONResponse:
+    """更新文件信息（标题、描述等）"""
+    try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件对象名不能为空")
+        
+        # 准备更新数据
+        update_data = {
+            "object_name": object_name,
+            "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        if title is not None:
+            update_data["title"] = title.strip() if title else ""
+        if description is not None:
+            update_data["description"] = description.strip() if description else ""
+        
+        # 使用 upsert 操作
+        await db.mongodb.initialize()
+        collection = db.mongodb.db["oss_file_info"]
+        
+        await collection.update_one(
+            {"object_name": object_name},
+            {
+                "$set": update_data,
+                "$setOnInsert": {
+                    "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                }
+            },
+            upsert=True
+        )
+        
+        logger.info(f"文件信息更新成功: {object_name}, title: {title}, description: {description}")
+        return create_response(
+            code=200,
+            message="更新成功",
+            data={
+                "object_name": object_name,
+                "title": title or "",
+                "description": description or ""
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"更新文件信息失败: {str(e)}")
+        return handle_error(e, 500)
+
+@router.get("/file/info/{object_name:path}")
+@ensure_initialized()
+async def get_file_info(object_name: str) -> JSONResponse:
+    """获取文件信息（标题、描述等）"""
+    try:
+        if not object_name:
+            raise HTTPException(status_code=400, detail="文件对象名不能为空")
+        
+        await db.mongodb.initialize()
+        info_doc = await db.mongodb.find_one("oss_file_info", {"object_name": object_name})
+        
+        if info_doc:
+            return create_response(
+                code=200,
+                message="获取成功",
+                data={
+                    "object_name": object_name,
+                    "title": info_doc.get("title", ""),
+                    "description": info_doc.get("description", "")
+                }
+            )
+        else:
+            return create_response(
+                code=200,
+                message="获取成功",
+                data={
+                    "object_name": object_name,
+                    "title": "",
+                    "description": ""
+                }
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取文件信息失败: {str(e)}")
         return handle_error(e, 500)

@@ -693,7 +693,243 @@
         </div>
     </div>
 
+    <!-- 文件信息编辑模态框 -->
+    <div id="fileInfoModal" class="tag-modal" onclick="if(event.target.id === 'fileInfoModal') closeFileInfoModal()">
+        <div class="tag-modal-content">
+            <div class="tag-modal-header">
+                <h3>✏️ 编辑文件信息</h3>
+                <span class="tag-modal-close" onclick="closeFileInfoModal()">&times;</span>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label>文件标题：</label>
+                    <input type="text" class="tag-input" id="fileInfoTitleInput" placeholder="输入文件标题">
+                </div>
+                <div class="form-group">
+                    <label>文件描述：</label>
+                    <textarea class="tag-input" id="fileInfoDescriptionInput" placeholder="输入文件描述" rows="4" style="resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="button-group" style="margin-top: 20px;">
+                <button onclick="saveFileInfo()">💾 保存</button>
+                <button onclick="closeFileInfoModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // ==================== SessionApiManager (内联版本) ====================
+        class SessionApiManager {
+            constructor(baseUrl, enabled = true) {
+                this.baseUrl = baseUrl;
+                this.enabled = enabled;
+                this.cache = {
+                    sessionsList: null,
+                    sessionsListTimestamp: 0,
+                    CACHE_DURATION: 30000,
+                };
+                this.pendingRequests = new Map();
+                this.retryConfig = {
+                    maxRetries: 3,
+                    retryDelay: 1000,
+                };
+            }
+            
+            isEnabled() {
+                return this.enabled && !!this.baseUrl;
+            }
+            
+            async _request(url, options = {}, retryCount = 0) {
+                if (!this.isEnabled()) {
+                    throw new Error('API管理器未启用');
+                }
+                
+                const requestKey = `${options.method || 'GET'}:${url}:${options.body || ''}`;
+                if (this.pendingRequests.has(requestKey)) {
+                    return await this.pendingRequests.get(requestKey);
+                }
+                
+                const requestPromise = (async () => {
+                    try {
+                        const response = await fetch(url, {
+                            ...options,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...options.headers,
+                            },
+                        });
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP ${response.status}: ${errorText}`);
+                        }
+                        
+                        const result = await response.json();
+                        this.pendingRequests.delete(requestKey);
+                        return result;
+                    } catch (error) {
+                        this.pendingRequests.delete(requestKey);
+                        if (retryCount < this.retryConfig.maxRetries) {
+                            await new Promise(resolve => setTimeout(resolve, this.retryConfig.retryDelay * (retryCount + 1)));
+                            return this._request(url, options, retryCount + 1);
+                        }
+                        throw error;
+                    }
+                })();
+                
+                this.pendingRequests.set(requestKey, requestPromise);
+                return requestPromise;
+            }
+            
+            async getSessionsList(options = {}) {
+                const { forceRefresh = false } = options;
+                const now = Date.now();
+                
+                if (!forceRefresh && 
+                    this.cache.sessionsList && 
+                    (now - this.cache.sessionsListTimestamp) < this.cache.CACHE_DURATION) {
+                    return this.cache.sessionsList;
+                }
+                
+                try {
+                    const url = `${this.baseUrl}/session/`;
+                    const result = await this._request(url, { method: 'GET' });
+                    
+                    if (result.success && Array.isArray(result.sessions)) {
+                        this.cache.sessionsList = result.sessions;
+                        this.cache.sessionsListTimestamp = now;
+                        return result.sessions;
+                    } else {
+                        throw new Error('返回数据格式错误');
+                    }
+                } catch (error) {
+                    console.warn('获取会话列表失败:', error.message);
+                    if (this.cache.sessionsList) {
+                        return this.cache.sessionsList;
+                    }
+                    throw error;
+                }
+            }
+            
+            async saveSession(sessionData) {
+                if (!sessionData || !sessionData.id) {
+                    throw new Error('会话数据无效');
+                }
+                
+                try {
+                    const url = `${this.baseUrl}/session/save`;
+                    const result = await this._request(url, {
+                        method: 'POST',
+                        body: JSON.stringify(sessionData),
+                    });
+                    
+                    this.cache.sessionsList = null;
+                    this.cache.sessionsListTimestamp = 0;
+                    
+                    return result;
+                } catch (error) {
+                    console.warn('保存会话到后端失败:', error.message);
+                    throw error;
+                }
+            }
+        }
+        
+        // ==================== 主脚本开始 ====================
+        // ==================== 全局变量 ====================
+        let sessionApi = null;
+        
+        // ==================== 初始化 SessionApiManager ====================
+        function initSessionApi() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            if (baseUrl && typeof SessionApiManager !== 'undefined') {
+                sessionApi = new SessionApiManager(baseUrl, true);
+                console.log('SessionApiManager 已初始化');
+            }
+        }
+        
+        // ==================== 根据文件URL查找关联的会话 ====================
+        async function findSessionsByFileUrl(fileUrl) {
+            if (!sessionApi || !sessionApi.isEnabled()) {
+                return [];
+            }
+            
+            try {
+                // 获取所有会话
+                const sessions = await sessionApi.getSessionsList({ forceRefresh: false });
+                
+                // 查找URL匹配的会话
+                const matchedSessions = sessions.filter(session => {
+                    return session.url === fileUrl;
+                });
+                
+                return matchedSessions;
+            } catch (error) {
+                console.warn('查找关联会话失败:', error);
+                return [];
+            }
+        }
+        
+        // ==================== 更新关联会话的标签 ====================
+        async function updateSessionsTags(fileUrl, tags) {
+            if (!sessionApi || !sessionApi.isEnabled()) {
+                return;
+            }
+            
+            try {
+                const matchedSessions = await findSessionsByFileUrl(fileUrl);
+                
+                for (const session of matchedSessions) {
+                    // 更新会话的标签
+                    const updatedSession = {
+                        ...session,
+                        tags: tags,
+                        updatedAt: Date.now()
+                    };
+                    
+                    // 保存会话
+                    await sessionApi.saveSession(updatedSession);
+                    console.log('已更新关联会话的标签:', session.id, { tags });
+                }
+            } catch (error) {
+                console.warn('更新关联会话标签失败:', error);
+            }
+        }
+        
+        // ==================== 更新关联会话的文件信息 ====================
+        async function updateSessionsFileInfo(fileUrl, fileInfo) {
+            if (!sessionApi || !sessionApi.isEnabled()) {
+                return;
+            }
+            
+            try {
+                const matchedSessions = await findSessionsByFileUrl(fileUrl);
+                
+                for (const session of matchedSessions) {
+                    // 更新会话的标题和描述
+                    const updatedSession = {
+                        ...session,
+                        pageTitle: fileInfo.title || session.pageTitle,
+                        pageDescription: fileInfo.description || session.pageDescription,
+                        updatedAt: Date.now()
+                    };
+                    
+                    // 如果会话有 _ossFileInfo，也更新它
+                    if (session._ossFileInfo) {
+                        updatedSession._ossFileInfo = {
+                            ...session._ossFileInfo,
+                            ...fileInfo
+                        };
+                    }
+                    
+                    // 保存会话
+                    await sessionApi.saveSession(updatedSession);
+                    console.log('已更新关联会话的文件信息:', session.id, fileInfo);
+                }
+            } catch (error) {
+                console.warn('更新关联会话文件信息失败:', error);
+            }
+        }
+        
         // ==================== 文件列表渲染模块 ====================
         const FileListRenderer = {
             // 渲染单个文件项
@@ -724,6 +960,7 @@
                         </div>
                         <div class="file-actions">
                             <button class="btn-success" onclick="copyUrl('${this.escapeHtml(file.url)}')">📋 复制链接</button>
+                            <button class="tag-manager-btn" data-file-index="${index}" onclick="handleFileInfoButtonClick(event, ${index})" title="编辑文件信息">✏️ 编辑</button>
                             <button class="tag-manager-btn" data-file-index="${index}" onclick="handleTagButtonClick(event, ${index})" title="管理标签">🏷️ 标签</button>
                             <button class="btn-danger" data-file-index="${index}" title="长按删除">🗑️ 删除</button>
                         </div>
@@ -1187,6 +1424,15 @@
             }
         }
 
+        // 处理文件信息按钮点击
+        function handleFileInfoButtonClick(event, fileIndex) {
+            event.stopPropagation();
+            if (window.currentFiles && window.currentFiles[fileIndex]) {
+                const file = window.currentFiles[fileIndex];
+                openFileInfoModal(file);
+            }
+        }
+
         // 处理标签按钮点击
         function handleTagButtonClick(event, fileIndex) {
             event.stopPropagation();
@@ -1503,6 +1749,16 @@
             }
 
             try {
+                // 找到当前文件对象以获取文件URL
+                let fileUrl = null;
+                if (window.currentFiles) {
+                    const currentFile = window.currentFiles.find(f => f.name === currentEditingFile);
+                    if (currentFile) {
+                        fileUrl = currentFile.url;
+                    }
+                }
+
+                // 保存文件标签到后端
                 const response = await fetch(`${baseUrl}/oss/tags`, {
                     method: 'POST',
                     headers: {
@@ -1521,6 +1777,16 @@
 
                 const result = await response.json();
                 if (result.code === 200) {
+                    // 同时更新关联会话的标签
+                    if (fileUrl) {
+                        try {
+                            await updateSessionsTags(fileUrl, currentTags);
+                        } catch (sessionError) {
+                            console.warn('更新关联会话标签失败:', sessionError);
+                            // 不阻止主流程，只记录警告
+                        }
+                    }
+                    
                     showStatus('success', '✅ 标签保存成功！');
                     closeTagModal();
                     // 刷新文件列表和标签列表
@@ -1535,12 +1801,118 @@
             }
         }
 
+        // 文件信息编辑相关变量
+        let currentEditingFileInfo = null;
+
+        // 打开文件信息编辑模态框
+        async function openFileInfoModal(file) {
+            currentEditingFileInfo = file;
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            
+            if (!baseUrl) {
+                showStatus('error', '❌ API 服务器地址不能为空！');
+                return;
+            }
+
+            // 获取文件的当前信息（如果有描述字段）
+            let currentDescription = file.description || '';
+            
+            // 显示当前信息
+            document.getElementById('fileInfoTitleInput').value = file.name || '';
+            document.getElementById('fileInfoDescriptionInput').value = currentDescription;
+            document.getElementById('fileInfoModal').style.display = 'block';
+            document.getElementById('fileInfoTitleInput').focus();
+        }
+
+        // 关闭文件信息编辑模态框
+        function closeFileInfoModal() {
+            document.getElementById('fileInfoModal').style.display = 'none';
+            document.getElementById('fileInfoTitleInput').value = '';
+            document.getElementById('fileInfoDescriptionInput').value = '';
+            currentEditingFileInfo = null;
+        }
+
+        // 保存文件信息
+        async function saveFileInfo() {
+            if (!currentEditingFileInfo) {
+                showStatus('error', '❌ 没有选择文件');
+                return;
+            }
+
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            if (!baseUrl) {
+                showStatus('error', '❌ API 服务器地址不能为空！');
+                return;
+            }
+
+            const titleInput = document.getElementById('fileInfoTitleInput');
+            const descriptionInput = document.getElementById('fileInfoDescriptionInput');
+            
+            if (!titleInput || !descriptionInput) {
+                showStatus('error', '❌ 输入框未找到');
+                return;
+            }
+
+            const newTitle = titleInput.value.trim();
+            const newDescription = descriptionInput.value.trim();
+            const fileUrl = currentEditingFileInfo.url;
+
+            try {
+                // 注意：OSS后端可能没有直接保存文件描述和标题的接口
+                // 这里我们主要更新关联会话的信息
+                // 如果后端有文件信息保存接口，可以在这里添加
+
+                // 更新关联会话的文件信息
+                if (fileUrl) {
+                    try {
+                        await updateSessionsFileInfo(fileUrl, {
+                            title: newTitle || currentEditingFileInfo.name,
+                            description: newDescription,
+                            name: currentEditingFileInfo.name,
+                            url: fileUrl,
+                            tags: currentEditingFileInfo.tags || []
+                        });
+                    } catch (sessionError) {
+                        console.warn('更新关联会话文件信息失败:', sessionError);
+                        // 不阻止主流程，只记录警告
+                    }
+                }
+
+                // 更新本地文件列表中的信息（用于显示）
+                if (window.currentFiles) {
+                    const fileIndex = window.currentFiles.findIndex(f => f.name === currentEditingFileInfo.name);
+                    if (fileIndex >= 0) {
+                        window.currentFiles[fileIndex].description = newDescription;
+                        // 如果标题改变了，也更新（虽然文件名本身不会改变）
+                        displayFiles(window.currentFiles);
+                    }
+                }
+
+                showStatus('success', '✅ 文件信息保存成功！');
+                closeFileInfoModal();
+                // 刷新文件列表
+                listFiles();
+            } catch (error) {
+                console.error('保存文件信息失败:', error);
+                showStatus('error', `❌ 保存文件信息失败: ${error.message}`);
+            }
+        }
+
         // 页面加载时自动获取文件列表和标签
         window.addEventListener('DOMContentLoaded', () => {
             const baseUrl = document.getElementById('baseUrl').value.trim();
             if (baseUrl) {
+                initSessionApi();
                 listFiles();
                 loadAllTags();
+            }
+            
+            // 监听 baseUrl 变化，重新初始化 SessionApiManager
+            const baseUrlInput = document.getElementById('baseUrl');
+            if (baseUrlInput) {
+                baseUrlInput.addEventListener('change', () => {
+                    initSessionApi();
+                });
             }
         });
     </script>
