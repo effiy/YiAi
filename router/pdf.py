@@ -270,11 +270,21 @@ async def convert_pdf_to_markdown(
     temp_dir = None
     
     try:
+        # 记录请求信息
+        logger.info(f"收到PDF转换请求: filename={file.filename}, content_type={file.content_type}")
+        
+        # 验证文件是否存在
+        if file is None:
+            logger.error("文件对象为空")
+            return RespFail(InvalidParams.set_msg("未接收到文件"))
+        
         # 验证文件类型
         if not file.filename:
+            logger.error("文件名为空")
             return RespFail(InvalidParams.set_msg("文件名不能为空"))
         
         if not file.filename.lower().endswith('.pdf'):
+            logger.error(f"不支持的文件格式: {file.filename}")
             return RespFail(InvalidParams.set_msg("只支持PDF文件格式"))
         
         # 创建临时目录
@@ -283,9 +293,17 @@ async def convert_pdf_to_markdown(
         
         # 保存上传的PDF文件到临时目录
         temp_pdf_path = os.path.join(temp_dir, "input.pdf")
-        with open(temp_pdf_path, "wb") as f:
+        try:
             content = await file.read()
-            f.write(content)
+            if len(content) == 0:
+                logger.error("上传的文件为空")
+                return RespFail(InvalidParams.set_msg("上传的文件为空，请选择有效的PDF文件"))
+            
+            with open(temp_pdf_path, "wb") as f:
+                f.write(content)
+        except Exception as e:
+            logger.error(f"保存文件时出错: {str(e)}")
+            return RespFail(InvalidParams.set_msg(f"保存文件失败: {str(e)}"))
         
         logger.info(f"PDF文件已保存: {temp_pdf_path}, 大小: {len(content)} bytes")
         

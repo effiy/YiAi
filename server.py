@@ -35,7 +35,8 @@ ENABLE_MIDDLEWARE = True
 async def header_verification_middleware(request: Request, call_next):
     try:
         # 记录请求信息
-        logger.info(f"收到请求: {request.method} {request.url}")
+        content_type = request.headers.get("content-type", "")
+        logger.info(f"收到请求: {request.method} {request.url}, Content-Type: {content_type}")
         
         # 跳过 OPTIONS 预检请求，让 CORS 中间件处理
         if request.method == "OPTIONS":
@@ -116,13 +117,23 @@ app.add_middleware(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"请求验证错误: {exc}")
+    error_details = exc.errors()
+    error_messages = []
+    for error in error_details:
+        field = ".".join(str(loc) for loc in error.get("loc", []))
+        msg = error.get("msg", "验证失败")
+        error_messages.append(f"{field}: {msg}")
+    
+    error_msg = "请求参数验证失败: " + "; ".join(error_messages)
     return JSONResponse(
         status_code=422,
         content={
-            "detail": "请求参数验证失败",
-            "message": "请检查请求参数格式",
-            "errors": exc.errors(),
-            "status": 422
+            "detail": error_msg,
+            "message": error_msg,
+            "msg": error_msg,
+            "errors": error_details,
+            "status": 422,
+            "code": 422
         }
     )
 
@@ -134,7 +145,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content={
             "detail": exc.detail,
             "message": exc.detail,
-            "status": exc.status_code
+            "msg": exc.detail,
+            "status": exc.status_code,
+            "code": exc.status_code
         }
     )
 
