@@ -430,7 +430,7 @@
                     let errorMessage = `HTTP ${response.status}`;
                     try {
                         const errorData = await response.json();
-                        errorMessage = errorData.message || errorData.detail || errorMessage;
+                        errorMessage = errorData.msg || errorData.message || errorData.detail || errorMessage;
                     } catch (e) {
                         const errorText = await response.text();
                         if (errorText) {
