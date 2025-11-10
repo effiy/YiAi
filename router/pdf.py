@@ -4,6 +4,7 @@ import tempfile
 import zipfile
 from typing import List, Dict, Tuple
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import Response, StreamingResponse
@@ -373,6 +374,7 @@ async def convert_pdf_to_markdown(
         
         # 创建ZIP文件
         zip_buffer = io.BytesIO()
+        # zipfile 在 Python 3 中默认使用 UTF-8 编码，支持中文文件名
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for md_filename, md_filepath in md_files:
                 zip_file.write(md_filepath, md_filename)
@@ -380,17 +382,36 @@ async def convert_pdf_to_markdown(
         zip_buffer.seek(0)
         
         # 生成ZIP文件名
-        pdf_name = Path(file.filename).stem
+        pdf_name = Path(file.filename).stem if file.filename else "pdf"
         zip_filename = f"{pdf_name}_chapters.zip"
         
-        logger.info(f"已生成ZIP文件: {zip_filename}, 包含 {len(md_files)} 个MD文件")
+        # 安全地记录日志（避免编码问题）
+        try:
+            logger.info(f"已生成ZIP文件: {zip_filename}, 包含 {len(md_files)} 个MD文件")
+        except UnicodeEncodeError:
+            logger.info(f"已生成ZIP文件: 包含 {len(md_files)} 个MD文件")
+        
+        # 正确处理包含中文的文件名编码
+        # 使用 RFC 5987 格式：filename*=UTF-8''encoded_filename
+        # 检查文件名是否包含非ASCII字符
+        try:
+            # 尝试将文件名编码为ASCII，如果失败则包含非ASCII字符
+            zip_filename.encode('ascii')
+            # 如果成功，文件名只包含ASCII字符，可以直接使用
+            content_disposition = f'attachment; filename="{zip_filename}"'
+        except UnicodeEncodeError:
+            # 包含非ASCII字符，使用RFC 5987格式
+            encoded_filename = quote(zip_filename, safe='')
+            # 同时提供ASCII版本（用于兼容性）和UTF-8编码版本
+            ascii_filename = "pdf_chapters.zip"  # 使用安全的ASCII文件名作为fallback
+            content_disposition = f'attachment; filename="{ascii_filename}"; filename*=UTF-8\'\'{encoded_filename}'
         
         # 返回ZIP文件
         return StreamingResponse(
             io.BytesIO(zip_buffer.read()),
             media_type="application/zip",
             headers={
-                "Content-Disposition": f"attachment; filename={zip_filename}"
+                "Content-Disposition": content_disposition
             }
         )
         
