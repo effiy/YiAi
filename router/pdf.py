@@ -320,8 +320,16 @@ async def convert_pdf_to_markdown(
         # 提取目录结构
         chapters = extract_outline(pdf_reader)
         
+        # 如果没有找到目录结构，将整个PDF作为一个章节处理
         if not chapters:
-            return RespFail(InvalidParams.set_msg("PDF中没有找到目录结构，无法分割章节"))
+            logger.info("PDF中没有找到目录结构，将整个PDF作为一个章节处理")
+            # 使用PDF文件名（不含扩展名）作为章节标题
+            pdf_name = Path(file.filename).stem if file.filename else "全部内容"
+            chapters = [PDFChapter(
+                title=pdf_name,
+                page_start=1,
+                page_end=total_pages
+            )]
         
         # 为每个章节生成MD文件
         md_files = []
