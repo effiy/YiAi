@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF转Markdown工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input[type="file"] {
+            padding: 10px;
+            cursor: pointer;
+        }
+        
+        input[type="file"]::file-selector-button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            opacity: 0.9;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex: 1;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .file-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .file-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .file-info-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .file-info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .file-info-value {
+            color: #333;
+        }
+        
+        .instructions {
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            color: #666;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .result-section {
+            display: none;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .download-btn:hover:not(:disabled) {
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>📄 PDF转Markdown工具</h1>
+            <p class="subtitle">上传PDF文件，自动提取目录并转换为Markdown章节文件</p>
+            
+            <div id="status" class="status"></div>
+            
+            <div class="instructions">
+                <h3>使用说明：</h3>
+                <ul>
+                    <li>支持上传包含目录结构的PDF文件</li>
+                    <li>系统会自动提取PDF的目录结构</li>
+                    <li>根据目录将PDF按章节分割</li>
+                    <li>每个章节转换为独立的Markdown文件</li>
+                    <li>所有文件打包成ZIP格式供下载</li>
+                </ul>
+            </div>
+            
+            <h2>配置</h2>
+            <div class="form-group">
+                <label for="baseUrl">API 服务器地址：</label>
+                <input type="text" id="baseUrl" placeholder="https://api.effiy.cn" value="https://api.effiy.cn">
+            </div>
+            
+            <h2>上传PDF文件</h2>
+            <div class="form-group">
+                <label for="fileInput">选择PDF文件：</label>
+                <input type="file" id="fileInput" accept=".pdf">
+            </div>
+            
+            <div id="fileInfo" class="file-info">
+                <div class="file-info-item">
+                    <span class="file-info-label">文件名：</span>
+                    <span class="file-info-value" id="fileName">-</span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">文件大小：</span>
+                    <span class="file-info-value" id="fileSize">-</span>
+                </div>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="btnConvert" onclick="convertPdf()">🔄 开始转换</button>
+            </div>
+            
+            <div id="resultSection" class="result-section">
+                <h2>转换结果</h2>
+                <div class="file-info">
+                    <div class="file-info-item">
+                        <span class="file-info-label">章节数量：</span>
+                        <span class="file-info-value" id="chapterCount">-</span>
+                    </div>
+                    <div class="file-info-item">
+                        <span class="file-info-label">ZIP文件大小：</span>
+                        <span class="file-info-value" id="zipSize">-</span>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="btnDownload" class="download-btn" onclick="downloadZip()">📥 下载ZIP文件</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let zipBlob = null;
+        let zipFileName = '';
+        
+        // 显示状态消息
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            status.style.display = 'block';
+            setTimeout(() => {
+                if (type !== 'error') {
+                    status.style.display = 'none';
+                }
+            }, 5000);
+        }
+        
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        // 显示文件信息
+        function displayFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+        }
+        
+        // 监听文件选择
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (!file.name.toLowerCase().endsWith('.pdf')) {
+                    showStatus('error', '❌ 请选择PDF文件！');
+                    e.target.value = '';
+                    return;
+                }
+                displayFileInfo(file);
+                // 隐藏之前的结果
+                document.getElementById('resultSection').style.display = 'none';
+                zipBlob = null;
+            }
+        });
+        
+        // 转换PDF
+        async function convertPdf() {
+            const fileInput = document.getElementById('fileInput');
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            const btnConvert = document.getElementById('btnConvert');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showStatus('error', '❌ 请先选择PDF文件！');
+                return;
+            }
+            
+            if (!baseUrl) {
+                showStatus('error', '❌ API 服务器地址不能为空！');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            btnConvert.disabled = true;
+            btnConvert.innerHTML = '<span class="loading"></span> 转换中...';
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '0%';
+            
+            // 模拟进度
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress < 90) {
+                    progressFill.style.width = progress + '%';
+                }
+            }, 200);
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${baseUrl}/pdf/convert-to-markdown`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                
+                if (!response.ok) {
+                    // 尝试解析错误信息
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.message || errorData.detail || errorMessage;
+                    } catch (e) {
+                        const errorText = await response.text();
+                        if (errorText) {
+                            errorMessage = errorText;
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/zip')) {
+                    // 获取ZIP文件
+                    zipBlob = await response.blob();
+                    
+                    // 获取文件名
+                    const contentDisposition = response.headers.get('content-disposition');
+                    if (contentDisposition) {
+                        const fileNameMatch = contentDisposition.match(/filename="?(.+?)"?$/);
+                        if (fileNameMatch) {
+                            zipFileName = fileNameMatch[1];
+                        } else {
+                            zipFileName = file.name.replace('.pdf', '_chapters.zip');
+                        }
+                    } else {
+                        zipFileName = file.name.replace('.pdf', '_chapters.zip');
+                    }
+                    
+                    // 显示结果
+                    document.getElementById('zipSize').textContent = formatFileSize(zipBlob.size);
+                    document.getElementById('chapterCount').textContent = '已生成（请查看ZIP文件）';
+                    document.getElementById('resultSection').style.display = 'block';
+                    
+                    showStatus('success', `✅ 转换成功！已生成 ${formatFileSize(zipBlob.size)} 的ZIP文件`);
+                } else {
+                    // 可能是JSON错误响应
+                    const result = await response.json();
+                    throw new Error(result.message || result.detail || '转换失败');
+                }
+                
+            } catch (error) {
+                console.error('转换失败:', error);
+                showStatus('error', `❌ 转换失败: ${error.message}`);
+            } finally {
+                btnConvert.disabled = false;
+                btnConvert.textContent = '🔄 开始转换';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 1000);
+            }
+        }
+        
+        // 下载ZIP文件
+        function downloadZip() {
+            if (!zipBlob) {
+                showStatus('error', '❌ 没有可下载的文件！');
+                return;
+            }
+            
+            const url = window.URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = zipFileName || 'pdf_chapters.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showStatus('success', '✅ 文件下载已开始');
+        }
+        
+        // 页面加载时检查API连接
+        window.addEventListener('load', function() {
+            const baseUrl = document.getElementById('baseUrl').value.trim();
+            if (baseUrl) {
+                // 可以在这里添加API健康检查
+            }
+        });
+    </script>
+</body>
+</html>
+
