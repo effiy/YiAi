@@ -938,14 +938,14 @@
                 const isImage = this.isImageFile(file.name);
                 const imagePreview = isImage && showImages 
                     ? `<div onclick="openImageModal('${this.escapeHtml(file.url)}')">
-                        <img src="${file.url}" alt="${this.escapeHtml(file.name)}" class="file-preview" />
+                        <img src="${file.url}" alt="${this.escapeHtml(file.title || file.name)}" class="file-preview" />
                        </div>` 
                     : '';
                 
                 const tagsHtml = this.renderFileTags(file.tags || [], index);
                 const fileSize = file.size_human || `${(file.size/1024/1024).toFixed(2)}MB`;
-                // 优先显示标题，如果没有标题则显示文件名
-                const displayName = (file.title && file.title.trim()) ? file.title : file.name;
+                // 优先使用 title，如果没有则使用 name
+                const displayName = file.title || file.name;
                 const fileIcon = this.getFileIcon(file.name);
                 
                 return `
@@ -1309,6 +1309,23 @@
                 const result = await response.json();
                 
                 if (result.code === 200) {
+                    // 自动保存原始文件名为标题
+                    try {
+                        await fetch(`${baseUrl}/oss/file/info`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                object_name: result.data.object_name,
+                                title: result.data.filename,
+                                description: ''
+                            })
+                        });
+                    } catch (infoError) {
+                        console.warn('保存文件标题失败:', infoError);
+                    }
+                    
                     showStatus('success', `✅ 上传成功！文件名：${result.data.filename}`);
                     fileInput.value = '';
                     // 自动刷新列表
@@ -1822,11 +1839,11 @@
                 return;
             }
 
-            // 获取文件的当前信息（如果有描述字段）
+            // 获取文件的当前信息
+            let currentTitle = file.title || file.name || '';
             let currentDescription = file.description || '';
             
-            // 显示当前信息（优先显示标题，如果没有标题则显示文件名）
-            const currentTitle = (file.title && file.title.trim()) ? file.title : (file.name || '');
+            // 显示当前信息
             document.getElementById('fileInfoTitleInput').value = currentTitle;
             document.getElementById('fileInfoDescriptionInput').value = currentDescription;
             document.getElementById('fileInfoModal').style.display = 'block';
@@ -1875,8 +1892,8 @@
                     },
                     body: JSON.stringify({
                         object_name: currentEditingFileInfo.name,
-                        title: newTitle || '',
-                        description: newDescription || ''
+                        title: newTitle || currentEditingFileInfo.name,
+                        description: newDescription
                     })
                 });
 
@@ -1887,7 +1904,7 @@
 
                 const result = await response.json();
                 if (result.code !== 200) {
-                    throw new Error(result.message || '保存文件信息失败');
+                    throw new Error(result.message || '保存失败');
                 }
 
                 // 更新关联会话的文件信息
@@ -1903,16 +1920,6 @@
                     } catch (sessionError) {
                         console.warn('更新关联会话文件信息失败:', sessionError);
                         // 不阻止主流程，只记录警告
-                    }
-                }
-
-                // 更新本地文件列表中的信息（用于显示）
-                if (window.currentFiles) {
-                    const fileIndex = window.currentFiles.findIndex(f => f.name === currentEditingFileInfo.name);
-                    if (fileIndex >= 0) {
-                        window.currentFiles[fileIndex].title = newTitle || '';
-                        window.currentFiles[fileIndex].description = newDescription;
-                        displayFiles(window.currentFiles);
                     }
                 }
 
