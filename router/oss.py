@@ -320,19 +320,15 @@ async def get_all_tags() -> JSONResponse:
 @router.get("/files")
 async def list_files(
     directory: Optional[str] = None,
-    max_keys: int = 10000,
     tags: Optional[str] = None,
     bucket: oss2.Bucket = Depends(get_bucket)
 ) -> JSONResponse:
     """列出OSS中的文件（支持标签筛选，默认返回所有数据）"""
     try:
-        if max_keys < 1:
-            raise HTTPException(status_code=400, detail="max_keys必须大于0")
-
         prefix = f"{directory}/" if directory else ""
         files = []
 
-        for obj in oss2.ObjectIterator(bucket, prefix=prefix, max_keys=max_keys):
+        for obj in oss2.ObjectIterator(bucket, prefix=prefix):
             # 格式化最后修改时间
             last_modified_str = None
             if obj.last_modified:

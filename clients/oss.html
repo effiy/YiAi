@@ -1346,13 +1346,18 @@
             btnRefresh.innerHTML = '<span class="loading"></span> 加载中...';
             
             try {
-                let url = `${baseUrl}/oss/files?max_keys=100`;
+                let url = `${baseUrl}/oss/files`;
+                const params = [];
                 if (directory) {
-                    url += `&directory=${encodeURIComponent(directory)}`;
+                    params.push(`directory=${encodeURIComponent(directory)}`);
                 }
                 // 添加标签筛选
                 if (window.selectedTags.length > 0) {
-                    url += `&tags=${encodeURIComponent(window.selectedTags.join(','))}`;
+                    params.push(`tags=${encodeURIComponent(window.selectedTags.join(','))}`);
+                }
+                
+                if (params.length > 0) {
+                    url += `?${params.join('&')}`;
                 }
                 
                 const response = await fetch(url);
