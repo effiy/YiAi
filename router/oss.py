@@ -320,15 +320,12 @@ async def get_all_tags() -> JSONResponse:
 @router.get("/files")
 async def list_files(
     directory: Optional[str] = None,
-    max_keys: int = 100,
+    max_keys: int = 10000,
     tags: Optional[str] = None,
     bucket: oss2.Bucket = Depends(get_bucket)
 ) -> JSONResponse:
-    """列出OSS中的文件（支持标签筛选）"""
+    """列出OSS中的文件（支持标签筛选，默认返回所有数据）"""
     try:
-        if max_keys > 1000:
-            raise HTTPException(status_code=400, detail="max_keys不能超过1000")
-        
         if max_keys < 1:
             raise HTTPException(status_code=400, detail="max_keys必须大于0")
 
