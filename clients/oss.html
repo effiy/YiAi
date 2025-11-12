@@ -944,12 +944,14 @@
                 
                 const tagsHtml = this.renderFileTags(file.tags || [], index);
                 const fileSize = file.size_human || `${(file.size/1024/1024).toFixed(2)}MB`;
+                // 优先显示标题，如果没有标题则显示文件名
+                const displayName = (file.title && file.title.trim()) ? file.title : file.name;
                 const fileIcon = this.getFileIcon(file.name);
                 
                 return `
                     <div class="file-item" data-file-index="${index}" data-file-name="${this.escapeHtml(file.name)}">
                         <div class="file-info">
-                            <div class="file-name">${fileIcon} ${this.escapeHtml(file.name)}</div>
+                            <div class="file-name">${fileIcon} ${this.escapeHtml(displayName)}</div>
                             <div class="file-meta">
                                 📊 大小: ${fileSize} | 
                                 📅 修改时间: ${file.last_modified_str || '未知'}
@@ -1823,8 +1825,9 @@
             // 获取文件的当前信息（如果有描述字段）
             let currentDescription = file.description || '';
             
-            // 显示当前信息
-            document.getElementById('fileInfoTitleInput').value = file.name || '';
+            // 显示当前信息（优先显示标题，如果没有标题则显示文件名）
+            const currentTitle = (file.title && file.title.trim()) ? file.title : (file.name || '');
+            document.getElementById('fileInfoTitleInput').value = currentTitle;
             document.getElementById('fileInfoDescriptionInput').value = currentDescription;
             document.getElementById('fileInfoModal').style.display = 'block';
             document.getElementById('fileInfoTitleInput').focus();
@@ -1864,9 +1867,28 @@
             const fileUrl = currentEditingFileInfo.url;
 
             try {
-                // 注意：OSS后端可能没有直接保存文件描述和标题的接口
-                // 这里我们主要更新关联会话的信息
-                // 如果后端有文件信息保存接口，可以在这里添加
+                // 保存文件信息到后端
+                const response = await fetch(`${baseUrl}/oss/file/info`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        object_name: currentEditingFileInfo.name,
+                        title: newTitle || '',
+                        description: newDescription || ''
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+                if (result.code !== 200) {
+                    throw new Error(result.message || '保存文件信息失败');
+                }
 
                 // 更新关联会话的文件信息
                 if (fileUrl) {
@@ -1888,8 +1910,8 @@
                 if (window.currentFiles) {
                     const fileIndex = window.currentFiles.findIndex(f => f.name === currentEditingFileInfo.name);
                     if (fileIndex >= 0) {
+                        window.currentFiles[fileIndex].title = newTitle || '';
                         window.currentFiles[fileIndex].description = newDescription;
-                        // 如果标题改变了，也更新（虽然文件名本身不会改变）
                         displayFiles(window.currentFiles);
                     }
                 }

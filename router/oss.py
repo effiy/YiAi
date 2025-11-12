@@ -140,6 +140,29 @@ async def upload_file(
         bucket.put_object(object_name, content)
         file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
 
+        # 自动创建文件信息，标题设置为原始文件名（包含后缀）
+        try:
+            await db.initialize()
+            collection = db.mongodb.db["oss_file_info"]
+            await collection.update_one(
+                {"object_name": object_name},
+                {
+                    "$set": {
+                        "object_name": object_name,
+                        "title": file.filename,  # 使用原始文件名作为标题
+                        "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                    },
+                    "$setOnInsert": {
+                        "createdTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                },
+                upsert=True
+            )
+            logger.info(f"文件信息已创建: {object_name}, title: {file.filename}")
+        except Exception as info_error:
+            logger.warning(f"创建文件信息失败: {str(info_error)}")
+            # 不阻止上传流程，只记录警告
+
         logger.info(f"文件上传成功: {object_name}")
         return create_response(
             code=200,
@@ -349,6 +372,18 @@ async def list_files(
             except Exception as tag_error:
                 logger.warning(f"获取文件标签失败: {str(tag_error)}")
             
+            # 获取文件信息（标题、描述等）
+            file_title = ""
+            file_description = ""
+            try:
+                await db.initialize()
+                info_doc = await db.mongodb.find_one("oss_file_info", {"object_name": obj.key})
+                if info_doc:
+                    file_title = info_doc.get("title", "")
+                    file_description = info_doc.get("description", "")
+            except Exception as info_error:
+                logger.warning(f"获取文件信息失败: {str(info_error)}")
+            
             file_data = {
                 "name": obj.key,
                 "size": obj.size,
@@ -356,7 +391,9 @@ async def list_files(
                 "last_modified": obj.last_modified,
                 "last_modified_str": last_modified_str,
                 "url": build_oss_url(bucket.bucket_name, bucket.endpoint, obj.key),
-                "tags": file_tags
+                "tags": file_tags,
+                "title": file_title,
+                "description": file_description
             }
             
             # 如果指定了标签筛选，则只返回包含该标签的文件
