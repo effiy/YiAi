@@ -172,7 +172,7 @@ async def get_session(
 async def list_sessions(
     http_request: Request,
     user_id: Optional[str] = None,
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1),
     skip: int = Query(0, ge=0)
 ):
     """列出所有会话"""
