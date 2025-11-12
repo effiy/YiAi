@@ -104,13 +104,20 @@ async def header_verification_middleware(request: Request, call_next):
             response.headers["Access-Control-Allow-Headers"] = "*"
         return response
 
-# 添加 CORS 中间件（在自定义中间件之后添加，这样它会先执行）
+# 配置 CORS 允许的来源
+# 从环境变量读取，如果没有设置则使用默认值
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://effiy.cn,http://localhost:3000,http://localhost:8000").split(",")
+CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS if origin.strip()]
+
+# 添加 CORS 中间件（在自定义中间件之前添加，确保所有响应都包含 CORS 头）
+# 注意：FastAPI 中间件执行顺序是后添加的先执行（LIFO），所以先添加 CORS 中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源，生产环境中应该指定具体域名
+    allow_origins=CORS_ORIGINS,  # 允许的来源
     allow_credentials=True,
-    allow_methods=["*"],  # 允许所有 HTTP 方法
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许的 HTTP 方法
     allow_headers=["*"],  # 允许所有头部
+    expose_headers=["*"],  # 暴露所有头部
 )
 
 # 全局异常处理器
@@ -125,7 +132,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         error_messages.append(f"{field}: {msg}")
     
     error_msg = "请求参数验证失败: " + "; ".join(error_messages)
-    return JSONResponse(
+    response = JSONResponse(
         status_code=422,
         content={
             "detail": error_msg,
@@ -136,11 +143,19 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "code": 422
         }
     )
+    # 确保异常响应也包含 CORS 头
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     logger.error(f"HTTP异常: {exc.detail}")
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content={
             "detail": exc.detail,
@@ -150,11 +165,19 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "code": exc.status_code
         }
     )
+    # 确保异常响应也包含 CORS 头
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     logger.error(f"未处理的异常: {str(exc)}", exc_info=True)
-    return JSONResponse(
+    response = JSONResponse(
         status_code=500,
         content={
             "detail": "服务器内部错误",
@@ -162,6 +185,14 @@ async def general_exception_handler(request: Request, exc: Exception):
             "status": 500
         }
     )
+    # 确保异常响应也包含 CORS 头
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 # 挂载静态文件服务（客户端 HTML 文件）
 try:
