@@ -113,9 +113,9 @@ CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS if origin.strip()]
 # 注意：FastAPI 中间件执行顺序是后添加的先执行（LIFO），所以先添加 CORS 中间件
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,  # 允许的来源
+    allow_origins=["*"],  # 允许所有来源
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # 允许的 HTTP 方法
+    allow_methods=["*"],  # 允许所有 HTTP 方法
     allow_headers=["*"],  # 允许所有头部
     expose_headers=["*"],  # 暴露所有头部
 )
@@ -247,3 +247,4 @@ if __name__ == "__main__":
         limit_max_requests=10000,  # 最大请求数（防止内存泄漏）
         timeout_keep_alive=5,  # Keep-alive 超时时间
     )
+
