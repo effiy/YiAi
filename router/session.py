@@ -173,15 +173,23 @@ async def list_sessions(
     http_request: Request,
     user_id: Optional[str] = None,
     limit: int = Query(10000, ge=1),
-    skip: int = Query(0, ge=0)
+    skip: int = Query(0, ge=0),
+    tags: Optional[str] = Query(None, description="标签过滤，多个标签用逗号分隔")
 ):
     """列出所有会话（默认返回所有数据）"""
     try:
         service = await get_session_service()
         user_id = get_user_id(http_request, user_id)
         
+        # 解析标签过滤参数
+        tags_filter = None
+        if tags:
+            tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+            if tags_list:
+                tags_filter = tags_list
+        
         # 调用服务层列出会话
-        sessions = await service.list_sessions(user_id=user_id, limit=limit, skip=skip)
+        sessions = await service.list_sessions(user_id=user_id, limit=limit, skip=skip, tags_filter=tags_filter)
         
         return JSONResponse(content={
             "success": True,

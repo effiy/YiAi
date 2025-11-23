@@ -333,7 +333,8 @@ class SessionService:
         self,
         user_id: Optional[str] = None,
         limit: int = 50,
-        skip: int = 0
+        skip: int = 0,
+        tags_filter: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
         """
         列出所有会话
@@ -342,6 +343,7 @@ class SessionService:
             user_id: 用户ID（可选）
             limit: 返回数量限制
             skip: 跳过数量
+            tags_filter: 标签过滤列表（可选），如果提供则只返回包含这些标签或没有标签的会话
         
         Returns:
             会话列表
@@ -353,6 +355,16 @@ class SessionService:
             query = {}
             if user_id and user_id != "default_user":
                 query["user_id"] = user_id
+            
+            # 如果提供了标签过滤，添加标签过滤条件
+            if tags_filter:
+                # 查询条件：tags字段包含任一指定标签，或者tags字段为空/不存在
+                query["$or"] = [
+                    {"tags": {"$in": tags_filter}},  # 包含任一指定标签
+                    {"tags": {"$exists": False}},     # tags字段不存在
+                    {"tags": {"$eq": []}},            # tags字段为空数组
+                    {"tags": {"$eq": None}}           # tags字段为None
+                ]
             
             # 查询会话，按更新时间倒序
             session_docs = await self.mongo_client.find_many(
