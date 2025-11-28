@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from router import base, mongodb, oss, prompt, mem0, qdrant, session, dataSync
+from router import base, mongodb, oss, prompt, mem0, session, dataSync
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -216,8 +216,7 @@ async def root():
             "mongodb": "/clients/mongodb.html",
             "oss": "/clients/oss.html",
             "base": "/clients/base.html",
-            "mem0": "/clients/mem0Client.html",
-            "qdrant": "/clients/qdrantClient.html"
+            "mem0": "/clients/mem0Client.html"
         }
     }
 
@@ -226,7 +225,6 @@ app.include_router(base.router)
 app.include_router(prompt.router)
 app.include_router(mongodb.router)
 app.include_router(mem0.router)
-app.include_router(qdrant.router)
 app.include_router(session.router)
 app.include_router(dataSync.router)
 

@@ -30,21 +30,6 @@ else
 fi
 
 echo ""
-echo "检查 Qdrant 进程..."
-if pgrep -f qdrant > /dev/null; then
-    echo "Qdrant 服务正在运行"
-    echo "检查 Qdrant 服务的文件描述符使用情况..."
-    qdrant_pid=$(pgrep -f qdrant | head -n 1)
-    if [ -n "$qdrant_pid" ]; then
-        echo "Qdrant PID: $qdrant_pid"
-        lsof_count=$(lsof -p $qdrant_pid 2>/dev/null | wc -l)
-        echo "当前打开的文件数: $lsof_count"
-    fi
-else
-    echo "Qdrant 服务未运行"
-fi
-
-echo ""
 echo "检查 Python 进程的文件描述符使用情况..."
 if pgrep -f python > /dev/null; then
     python_pid=$(pgrep -f python | head -n 1)

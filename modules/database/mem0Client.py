@@ -43,8 +43,6 @@ class Mem0Client:
                     check_url = url.rstrip('/')
                     if service_name.lower() == "ollama":
                         check_url = f"{check_url}/api/tags"  # Ollama 的健康检查端点
-                    elif service_name.lower() == "qdrant":
-                        check_url = f"{check_url}/collections"  # Qdrant 的健康检查端点
                     
                     req = urllib.request.Request(check_url)
                     req.add_header('User-Agent', 'Mem0Client/1.0')
@@ -59,7 +57,7 @@ class Mem0Client:
             # 对于本地服务，使用 socket 检查
             else:
                 host = parsed.hostname or "localhost"
-                port = parsed.port or (6333 if "qdrant" in service_name.lower() else 11434)
+                port = parsed.port or 11434
                 
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(2)
@@ -80,9 +78,6 @@ class Mem0Client:
             original_openai_key = os.environ.get("OPENAI_API_KEY")
             try:
                 # Mem0 配置
-                qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
-                qdrant_api_key = os.getenv("QDRANT_API_KEY", None)
-                
                 ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
                 ollama_embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
                 ollama_model_val = os.getenv("OLLAMA_MODEL", "qwen3")
@@ -90,17 +85,7 @@ class Mem0Client:
                 
                 # 检查服务连接
                 logger.info("检查依赖服务连接状态...")
-                qdrant_available = self._check_service_connection(qdrant_url, "Qdrant")
                 ollama_available = self._check_service_connection(ollama_url, "Ollama")
-                
-                if not qdrant_available:
-                    logger.warning("=" * 70)
-                    logger.warning(f"⚠️  Qdrant 服务不可用 ({qdrant_url})")
-                    logger.warning("   启动命令: docker run -p 6333:6333 qdrant/qdrant")
-                    logger.warning("   Mem0 功能将暂时不可用，但不影响其他功能运行")
-                    logger.warning("=" * 70)
-                    self._initialization_failed = True
-                    return
                 
                 if not ollama_available:
                     logger.warning("=" * 70)
@@ -121,12 +106,6 @@ class Mem0Client:
                     logger.info("临时设置虚拟 OPENAI_API_KEY 以通过 Mem0 初始化检查")
                 
                 # 构建配置，明确使用 Ollama
-                qdrant_config = {
-                    "url": qdrant_url
-                }
-                if qdrant_api_key:
-                    qdrant_config["api_key"] = qdrant_api_key
-                
                 # 构建 Ollama embedding 配置
                 # Mem0 的 Ollama 配置可能使用不同的参数名
                 # 尝试多种可能的参数名：host, url, api_url
@@ -161,10 +140,6 @@ class Mem0Client:
                     llm_config["host"] = ollama_url.replace("http://", "").replace("https://", "")
                 
                 config = {
-                    "vector_store": {
-                        "provider": "qdrant",
-                        "config": qdrant_config
-                    },
                     "embedding": {
                         "provider": "ollama",
                         "config": embedding_config
@@ -175,7 +150,7 @@ class Mem0Client:
                     }
                 }
                 
-                logger.info(f"Mem0Client 配置: Qdrant={qdrant_url}, Ollama={ollama_url}")
+                logger.info(f"Mem0Client 配置: Ollama={ollama_url}")
                 logger.info(f"Embedding模型={ollama_embedding_model}, LLM模型={ollama_model_val}")
                 
                 # 尝试多种初始化方式
@@ -195,7 +170,6 @@ class Mem0Client:
                             embedding_config_url = {"model": ollama_embedding_model, "url": ollama_url}
                             llm_config_url = {"model": ollama_model_val, "url": ollama_url}
                             config_url = {
-                                "vector_store": config["vector_store"],
                                 "embedding": {"provider": "ollama", "config": embedding_config_url},
                                 "llm": {"provider": "ollama", "config": llm_config_url}
                             }
@@ -207,7 +181,6 @@ class Mem0Client:
                             # 尝试最简单的配置（让 Mem0 使用默认设置）
                             try:
                                 config_simple = {
-                                    "vector_store": config["vector_store"],
                                     "embedding": {
                                         "provider": "ollama",
                                         "config": {"model": ollama_embedding_model}
@@ -237,8 +210,6 @@ class Mem0Client:
                             logger.warning(f"直接初始化失败: {str(direct_error)}")
                         # 方式3: 尝试使用环境变量方式
                         # 确保环境变量设置正确
-                        os.environ["MEM0_VECTOR_STORE_PROVIDER"] = "qdrant"
-                        os.environ["MEM0_VECTOR_STORE_URL"] = qdrant_url
                         os.environ["MEM0_EMBEDDING_PROVIDER"] = "ollama"
                         os.environ["MEM0_EMBEDDING_MODEL"] = ollama_embedding_model
                         os.environ["MEM0_EMBEDDING_BASE_URL"] = ollama_url
@@ -254,28 +225,14 @@ class Mem0Client:
                             if "Connection refused" in error_msg or "[Errno 61]" in error_msg:
                                 logger.error("=" * 60)
                                 logger.error("连接被拒绝！请检查以下服务是否运行：")
-                                logger.error(f"1. Qdrant: {qdrant_url}")
-                                logger.error("   启动命令: docker run -p 6333:6333 qdrant/qdrant")
-                                logger.error(f"2. Ollama: {ollama_url}")
+                                logger.error(f"Ollama: {ollama_url}")
                                 logger.error("   启动命令: ollama serve")
                                 logger.error("   并确保已下载 embedding 模型: ollama pull mxbai-embed-large")
                                 logger.error("=" * 60)
                             
-                            # 最后尝试：完全不设置 OPENAI_API_KEY，只使用向量存储
-                            if "OPENAI_API_KEY" in os.environ:
-                                del os.environ["OPENAI_API_KEY"]
-                            # 只使用 Qdrant，不使用 embedding（如果 Mem0 支持）
-                            minimal_config = {
-                                "vector_store": config["vector_store"]
-                            }
-                            try:
-                                self._memory = Memory.from_config(minimal_config)
-                                logger.warning("Mem0Client 使用最小配置初始化（仅向量存储），embedding 功能可能不可用")
-                            except Exception as minimal_error:
-                                logger.error(f"最小配置也失败: {minimal_error}")
-                                # 不抛出异常，允许系统继续运行
-                                self._initialization_failed = True
-                                logger.warning("Mem0 初始化失败，但系统将继续运行（Mem0 功能不可用）")
+                            # 不抛出异常，允许系统继续运行
+                            self._initialization_failed = True
+                            logger.warning("Mem0 初始化失败，但系统将继续运行（Mem0 功能不可用）")
                 
             except Exception as e:
                 logger.error(f"Mem0Client 初始化失败: {str(e)}")
@@ -293,7 +250,6 @@ class Mem0Client:
             if self._initialization_failed:
                 raise RuntimeError(
                     "Mem0 未初始化。请确保以下服务正在运行：\n"
-                    "  - Qdrant: docker run -p 6333:6333 qdrant/qdrant\n"
                     "  - Ollama: ollama serve"
                 )
             raise RuntimeError("Mem0 未初始化")

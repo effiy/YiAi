@@ -19,8 +19,7 @@ class ChatService:
     async def initialize(self):
         """初始化服务"""
         await self.mongo_client.initialize()
-        # Mem0 会自动管理 Qdrant 集合，无需手动创建
-        # 移除对 QdrantClient 的直接使用，避免双重连接导致文件描述符泄漏
+        # Mem0 会自动管理向量存储集合，无需手动创建
         if not self.mem0_client.is_available():
             logger.warning("Mem0 不可用，向量搜索功能将不可用")
     

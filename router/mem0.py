@@ -54,7 +54,7 @@ async def get_status():
     """检查 Mem0 服务状态"""
     return {
         "available": mem0_client.is_available(),
-        "message": "Mem0 服务可用" if mem0_client.is_available() else "Mem0 服务不可用，请检查 Qdrant 和 Ollama 服务"
+        "message": "Mem0 服务可用" if mem0_client.is_available() else "Mem0 服务不可用，请检查 Ollama 服务"
     }
 
 
