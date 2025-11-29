@@ -284,30 +284,53 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
 
         cname = validate_collection_name(cname)
 
-        # 验证key字段
+        # 验证key字段或link字段
         key = data.get('key')
-        if not key:
-            raise ValueError("更新数据时必须提供key字段")
+        link = data.get('link')
+        
+        # 确定查询条件和使用的标识字段
+        if key:
+            # 优先使用key字段
+            query_filter = {'key': key}
+            identifier = key
+            identifier_type = 'key'
+        elif link:
+            # 兼容使用link字段替换key字段
+            query_filter = {'link': link}
+            identifier = link
+            identifier_type = 'link'
+        else:
+            raise ValueError("更新数据时必须提供key字段或link字段")
 
-        if len(data) <= 1:  # 只有key字段
+        # 检查是否有有效的更新数据
+        # 如果使用key查找，排除key字段（因为key是查找条件，不应该被更新）
+        # 如果使用link查找，允许更新link字段（因为link字段的值可能会改变）
+        excluded_fields = ['key'] if key else []
+        data_for_check = {k: v for k, v in data.items() if k not in excluded_fields}
+        if not data_for_check:
             raise ValueError("更新数据不能为空")
 
         collection = db.mongodb.db[cname]
 
-        # 添加更新时间
-        data['updatedTime'] = get_current_time()
+        # 准备更新数据
+        # 如果使用key查找，排除key字段（避免更新主键），但允许更新link字段
+        # 如果使用link查找，允许更新所有字段（包括key和link）
+        update_data = {k: v for k, v in data.items() if k not in (['key'] if key else [])}
+        update_data['updatedTime'] = get_current_time()
 
         # 执行更新
         result = await collection.find_one_and_update(
-            {'key': key},
-            {"$set": data},
+            query_filter,
+            {"$set": update_data},
             return_document=ReturnDocument.AFTER
         )
 
         if not result:
-            raise ValueError(f"未找到key为 {key} 的数据")
+            raise ValueError(f"未找到{identifier_type}为 {identifier} 的数据")
 
-        return RespOk(data={"key": key, "updated": True})
+        # 返回实际使用的key值
+        actual_key = result.get('key', identifier)
+        return RespOk(data={"key": actual_key, "updated": True})
 
     except ValueError as e:
         logger.warning(f"数据验证失败: {str(e)}")
