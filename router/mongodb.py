@@ -347,7 +347,9 @@ async def delete(request: Request):
         query_params = dict(request.query_params)
         cname = validate_collection_name(query_params.get('cname'))
         key = query_params.get('key')
+        link = query_params.get('link')
         keys_str = query_params.get('keys')
+        links_str = query_params.get('links')
 
         collection = db.mongodb.db[cname]
 
@@ -359,16 +361,32 @@ async def delete(request: Request):
 
             result = await collection.delete_many({'key': {'$in': keys_list}})
             return RespOk(data={"deleted_count": result.deleted_count})
+        
+        elif links_str:
+            links_list = [l.strip() for l in links_str.split(',') if l.strip()]
+            if not links_list:
+                raise ValueError("links参数不能为空")
+
+            result = await collection.delete_many({'link': {'$in': links_list}})
+            return RespOk(data={"deleted_count": result.deleted_count})
 
         # 单个删除
         elif key:
+            # 优先使用key字段
             result = await collection.delete_one({'key': key})
             if result.deleted_count == 0:
                 raise ValueError(f"未找到key为 {key} 的数据")
             return RespOk(data={"deleted_count": result.deleted_count})
+        
+        elif link:
+            # 兼容使用link字段替换key字段
+            result = await collection.delete_one({'link': link})
+            if result.deleted_count == 0:
+                raise ValueError(f"未找到link为 {link} 的数据")
+            return RespOk(data={"deleted_count": result.deleted_count})
 
         else:
-            raise ValueError("删除操作必须提供有效的key或keys参数")
+            raise ValueError("删除操作必须提供有效的key、link、keys或links参数")
 
     except ValueError as e:
         logger.warning(f"删除数据验证失败: {str(e)}")
