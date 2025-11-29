@@ -153,7 +153,7 @@ async def query(request: Request):
         # 验证分页参数
         try:
             page_num = max(1, int(query_params.pop('pageNum', 1)))
-            page_size = min(999999999, max(1, int(query_params.pop('pageSize', 999999999))))
+            page_size = min(5000, max(1, int(query_params.pop('pageSize', 999999999))))
         except ValueError:
             raise ValueError("分页参数必须是有效的整数")
 
