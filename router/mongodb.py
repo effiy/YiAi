@@ -2,7 +2,7 @@ from functools import wraps
 from fastapi import APIRouter, Request, Body, HTTPException
 from typing import Dict, Any, List, Optional
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 import logging
 from bson import ObjectId
@@ -70,6 +70,78 @@ def handle_error(e: Exception, status_code: int = 500) -> dict:
         data=None
     )
 
+def parse_published_date(date_str: str) -> Optional[datetime]:
+    """解析 published 字段中的日期字符串，支持多种格式"""
+    if not date_str:
+        return None
+    
+    # 尝试解析常见的日期格式
+    date_formats = [
+        '%a, %d %b %Y %H:%M:%S %z',  # Mon, 01 Dec 2025 13:25:44 +0800
+        '%a, %d %b %Y %H:%M:%S',     # Mon, 01 Dec 2025 13:25:44
+        '%Y-%m-%d %H:%M:%S',         # 2025-12-01 13:25:44
+        '%Y-%m-%d',                   # 2025-12-01
+        '%d %b %Y',                   # 01 Dec 2025
+        '%Y-%m-%dT%H:%M:%S',         # 2025-12-01T13:25:44
+        '%Y-%m-%dT%H:%M:%S%z',       # 2025-12-01T13:25:44+0800
+    ]
+    
+    for fmt in date_formats:
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    
+    return None
+
+def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any]:
+    """构建 pubDate 字段的日期范围查询"""
+    try:
+        # 解析开始和结束日期
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        # 月份名称映射
+        month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+        # 生成日期范围内的所有日期模式
+        date_patterns = []
+        current_dt = start_dt
+        
+        while current_dt <= end_dt:
+            year = current_dt.year
+            month = current_dt.month
+            day = current_dt.day
+            month_name = month_names[month - 1]
+            
+            # 生成该日期的所有可能格式
+            date_patterns.extend([
+                f'{year}-{month:02d}-{day:02d}',  # 2025-12-01
+                f'{day:02d} {month_name} {year}',  # 01 Dec 2025
+                f'{day} {month_name} {year}',     # 1 Dec 2025
+            ])
+            
+            # 移动到下一天
+            current_dt += timedelta(days=1)
+        
+        # 去重
+        date_patterns = list(set(date_patterns))
+        
+        if not date_patterns:
+            return {}
+        
+        # 使用 $or 和正则表达式匹配
+        return {
+            '$or': [
+                {'pubDate': {'$regex': pattern, '$options': 'i'}}
+                for pattern in date_patterns
+            ]
+        }
+    except ValueError:
+        # 如果日期解析失败，返回空查询
+        return {}
+
 def build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
     """构建MongoDB查询过滤条件"""
     filter_dict = {}
@@ -77,6 +149,31 @@ def build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
     for key, value in query_params.items():
         if not value:  # 跳过空值
             continue
+
+        # 特殊处理 isoDate 参数（用于 RSS 查询）
+        # isoDate 查询会匹配 pubDate 字段中包含指定日期的记录
+        if key == 'isoDate' and isinstance(value, str):
+            if ',' in value:
+                # 日期范围查询，格式：2025-12-01,2025-12-01
+                date_parts = [term.strip() for term in value.split(',') if term.strip()]
+                if len(date_parts) == 2:
+                    start_date, end_date = date_parts
+                    if is_valid_date(start_date) and is_valid_date(end_date):
+                        # 构建 pubDate 字段的日期查询
+                        published_filter = build_published_date_filter(start_date, end_date)
+                        if published_filter:
+                            # pubDate 字段的查询作为独立的 AND 条件
+                            # 因为 pubDate 可能有多种格式，所以内部使用 $or
+                            filter_dict.update(published_filter)
+                        continue
+            else:
+                # 单个日期查询
+                if is_valid_date(value):
+                    published_filter = build_published_date_filter(value, value)
+                    if published_filter:
+                        # pubDate 字段的查询作为独立的 AND 条件
+                        filter_dict.update(published_filter)
+                        continue
 
         # 处理列表类型参数
         if hasattr(value, '__iter__') and not isinstance(value, (str, bytes, dict)):
@@ -102,10 +199,17 @@ def build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
             if ',' in value:  # 多条件模糊查询
                 search_terms = [term.strip() for term in value.split(',') if term.strip()]
                 if search_terms:
-                    filter_dict['$or'] = [
-                        {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
-                        for term in search_terms
-                    ]
+                    # 合并到 $or 条件中
+                    if '$or' in filter_dict:
+                        filter_dict['$or'].extend([
+                            {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
+                            for term in search_terms
+                        ])
+                    else:
+                        filter_dict['$or'] = [
+                            {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
+                            for term in search_terms
+                        ]
             else:  # 单条件模糊查询
                 filter_dict[key] = re.compile(f'.*{re.escape(value)}.*', re.IGNORECASE)
 
@@ -234,6 +338,14 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
         collection = db.mongodb.db[cname]
         logger.info(f"创建数据请求 - 集合: {cname}, 数据: {data}")
 
+        # 如果是 rss 集合，检查 link 字段的唯一性
+        if cname == 'rss':
+            link = data.get('link')
+            if link:
+                existing_item = await collection.find_one({'link': link})
+                if existing_item:
+                    raise ValueError(f"link 字段值 '{link}' 已存在，不能重复创建")
+
         # 准备数据
         data_copy = {k: (str(v) if isinstance(v, ObjectId) else v) for k, v in data.items()}
 
@@ -258,8 +370,17 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
             data_copy['order'] = 1
 
         # 插入数据
-        result = await collection.insert_one(data_copy)
-        logger.info(f"数据创建成功 - 集合: {cname}, ID: {result.inserted_id}")
+        try:
+            result = await collection.insert_one(data_copy)
+            logger.info(f"数据创建成功 - 集合: {cname}, ID: {result.inserted_id}")
+        except Exception as e:
+            # 捕获唯一索引冲突错误
+            if 'duplicate key' in str(e).lower() or 'E11000' in str(e):
+                if cname == 'rss':
+                    raise ValueError(f"link 字段值 '{data_copy.get('link', '')}' 已存在，不能重复创建")
+                else:
+                    raise ValueError(f"数据创建失败: 唯一性约束冲突")
+            raise
 
         return RespOk(data={'key': data_copy['key']})
 
@@ -312,6 +433,25 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
 
         collection = db.mongodb.db[cname]
 
+        # 如果是 rss 集合，且要更新 link 字段，检查新 link 值的唯一性
+        if cname == 'rss':
+            new_link = data.get('link')
+            if new_link:
+                # 查找是否存在其他记录使用了相同的 link
+                existing_item = await collection.find_one({'link': new_link})
+                if existing_item:
+                    # 如果找到的记录不是当前要更新的记录，则冲突
+                    existing_key = existing_item.get('key')
+                    existing_link = existing_item.get('link')
+                    if key:
+                        # 使用 key 查找时，检查找到的记录是否就是当前记录
+                        if existing_key != key:
+                            raise ValueError(f"link 字段值 '{new_link}' 已被其他记录使用（key: {existing_key}）")
+                    elif link:
+                        # 使用 link 查找时，如果 link 值改变，检查新值是否冲突
+                        if new_link != link and existing_key:
+                            raise ValueError(f"link 字段值 '{new_link}' 已被其他记录使用（key: {existing_key}）")
+
         # 准备更新数据
         # 如果使用key查找，排除key字段（避免更新主键），但允许更新link字段
         # 如果使用link查找，允许更新所有字段（包括key和link）
@@ -319,11 +459,21 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
         update_data['updatedTime'] = get_current_time()
 
         # 执行更新
-        result = await collection.find_one_and_update(
-            query_filter,
-            {"$set": update_data},
-            return_document=ReturnDocument.AFTER
-        )
+        try:
+            result = await collection.find_one_and_update(
+                query_filter,
+                {"$set": update_data},
+                return_document=ReturnDocument.AFTER
+            )
+        except Exception as e:
+            # 捕获唯一索引冲突错误
+            if 'duplicate key' in str(e).lower() or 'E11000' in str(e):
+                if cname == 'rss':
+                    new_link = data.get('link')
+                    raise ValueError(f"link 字段值 '{new_link}' 已存在，不能重复")
+                else:
+                    raise ValueError(f"数据更新失败: 唯一性约束冲突")
+            raise
 
         if not result:
             raise ValueError(f"未找到{identifier_type}为 {identifier} 的数据")
@@ -454,3 +604,4 @@ async def batch_order(request: Request, data: Dict[str, Any] = Body(...)):
     except Exception as e:
         logger.error(f"批量排序失败: {str(e)}", exc_info=True)
         return handle_error(e)
+
