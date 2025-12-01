@@ -95,7 +95,7 @@ def parse_published_date(date_str: str) -> Optional[datetime]:
     return None
 
 def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any]:
-    """构建 pubDate 字段的日期范围查询"""
+    """构建 pubDate 和 isoDate 字段的日期范围查询，兼容多种日期格式"""
     try:
         # 解析开始和结束日期
         start_dt = datetime.strptime(start_date, '%Y-%m-%d')
@@ -107,6 +107,7 @@ def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any
         
         # 生成日期范围内的所有日期模式
         date_patterns = []
+        iso_date_values = []  # 用于 isoDate 字段的精确匹配
         current_dt = start_dt
         
         while current_dt <= end_dt:
@@ -115,28 +116,50 @@ def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any
             day = current_dt.day
             month_name = month_names[month - 1]
             
-            # 生成该日期的所有可能格式
+            # 生成该日期的所有可能格式（用于 pubDate 字段的正则匹配）
             date_patterns.extend([
                 f'{year}-{month:02d}-{day:02d}',  # 2025-12-01
                 f'{day:02d} {month_name} {year}',  # 01 Dec 2025
                 f'{day} {month_name} {year}',     # 1 Dec 2025
             ])
             
+            # 用于 isoDate 字段的精确匹配值
+            iso_date_values.append(f'{year}-{month:02d}-{day:02d}')
+            
             # 移动到下一天
             current_dt += timedelta(days=1)
         
         # 去重
         date_patterns = list(set(date_patterns))
+        iso_date_values = list(set(iso_date_values))
         
         if not date_patterns:
             return {}
         
-        # 使用 $or 和正则表达式匹配
+        # 构建查询条件：同时匹配 pubDate、published 和 isoDate 字段
+        # pubDate/published 字段使用正则表达式匹配（支持 'Sun, 29 Jun 2025 08:19:20 GMT' 等格式）
+        # isoDate 字段使用精确匹配或范围匹配
+        or_conditions = []
+        
+        # 添加 pubDate 字段的正则匹配条件（兼容 pubDate 字段）
+        for pattern in date_patterns:
+            or_conditions.append({'pubDate': {'$regex': pattern, '$options': 'i'}})
+        
+        # 添加 published 字段的正则匹配条件（兼容 published 字段，RSS 数据可能使用此字段）
+        for pattern in date_patterns:
+            or_conditions.append({'published': {'$regex': pattern, '$options': 'i'}})
+        
+        # 添加 isoDate 字段的匹配条件（如果字段存在）
+        if iso_date_values:
+            # 使用 $in 进行精确匹配
+            or_conditions.append({'isoDate': {'$in': iso_date_values}})
+            # 也支持 isoDate 字段包含日期字符串的情况（使用正则）
+            for iso_date in iso_date_values:
+                or_conditions.append({'isoDate': {'$regex': iso_date, '$options': 'i'}})
+        
+        # 使用 $or 组合所有条件
         return {
-            '$or': [
-                {'pubDate': {'$regex': pattern, '$options': 'i'}}
-                for pattern in date_patterns
-            ]
+            '$or': or_conditions
         }
     except ValueError:
         # 如果日期解析失败，返回空查询
@@ -604,4 +627,5 @@ async def batch_order(request: Request, data: Dict[str, Any] = Body(...)):
     except Exception as e:
         logger.error(f"批量排序失败: {str(e)}", exc_info=True)
         return handle_error(e)
+
 
