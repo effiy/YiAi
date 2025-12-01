@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt, session, dataSync, rss
+from contextlib import asynccontextmanager
 
 # 禁用 Python 字节码缓存
 sys.dont_write_bytecode = True
@@ -19,12 +20,42 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 应用生命周期管理
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用启动和关闭时的生命周期管理"""
+    # 启动时执行
+    logger.info("应用启动中...")
+    
+    # 启动 RSS 定时解析任务
+    try:
+        # 检查是否启用定时任务（通过环境变量控制）
+        enable_rss_scheduler = os.getenv("ENABLE_RSS_SCHEDULER", "true").lower() == "true"
+        if enable_rss_scheduler:
+            rss.start_rss_scheduler()
+            logger.info("RSS 定时解析任务已启动")
+        else:
+            logger.info("RSS 定时解析任务已禁用（通过环境变量）")
+    except Exception as e:
+        logger.warning(f"启动 RSS 定时解析任务失败: {str(e)}")
+    
+    yield
+    
+    # 关闭时执行
+    logger.info("应用关闭中...")
+    try:
+        rss.stop_rss_scheduler()
+        logger.info("RSS 定时解析任务已停止")
+    except Exception as e:
+        logger.warning(f"停止 RSS 定时解析任务失败: {str(e)}")
+
 # 创建FastAPI应用实例
 app = FastAPI(
     title="YiAi API",
     description="AI服务API",
     version="1.0.0",
-    docs_url="/docs"
+    docs_url="/docs",
+    lifespan=lifespan
 )
 
 # 中间件开关，通过环境变量控制
@@ -244,5 +275,6 @@ if __name__ == "__main__":
         limit_max_requests=10000,  # 最大请求数（防止内存泄漏）
         timeout_keep_alive=5,  # Keep-alive 超时时间
     )
+
 
 
