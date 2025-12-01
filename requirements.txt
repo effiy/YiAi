@@ -7,8 +7,10 @@ python-dotenv>=1.0.0
 ollama>=0.1.0
 aiohttp>=3.9.0
 feedparser>=6.0.10
+apscheduler>=3.10.0
 # Qwen3-VL 相关依赖（用于处理多模态消息格式）
 qwen-vl-utils>=0.0.14
 transformers>=4.37.0
+
 
 

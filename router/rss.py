@@ -10,14 +10,28 @@ import asyncio
 import os
 from Resp import RespOk
 from database import db
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
 # 定时任务相关配置
-_rss_scheduler_task: Optional[asyncio.Task] = None
+_rss_scheduler: Optional[AsyncIOScheduler] = None
 _rss_scheduler_running = False
-_rss_scheduler_interval = int(os.getenv("RSS_SCHEDULER_INTERVAL", "3600"))  # 默认1小时（秒）
+_rss_scheduler_config: Dict[str, Any] = {
+    'type': 'interval',  # 'interval' 或 'cron'
+    'interval': int(os.getenv("RSS_SCHEDULER_INTERVAL", "3600")),  # 默认1小时（秒）
+    'cron': {
+        'second': None,  # 0-59 或 None（表示每分钟）
+        'minute': None,  # 0-59 或 None（表示每小时）
+        'hour': None,  # 0-23 或 None（表示每天）
+        'day': None,  # 1-31 或 None（表示每月）
+        'month': None,  # 1-12 或 None（表示每年）
+        'day_of_week': None  # 0-6 (0=Monday) 或 None
+    }
+}
 
 router = APIRouter(
     prefix="/rss",
@@ -33,8 +47,13 @@ class ParseAllRssRequest(BaseModel):
     force: Optional[bool] = False
 
 class SchedulerConfigRequest(BaseModel):
+    # 兼容旧版本的间隔模式
     interval: Optional[int] = None  # 定时器间隔（秒）
     enabled: Optional[bool] = None  # 是否启用定时器
+    
+    # 新的 cron 风格配置
+    type: Optional[str] = None  # 'interval' 或 'cron'
+    cron: Optional[Dict[str, Any]] = None  # cron 配置：{second, minute, hour, day, month, day_of_week}
 
 async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
     """获取并解析 RSS 源"""
@@ -329,62 +348,143 @@ async def parse_all_rss(request: ParseAllRssRequest = Body(...)):
         logger.error(f"批量解析 RSS 源失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"批量解析 RSS 源失败: {str(e)}")
 
-async def rss_scheduler_loop():
-    """RSS 定时解析任务循环"""
-    global _rss_scheduler_running, _rss_scheduler_interval
-    
-    logger.info(f"RSS 定时解析任务已启动，间隔: {_rss_scheduler_interval} 秒")
-    
-    while _rss_scheduler_running:
-        try:
-            await asyncio.sleep(_rss_scheduler_interval)
-            
-            if not _rss_scheduler_running:
-                break
-            
-            logger.info("开始执行定时 RSS 解析任务")
-            result = await parse_all_enabled_rss_sources()
-            logger.info(f"定时 RSS 解析任务完成: 成功 {result.get('success_count', 0)} 个，失败 {result.get('failed_count', 0)} 个")
-        except asyncio.CancelledError:
-            logger.info("RSS 定时解析任务已取消")
-            break
-        except Exception as e:
-            logger.error(f"RSS 定时解析任务执行失败: {str(e)}", exc_info=True)
-            # 即使出错也继续运行，等待下次执行
+async def rss_scheduler_job():
+    """RSS 定时解析任务执行函数"""
+    try:
+        logger.info("开始执行定时 RSS 解析任务")
+        result = await parse_all_enabled_rss_sources()
+        logger.info(f"定时 RSS 解析任务完成: 成功 {result.get('success_count', 0)} 个，失败 {result.get('failed_count', 0)} 个")
+    except Exception as e:
+        logger.error(f"RSS 定时解析任务执行失败: {str(e)}", exc_info=True)
+
+def get_scheduler():
+    """获取或创建调度器实例"""
+    global _rss_scheduler
+    if _rss_scheduler is None:
+        _rss_scheduler = AsyncIOScheduler()
+    return _rss_scheduler
 
 def start_rss_scheduler():
     """启动 RSS 定时解析任务"""
-    global _rss_scheduler_task, _rss_scheduler_running
+    global _rss_scheduler_running, _rss_scheduler_config
     
-    if _rss_scheduler_task and not _rss_scheduler_task.done():
+    if _rss_scheduler_running:
         logger.warning("RSS 定时解析任务已在运行")
         return
     
+    scheduler = get_scheduler()
+    
+    # 移除旧任务（如果存在）
+    scheduler.remove_all_jobs()
+    
+    # 根据配置类型创建触发器
+    config = _rss_scheduler_config
+    if config['type'] == 'cron' and config.get('cron'):
+        cron_config = config['cron']
+        # 构建 cron 触发器参数（只包含非 None 的值）
+        trigger_kwargs = {}
+        if cron_config.get('second') is not None:
+            trigger_kwargs['second'] = cron_config['second']
+        if cron_config.get('minute') is not None:
+            trigger_kwargs['minute'] = cron_config['minute']
+        if cron_config.get('hour') is not None:
+            trigger_kwargs['hour'] = cron_config['hour']
+        if cron_config.get('day') is not None:
+            trigger_kwargs['day'] = cron_config['day']
+        if cron_config.get('month') is not None:
+            trigger_kwargs['month'] = cron_config['month']
+        if cron_config.get('day_of_week') is not None:
+            trigger_kwargs['day_of_week'] = cron_config['day_of_week']
+        
+        trigger = CronTrigger(**trigger_kwargs)
+        logger.info(f"RSS 定时解析任务已启动（Cron模式）: {trigger_kwargs}")
+    else:
+        # 使用间隔模式
+        interval = config.get('interval', 3600)
+        trigger = IntervalTrigger(seconds=interval)
+        logger.info(f"RSS 定时解析任务已启动（间隔模式）: {interval} 秒")
+    
+    # 添加任务
+    scheduler.add_job(
+        rss_scheduler_job,
+        trigger=trigger,
+        id='rss_parse_job',
+        replace_existing=True
+    )
+    
+    # 启动调度器
+    if not scheduler.running:
+        scheduler.start()
+    
     _rss_scheduler_running = True
-    _rss_scheduler_task = asyncio.create_task(rss_scheduler_loop())
     logger.info("RSS 定时解析任务已启动")
 
 def stop_rss_scheduler():
     """停止 RSS 定时解析任务"""
-    global _rss_scheduler_task, _rss_scheduler_running
+    global _rss_scheduler_running, _rss_scheduler
     
     _rss_scheduler_running = False
     
-    if _rss_scheduler_task and not _rss_scheduler_task.done():
-        _rss_scheduler_task.cancel()
+    if _rss_scheduler:
+        _rss_scheduler.remove_all_jobs()
+        if _rss_scheduler.running:
+            _rss_scheduler.shutdown(wait=False)
         logger.info("RSS 定时解析任务已停止")
 
-def set_scheduler_interval(interval: int):
-    """设置定时器间隔（秒）"""
-    global _rss_scheduler_interval
+def set_scheduler_config(config: Dict[str, Any]):
+    """设置定时器配置"""
+    global _rss_scheduler_config
     
-    if interval < 60:
-        raise ValueError("定时器间隔不能小于 60 秒")
+    # 验证配置
+    if config.get('type') == 'interval':
+        interval = config.get('interval')
+        if interval is None:
+            # 兼容旧版本：如果只传了 interval，使用 interval 模式
+            interval = config.get('interval', 3600)
+        if interval < 60:
+            raise ValueError("定时器间隔不能小于 60 秒")
+        _rss_scheduler_config = {
+            'type': 'interval',
+            'interval': interval,
+            'cron': _rss_scheduler_config.get('cron', {})
+        }
+        logger.info(f"RSS 定时器配置已设置为间隔模式: {interval} 秒")
+    elif config.get('type') == 'cron' or config.get('cron'):
+        cron_config = config.get('cron', {})
+        # 验证 cron 配置
+        if cron_config.get('second') is not None and not (0 <= cron_config['second'] <= 59):
+            raise ValueError("秒数必须在 0-59 之间")
+        if cron_config.get('minute') is not None and not (0 <= cron_config['minute'] <= 59):
+            raise ValueError("分钟数必须在 0-59 之间")
+        if cron_config.get('hour') is not None and not (0 <= cron_config['hour'] <= 23):
+            raise ValueError("小时数必须在 0-23 之间")
+        if cron_config.get('day') is not None and not (1 <= cron_config['day'] <= 31):
+            raise ValueError("日期必须在 1-31 之间")
+        if cron_config.get('month') is not None and not (1 <= cron_config['month'] <= 12):
+            raise ValueError("月份必须在 1-12 之间")
+        if cron_config.get('day_of_week') is not None and not (0 <= cron_config['day_of_week'] <= 6):
+            raise ValueError("星期数必须在 0-6 之间（0=周一）")
+        
+        _rss_scheduler_config = {
+            'type': 'cron',
+            'interval': _rss_scheduler_config.get('interval', 3600),
+            'cron': cron_config
+        }
+        logger.info(f"RSS 定时器配置已设置为 Cron 模式: {cron_config}")
+    else:
+        # 兼容旧版本：如果只传了 interval，使用 interval 模式
+        if 'interval' in config:
+            interval = config['interval']
+            if interval < 60:
+                raise ValueError("定时器间隔不能小于 60 秒")
+            _rss_scheduler_config = {
+                'type': 'interval',
+                'interval': interval,
+                'cron': _rss_scheduler_config.get('cron', {})
+            }
+            logger.info(f"RSS 定时器配置已设置为间隔模式: {interval} 秒")
     
-    _rss_scheduler_interval = interval
-    logger.info(f"RSS 定时器间隔已设置为: {interval} 秒")
-    
-    # 如果任务正在运行，需要重启以应用新间隔
+    # 如果任务正在运行，需要重启以应用新配置
     if _rss_scheduler_running:
         stop_rss_scheduler()
         start_rss_scheduler()
@@ -392,23 +492,47 @@ def set_scheduler_interval(interval: int):
 @router.get("/scheduler/status")
 async def get_scheduler_status():
     """获取定时器状态"""
-    global _rss_scheduler_running, _rss_scheduler_interval, _rss_scheduler_task
+    global _rss_scheduler_running, _rss_scheduler_config, _rss_scheduler
+    
+    is_running = False
+    if _rss_scheduler:
+        jobs = _rss_scheduler.get_jobs()
+        is_running = len(jobs) > 0 and _rss_scheduler.running
     
     return RespOk(data={
         'enabled': _rss_scheduler_running,
-        'interval': _rss_scheduler_interval,
-        'running': _rss_scheduler_task is not None and not _rss_scheduler_task.done()
+        'running': is_running,
+        'type': _rss_scheduler_config.get('type', 'interval'),
+        'interval': _rss_scheduler_config.get('interval'),
+        'cron': _rss_scheduler_config.get('cron', {})
     })
 
 @router.post("/scheduler/config")
 async def config_scheduler(request: SchedulerConfigRequest = Body(...)):
     """配置定时器"""
     try:
-        global _rss_scheduler_running
+        global _rss_scheduler_running, _rss_scheduler_config
         
+        # 构建配置对象
+        config_update = {}
+        
+        # 兼容旧版本：如果只传了 interval，使用 interval 模式
         if request.interval is not None:
-            set_scheduler_interval(request.interval)
+            config_update['type'] = 'interval'
+            config_update['interval'] = request.interval
         
+        # 新的配置方式
+        if request.type is not None:
+            config_update['type'] = request.type
+        
+        if request.cron is not None:
+            config_update['cron'] = request.cron
+        
+        # 更新配置
+        if config_update:
+            set_scheduler_config(config_update)
+        
+        # 控制启用/禁用
         if request.enabled is not None:
             if request.enabled:
                 if not _rss_scheduler_running:
@@ -420,7 +544,9 @@ async def config_scheduler(request: SchedulerConfigRequest = Body(...)):
         return RespOk(
             data={
                 'enabled': _rss_scheduler_running,
-                'interval': _rss_scheduler_interval
+                'type': _rss_scheduler_config.get('type', 'interval'),
+                'interval': _rss_scheduler_config.get('interval'),
+                'cron': _rss_scheduler_config.get('cron', {})
             },
             msg="定时器配置已更新"
         )
@@ -449,6 +575,7 @@ async def stop_scheduler():
     except Exception as e:
         logger.error(f"停止定时器失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"停止定时器失败: {str(e)}")
+
 
 
 
