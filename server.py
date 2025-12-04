@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from router import base, mongodb, oss, prompt, session, dataSync, rss
+from router import base, mongodb, oss, prompt, session, dataSync, rss, apiRequest
 from contextlib import asynccontextmanager
 
 # 禁用 Python 字节码缓存
@@ -257,6 +257,7 @@ app.include_router(mongodb.router)
 app.include_router(session.router)
 app.include_router(dataSync.router)
 app.include_router(rss.router)
+app.include_router(apiRequest.router)
 
 # 当直接运行此脚本时执行以下代码
 if __name__ == "__main__":
@@ -275,6 +276,7 @@ if __name__ == "__main__":
         limit_max_requests=10000,  # 最大请求数（防止内存泄漏）
         timeout_keep_alive=5,  # Keep-alive 超时时间
     )
+
 
 
 
