@@ -78,7 +78,7 @@ async def list_api_requests(
             query["user_id"] = user_id
         
         # 查询请求接口，按时间戳倒序
-        collection = db.get_collection("apis")
+        collection = db.mongodb.db["apis"]
         cursor = collection.find(query).sort("timestamp", -1).skip(skip).limit(limit)
         docs = await cursor.to_list(length=limit)
         
@@ -121,7 +121,7 @@ async def get_api_request(
         except:
             query["key"] = request_id
         
-        collection = db.get_collection("apis")
+        collection = db.mongodb.db["apis"]
         doc = await collection.find_one(query)
         
         if not doc:
@@ -159,5 +159,6 @@ async def get_api_request(
     except Exception as e:
         logger.error(f"获取请求接口详情失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取请求接口详情失败: {str(e)}")
+
 
 
