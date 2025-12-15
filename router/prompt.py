@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from ollama import Client
 from modules.services.chatService import ChatService
 from modules.utils.session_utils import normalize_session_id
+from router.utils import get_user_id
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -31,19 +32,6 @@ router = APIRouter(
 
 # 初始化聊天服务
 chat_service = ChatService()
-
-
-def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
-    """获取用户ID，优先级：参数 > X-User 请求头 > 默认值 bigboom"""
-    if user_id:
-        return user_id
-    
-    x_user = request.headers.get("X-User", "")
-    if x_user:
-        return x_user
-    
-    return "bigboom"
-
 
 class ContentRequest(BaseModel):
     fromSystem: Optional[str] = "你是一个有用的AI助手。"  # 系统提示词，默认为通用助手
@@ -439,7 +427,7 @@ async def stream_ollama_response(request: ContentRequest, chat_service: ChatServ
         conversation_id = normalize_session_id(conversation_id)
     
     # 获取用户ID（从参数、X-User 或默认值）
-    user_id = get_user_id(http_request, request.user_id)
+    user_id = get_user_id(http_request, request.user_id, default="bigboom")
     
     try:
         # 初始化聊天服务
@@ -766,7 +754,7 @@ async def save_chat(
 ):
     """保存聊天记录"""
     try:
-        user_id = get_user_id(http_request, user_id)
+        user_id = get_user_id(http_request, user_id, default="bigboom")
         messages = messages or []
         
         if not messages:
@@ -869,7 +857,7 @@ async def search_chats(request: ChatQueryRequest, http_request: Request):
     """语义搜索聊天记录"""
     try:
         await chat_service.initialize()
-        user_id = get_user_id(http_request, request.user_id)
+        user_id = get_user_id(http_request, request.user_id, default="bigboom")
         results = await chat_service.search_chats(
             query=request.query,
             user_id=user_id,

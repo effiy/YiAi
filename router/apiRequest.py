@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from datetime import datetime
 
 from database import db
+from router.utils import get_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -15,19 +16,6 @@ router = APIRouter(
     tags=["YiPet API Request Management"],
     responses={404: {"description": "未找到"}},
 )
-
-
-def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
-    """获取用户ID，优先级：参数 > X-User 请求头 > 默认值"""
-    if user_id:
-        return user_id
-    
-    x_user = request.headers.get("X-User", "")
-    if x_user:
-        return x_user
-    
-    return "default_user"
-
 
 def api_request_to_list_item(doc: Dict[str, Any]) -> Dict[str, Any]:
     """

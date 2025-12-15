@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from modules.services.dataSyncService import DataSyncService
+from router.utils import get_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -25,19 +26,6 @@ async def get_data_sync_service():
         data_sync_service = DataSyncService()
         await data_sync_service.initialize()
     return data_sync_service
-
-
-def get_user_id(request: Request, user_id: Optional[str] = None) -> str:
-    """获取用户ID，优先级：参数 > X-User 请求头 > 默认值"""
-    if user_id:
-        return user_id
-    
-    x_user = request.headers.get("X-User", "")
-    if x_user:
-        return x_user
-    
-    return "default_user"
-
 
 class SaveDataRequest(BaseModel):
     """保存数据请求"""
