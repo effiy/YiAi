@@ -52,7 +52,7 @@ def api_request_to_list_item(doc: Dict[str, Any]) -> Dict[str, Any]:
 async def list_api_requests(
     http_request: Request,
     user_id: Optional[str] = None,
-    limit: int = Query(10000, ge=1),
+    limit: int = Query(10000, ge=1, le=10000),
     skip: int = Query(0, ge=0)
 ):
     """列出所有请求接口（返回简化版列表，不包含完整详情）"""
@@ -106,7 +106,7 @@ async def get_api_request(
         from bson import ObjectId
         try:
             query["_id"] = ObjectId(request_id)
-        except:
+        except Exception:
             query["key"] = request_id
         
         collection = db.mongodb.db["apis"]

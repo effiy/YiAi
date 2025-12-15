@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt, session, dataSync, rss, apiRequest
+from database import db
 from contextlib import asynccontextmanager
 
 # 禁用 Python 字节码缓存
@@ -26,6 +27,13 @@ async def lifespan(app: FastAPI):
     """应用启动和关闭时的生命周期管理"""
     # 启动时执行
     logger.info("应用启动中...")
+
+    # 初始化数据库连接（避免首次请求时才初始化带来的抖动）
+    try:
+        await db.initialize()
+        logger.info("数据库已初始化")
+    except Exception as e:
+        logger.warning(f"数据库初始化失败（将延迟到首次使用时重试）: {str(e)}")
     
     # 启动 RSS 定时解析任务
     try:
@@ -49,6 +57,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"停止 RSS 定时解析任务失败: {str(e)}")
 
+    # 关闭数据库连接
+    try:
+        await db.close()
+        logger.info("数据库已关闭")
+    except Exception as e:
+        logger.warning(f"关闭数据库失败: {str(e)}")
+
 # 创建FastAPI应用实例
 app = FastAPI(
     title="YiAi API",
@@ -59,7 +74,7 @@ app = FastAPI(
 )
 
 # 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = True
+ENABLE_MIDDLEWARE = os.getenv("ENABLE_AUTH_MIDDLEWARE", "true").lower() == "true"
 
 # 中间件拦截器（需要在 CORS 之前添加，以便 CORS 可以处理所有响应）
 @app.middleware("http")
@@ -98,7 +113,7 @@ async def header_verification_middleware(request: Request, call_next):
         
         if not (token_valid and user_valid):
             logger.warning(f"无效的请求头: X-Token={x_token}, X-User={x_user}")
-            # 创建响应并添加 CORS 头
+            # 创建响应
             response = JSONResponse(
                 status_code=401,
                 content={
@@ -106,13 +121,6 @@ async def header_verification_middleware(request: Request, call_next):
                     "message": "请提供有效的X-Token和X-User请求头"
                 },
             )
-            # 添加 CORS 头
-            origin = request.headers.get("origin")
-            if origin:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Allow-Methods"] = "*"
-                response.headers["Access-Control-Allow-Headers"] = "*"
             return response
 
         response = await call_next(request)
@@ -121,31 +129,26 @@ async def header_verification_middleware(request: Request, call_next):
         
     except Exception as e:
         logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
-        # 创建响应并添加 CORS 头
+        # 创建响应
         response = JSONResponse(
             status_code=500,
             content={"detail": "服务器内部错误", "message": "中间件处理异常"}
         )
-        # 添加 CORS 头
-        origin = request.headers.get("origin")
-        if origin:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "*"
         return response
 
-# 配置 CORS 允许的来源
-# 从环境变量读取，如果没有设置则使用默认值
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://effiy.cn,http://localhost:3000,http://localhost:8000").split(",")
-CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS if origin.strip()]
+# 配置 CORS 允许的来源（逗号分隔），支持 "*" 表示允许任意来源
+_cors_origins_env = os.getenv("CORS_ORIGINS", "https://effiy.cn,http://localhost:3000,http://localhost:8000")
+CORS_ORIGINS = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
+ALLOW_ANY_ORIGIN = len(CORS_ORIGINS) == 1 and CORS_ORIGINS[0] == "*"
 
-# 添加 CORS 中间件（在自定义中间件之前添加，确保所有响应都包含 CORS 头）
-# 注意：FastAPI 中间件执行顺序是后添加的先执行（LIFO），所以先添加 CORS 中间件
+# 添加 CORS 中间件
+# 注意：FastAPI/Starlette 中间件执行顺序是后添加的先执行（LIFO）。
+# 我们希望 CORS 成为最外层中间件，从而对所有响应（包括异常处理器生成的响应）都能加上 CORS 头。
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有来源
-    allow_credentials=True,
+    allow_origins=["*"] if ALLOW_ANY_ORIGIN else CORS_ORIGINS,
+    # 规范要求：allow_credentials=True 时，allow_origins 不能是 "*"
+    allow_credentials=False if ALLOW_ANY_ORIGIN else True,
     allow_methods=["*"],  # 允许所有 HTTP 方法
     allow_headers=["*"],  # 允许所有头部
     expose_headers=["*"],  # 暴露所有头部
@@ -174,13 +177,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "code": 422
         }
     )
-    # 确保异常响应也包含 CORS 头
-    origin = request.headers.get("origin")
-    if origin:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 @app.exception_handler(HTTPException)
@@ -196,13 +192,6 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "code": exc.status_code
         }
     )
-    # 确保异常响应也包含 CORS 头
-    origin = request.headers.get("origin")
-    if origin:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 @app.exception_handler(Exception)
@@ -216,13 +205,6 @@ async def general_exception_handler(request: Request, exc: Exception):
             "status": 500
         }
     )
-    # 确保异常响应也包含 CORS 头
-    origin = request.headers.get("origin")
-    if origin:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
 # 挂载静态文件服务（客户端 HTML 文件）
