@@ -96,29 +96,24 @@ async def header_verification_middleware(request: Request, call_next):
 
         # 获取环境变量中的配置
         required_token = os.getenv("API_X_TOKEN", "")
-        required_user = os.getenv("API_X_USER", "")
         
         # 如果环境变量未设置，跳过验证
-        if not required_token and not required_user:
+        if not required_token:
             logger.info("未配置API验证，跳过请求头验证")
             response = await call_next(request)
             return response
 
         x_token = request.headers.get("X-Token", "")
-        x_user = request.headers.get("X-User", "")
 
         # 验证请求头
-        token_valid = not required_token or x_token == required_token
-        user_valid = not required_user or x_user == required_user
-        
-        if not (token_valid and user_valid):
-            logger.warning(f"无效的请求头: X-Token={x_token}, X-User={x_user}")
+        if x_token != required_token:
+            logger.warning(f"无效的请求头: X-Token={x_token}")
             # 创建响应
             response = JSONResponse(
                 status_code=401,
                 content={
                     "detail": "Invalid or missing headers",
-                    "message": "请提供有效的X-Token和X-User请求头"
+                    "message": "请提供有效的X-Token请求头"
                 },
             )
             return response
