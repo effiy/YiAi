@@ -137,7 +137,7 @@ async def header_verification_middleware(request: Request, call_next):
         return response
 
 # 配置 CORS 允许的来源（逗号分隔），支持 "*" 表示允许任意来源
-_cors_origins_env = os.getenv("CORS_ORIGINS", "https://effiy.cn,http://localhost:3000,http://localhost:8000")
+_cors_origins_env = os.getenv("CORS_ORIGINS", "https://effiy.cn,https://m.effiy.cn,http://localhost:3000,http://localhost:8000")
 CORS_ORIGINS = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
 ALLOW_ANY_ORIGIN = len(CORS_ORIGINS) == 1 and CORS_ORIGINS[0] == "*"
 
