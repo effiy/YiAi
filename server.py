@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt, session, dataSync, rss, apiRequest
@@ -72,6 +73,11 @@ app = FastAPI(
     docs_url="/docs",
     lifespan=lifespan
 )
+
+# 开启响应压缩（显著降低 JSON/文本接口流量）
+# 注意：FastAPI/Starlette 中间件执行顺序是后添加的先执行（LIFO）。
+# 我们希望 CORS 成为最外层中间件，因此 GZip 必须在 CORS 之前添加。
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 # 中间件开关，通过环境变量控制
 ENABLE_MIDDLEWARE = os.getenv("ENABLE_AUTH_MIDDLEWARE", "true").lower() == "true"

@@ -52,7 +52,8 @@ def api_request_to_list_item(doc: Dict[str, Any]) -> Dict[str, Any]:
 async def list_api_requests(
     http_request: Request,
     user_id: Optional[str] = None,
-    limit: int = Query(10000, ge=1, le=10000),
+    # 默认分页：避免一次性拉取超大列表造成流量浪费
+    limit: int = Query(200, ge=1, le=2000),
     skip: int = Query(0, ge=0)
 ):
     """列出所有请求接口（返回简化版列表，不包含完整详情）"""
@@ -65,9 +66,17 @@ async def list_api_requests(
         if user_id and user_id != "default_user":
             query["user_id"] = user_id
         
-        # 查询请求接口，按时间戳倒序
+        # 查询请求接口，按时间戳倒序；使用投影排除大字段，减少数据库读取与网络传输
         collection = db.mongodb.db["apis"]
-        cursor = collection.find(query).sort("timestamp", -1).skip(skip).limit(limit)
+        projection = {
+            "headers": 0,
+            "body": 0,
+            "responseHeaders": 0,
+            "responseText": 0,
+            "responseBody": 0,
+            "curl": 0,
+        }
+        cursor = collection.find(query, projection).sort("timestamp", -1).skip(skip).limit(limit)
         docs = await cursor.to_list(length=limit)
         
         # 转换为列表项格式

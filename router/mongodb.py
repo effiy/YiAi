@@ -287,18 +287,26 @@ async def query(request: Request):
         # 验证分页参数
         try:
             page_num = max(1, int(query_params.pop('pageNum', 1)))
-            page_size = min(5000, max(1, int(query_params.pop('pageSize', 999999999))))
+            # 默认不要全量拉取，避免一次返回超大列表导致流量和延迟爆炸
+            # 需要更多数据时由调用方显式传入 pageSize/pageNum 分页拉取
+            page_size = min(2000, max(1, int(query_params.pop('pageSize', 200))))
         except ValueError:
             raise ValueError("分页参数必须是有效的整数")
 
         # 验证排序参数
-        sort_param = query_params.pop('orderBy', 'order')
+        # apis 集合通常按 timestamp 倒序更符合使用习惯
+        sort_param = query_params.pop('orderBy', 'timestamp' if cname == 'apis' else 'order')
         sort_order = -1 if query_params.pop('orderType', 'asc').lower() == 'desc' else 1
 
         # 构建查询条件和排序
         filter_dict = build_filter(query_params)
         sort_list = build_sort_list(sort_param, sort_order)
         projection = {'_id': 0}
+
+        # 若调用方未指定投影，针对 apis 默认排除大字段（列表页通常不需要这些字段）
+        # 需要详情时建议调用 /mongodb/detail 获取单条完整数据
+        if cname == 'apis' and not fields_param and not exclude_fields_param:
+            exclude_fields_param = 'headers,body,responseHeaders,responseText,responseBody,curl'
 
         # 应用投影
         if fields_param:
