@@ -277,6 +277,13 @@ async def query(request: Request):
         # 验证并获取集合名称
         cname = validate_collection_name(query_params.pop('cname', None))
 
+        # 字段投影（用于节约流量/提高查询性能）
+        # - fields: 逗号分隔的字段白名单（包含模式）
+        # - excludeFields: 逗号分隔的字段黑名单（排除模式）
+        # 注意：MongoDB 投影要么包含要么排除（_id 例外），两者不能混用
+        fields_param = query_params.pop('fields', None) or query_params.pop('select', None)
+        exclude_fields_param = query_params.pop('excludeFields', None) or query_params.pop('exclude', None)
+
         # 验证分页参数
         try:
             page_num = max(1, int(query_params.pop('pageNum', 1)))
@@ -292,6 +299,18 @@ async def query(request: Request):
         filter_dict = build_filter(query_params)
         sort_list = build_sort_list(sort_param, sort_order)
         projection = {'_id': 0}
+
+        # 应用投影
+        if fields_param:
+            fields = [f.strip() for f in str(fields_param).split(',') if f.strip()]
+            # key 是前端普遍依赖的稳定标识，确保带上
+            if 'key' not in fields:
+                fields.append('key')
+            projection = {'_id': 0, **{f: 1 for f in fields}}
+        elif exclude_fields_param:
+            exclude_fields = [f.strip() for f in str(exclude_fields_param).split(',') if f.strip()]
+            # 排除模式下保持默认 _id=0，同时排除指定字段
+            projection = {'_id': 0, **{f: 0 for f in exclude_fields}}
 
         # 执行查询
         collection = db.mongodb.db[cname]
