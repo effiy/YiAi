@@ -161,7 +161,7 @@ async def list_sessions(
     http_request: Request,
     user_id: Optional[str] = None,
     # 默认分页：避免一次性拉取超大列表造成流量浪费
-    limit: int = Query(200, ge=1, le=2000),
+    limit: int = Query(2000, ge=1, le=8000),
     skip: int = Query(0, ge=0)
 ):
     """列出所有会话（默认返回所有数据）"""
