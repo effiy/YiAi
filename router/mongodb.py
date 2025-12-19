@@ -289,7 +289,7 @@ async def query(request: Request):
             page_num = max(1, int(query_params.pop('pageNum', 1)))
             # 默认不要全量拉取，避免一次返回超大列表导致流量和延迟爆炸
             # 需要更多数据时由调用方显式传入 pageSize/pageNum 分页拉取
-            page_size = min(2000, max(1, int(query_params.pop('pageSize', 200))))
+            page_size = min(8000, max(1, int(query_params.pop('pageSize', 2000))))
         except ValueError:
             raise ValueError("分页参数必须是有效的整数")
 
