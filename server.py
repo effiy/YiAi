@@ -208,29 +208,13 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
     return response
 
-# 挂载静态文件服务（客户端 HTML 文件）
-try:
-    import os
-    clients_dir = os.path.join(os.path.dirname(__file__), "clients")
-    if os.path.exists(clients_dir):
-        app.mount("/clients", StaticFiles(directory=clients_dir, html=True), name="clients")
-        logger.info(f"静态文件服务已挂载: /clients -> {clients_dir}")
-except Exception as e:
-    logger.warning(f"挂载静态文件服务失败: {e}")
-
 # 根路径端点
 @app.get("/")
 async def root():
     return {
         "message": "Welcome to YiAi API",
         "version": "1.0.0",
-        "docs": "/docs",
-        "clients": {
-            "prompt": "/clients/prompt.html",
-            "mongodb": "/clients/mongodb.html",
-            "oss": "/clients/oss.html",
-            "base": "/clients/base.html"
-        }
+        "docs": "/docs"
     }
 
 app.include_router(oss.router)
