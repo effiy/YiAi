@@ -87,18 +87,14 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 # 添加认证中间件（需要在 CORS 之前添加，以便 CORS 可以处理所有响应）
 app.middleware("http")(header_verification_middleware)
 
-# 配置 CORS
-cors_origins = Config.get_cors_origins()
-allow_any_origin = Config.allow_any_origin()
-
+# 配置 CORS - 允许所有跨域请求
 # 添加 CORS 中间件
 # 注意：FastAPI/Starlette 中间件执行顺序是后添加的先执行（LIFO）。
 # 我们希望 CORS 成为最外层中间件，从而对所有响应（包括异常处理器生成的响应）都能加上 CORS 头。
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if allow_any_origin else cors_origins,
-    # 规范要求：allow_credentials=True 时，allow_origins 不能是 "*"
-    allow_credentials=False if allow_any_origin else True,
+    allow_origins=["*"],  # 允许所有来源
+    allow_credentials=False,  # 规范要求：allow_credentials=True 时，allow_origins 不能是 "*"
     allow_methods=["*"],  # 允许所有 HTTP 方法
     allow_headers=["*"],  # 允许所有头部
     expose_headers=["*"],  # 暴露所有头部
