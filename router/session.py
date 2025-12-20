@@ -3,11 +3,11 @@ import logging
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Request, Query
-from fastapi.responses import JSONResponse
 from datetime import datetime
 
 from modules.services.sessionService import SessionService
 from router.utils import get_user_id
+from router.response import success_response, error_response, list_response
 
 logger = logging.getLogger(__name__)
 
@@ -112,16 +112,15 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         # 获取保存后的完整会话数据，用于返回给前端
         saved_session = await service.get_session(session_id, user_id=user_id)
         
-        return JSONResponse(content={
-            "success": True,
-            "data": {
+        return success_response(
+            data={
                 "session_id": session_id,
                 "id": session_id,
                 "is_new": is_new,
                 "session": saved_session  # 返回完整会话数据，便于前端更新
             },
-            "message": "会话创建成功" if is_new else "会话更新成功"
-        })
+            message="会话创建成功" if is_new else "会话更新成功"
+        )
     except Exception as e:
         logger.error(f"保存会话失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"保存会话失败: {str(e)}")
@@ -144,11 +143,7 @@ async def get_session(
         if not session_data:
             raise HTTPException(status_code=404, detail=f"会话 {session_id} 不存在")
         
-        return JSONResponse(content={
-            "success": True,
-            "data": session_data,
-            "message": "获取会话成功"
-        })
+        return success_response(data=session_data, message="获取会话成功")
     except HTTPException:
         raise
     except Exception as e:
@@ -172,12 +167,7 @@ async def list_sessions(
         # 调用服务层列出会话
         sessions = await service.list_sessions(user_id=user_id, limit=limit, skip=skip)
         
-        return JSONResponse(content={
-            "success": True,
-            "count": len(sessions),
-            "sessions": sessions,
-            "message": f"获取到 {len(sessions)} 个会话"
-        })
+        return list_response(sessions)
     except Exception as e:
         logger.error(f"列出会话失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"列出会话失败: {str(e)}")
@@ -197,12 +187,7 @@ async def search_sessions(request: SearchSessionRequest, http_request: Request):
             limit=request.limit
         )
         
-        return JSONResponse(content={
-            "success": True,
-            "count": len(sessions),
-            "sessions": sessions,
-            "message": f"找到 {len(sessions)} 个相关会话"
-        })
+        return list_response(sessions, message=f"找到 {len(sessions)} 个相关会话")
     except Exception as e:
         logger.error(f"搜索会话失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"搜索会话失败: {str(e)}")
@@ -222,10 +207,9 @@ async def delete_session(
         # 调用服务层删除会话
         success = await service.delete_session(session_id, user_id=user_id)
         
-        return JSONResponse(content={
-            "success": success,
-            "message": "会话删除成功" if success else "会话删除失败或不存在"
-        })
+        return success_response(
+            message="会话删除成功" if success else "会话删除失败或不存在"
+        )
     except Exception as e:
         logger.error(f"删除会话失败: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"删除会话失败: {str(e)}")
@@ -253,11 +237,10 @@ async def batch_delete_sessions(
         # 调用服务层批量删除会话
         result = await service.delete_sessions(request.session_ids, user_id=user_id)
         
-        return JSONResponse(content={
-            "success": True,
-            "data": result,
-            "message": f"成功删除 {result['success_count']} 个会话，失败 {result['failed_count']} 个"
-        })
+        return success_response(
+            data=result,
+            message=f"成功删除 {result['success_count']} 个会话，失败 {result['failed_count']} 个"
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -298,14 +281,13 @@ async def update_session(
         # 调用服务层更新会话
         result = await service.update_session(session_id, session_data, user_id=user_id)
         
-        return JSONResponse(content={
-            "success": True,
-            "data": {
+        return success_response(
+            data={
                 "session_id": result["session_id"],
                 "id": result["id"]
             },
-            "message": "会话更新成功"
-        })
+            message="会话更新成功"
+        )
     except ValueError as e:
         # 会话不存在
         raise HTTPException(status_code=404, detail=str(e))

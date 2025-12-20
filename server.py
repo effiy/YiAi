@@ -1,14 +1,21 @@
-import sys, os
+import sys
+import os
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 import logging
 
 from router import base, mongodb, oss, prompt, session, dataSync, rss, apiRequest
+from fastapi.exceptions import RequestValidationError
+from fastapi import HTTPException
+from router.exceptions import (
+    validation_exception_handler,
+    http_exception_handler,
+    general_exception_handler
+)
+from middleware.auth import header_verification_middleware
+from config import Config
 from database import db
 from contextlib import asynccontextmanager
 
@@ -38,9 +45,7 @@ async def lifespan(app: FastAPI):
     
     # 启动 RSS 定时解析任务
     try:
-        # 检查是否启用定时任务（通过环境变量控制）
-        enable_rss_scheduler = os.getenv("ENABLE_RSS_SCHEDULER", "true").lower() == "true"
-        if enable_rss_scheduler:
+        if Config.is_rss_scheduler_enabled():
             rss.start_rss_scheduler()
             logger.info("RSS 定时解析任务已启动")
         else:
@@ -79,134 +84,30 @@ app = FastAPI(
 # 我们希望 CORS 成为最外层中间件，因此 GZip 必须在 CORS 之前添加。
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
-# 中间件开关，通过环境变量控制
-ENABLE_MIDDLEWARE = os.getenv("ENABLE_AUTH_MIDDLEWARE", "true").lower() == "true"
+# 添加认证中间件（需要在 CORS 之前添加，以便 CORS 可以处理所有响应）
+app.middleware("http")(header_verification_middleware)
 
-# 中间件拦截器（需要在 CORS 之前添加，以便 CORS 可以处理所有响应）
-@app.middleware("http")
-async def header_verification_middleware(request: Request, call_next):
-    try:
-        # 记录请求信息
-        content_type = request.headers.get("content-type", "")
-        logger.info(f"收到请求: {request.method} {request.url}, Content-Type: {content_type}")
-        
-        # 跳过 OPTIONS 预检请求，让 CORS 中间件处理
-        if request.method == "OPTIONS":
-            response = await call_next(request)
-            return response
-        
-        # 如果中间件被禁用，直接通过
-        if not ENABLE_MIDDLEWARE:
-            response = await call_next(request)
-            return response
-
-        # 获取环境变量中的配置
-        required_token = os.getenv("API_X_TOKEN", "")
-        
-        # 如果环境变量未设置，跳过验证
-        if not required_token:
-            logger.info("未配置API验证，跳过请求头验证")
-            response = await call_next(request)
-            return response
-
-        x_token = request.headers.get("X-Token", "")
-
-        # 验证请求头
-        if x_token != required_token:
-            logger.warning(f"无效的请求头: X-Token={x_token}")
-            # 创建响应
-            response = JSONResponse(
-                status_code=401,
-                content={
-                    "detail": "Invalid or missing headers",
-                    "message": "请提供有效的X-Token请求头"
-                },
-            )
-            return response
-
-        response = await call_next(request)
-        logger.info(f"请求处理完成: {request.method} {request.url}")
-        return response
-        
-    except Exception as e:
-        logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
-        # 创建响应
-        response = JSONResponse(
-            status_code=500,
-            content={"detail": "服务器内部错误", "message": "中间件处理异常"}
-        )
-        return response
-
-# 配置 CORS 允许的来源（逗号分隔），支持 "*" 表示允许任意来源
-_cors_origins_env = os.getenv("CORS_ORIGINS", "https://effiy.cn,https://m.effiy.cn,http://localhost:3000,http://localhost:8000")
-CORS_ORIGINS = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
-ALLOW_ANY_ORIGIN = len(CORS_ORIGINS) == 1 and CORS_ORIGINS[0] == "*"
+# 配置 CORS
+cors_origins = Config.get_cors_origins()
+allow_any_origin = Config.allow_any_origin()
 
 # 添加 CORS 中间件
 # 注意：FastAPI/Starlette 中间件执行顺序是后添加的先执行（LIFO）。
 # 我们希望 CORS 成为最外层中间件，从而对所有响应（包括异常处理器生成的响应）都能加上 CORS 头。
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if ALLOW_ANY_ORIGIN else CORS_ORIGINS,
+    allow_origins=["*"] if allow_any_origin else cors_origins,
     # 规范要求：allow_credentials=True 时，allow_origins 不能是 "*"
-    allow_credentials=False if ALLOW_ANY_ORIGIN else True,
+    allow_credentials=False if allow_any_origin else True,
     allow_methods=["*"],  # 允许所有 HTTP 方法
     allow_headers=["*"],  # 允许所有头部
     expose_headers=["*"],  # 暴露所有头部
 )
 
-# 全局异常处理器
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    logger.error(f"请求验证错误: {exc}")
-    error_details = exc.errors()
-    error_messages = []
-    for error in error_details:
-        field = ".".join(str(loc) for loc in error.get("loc", []))
-        msg = error.get("msg", "验证失败")
-        error_messages.append(f"{field}: {msg}")
-    
-    error_msg = "请求参数验证失败: " + "; ".join(error_messages)
-    response = JSONResponse(
-        status_code=422,
-        content={
-            "detail": error_msg,
-            "message": error_msg,
-            "msg": error_msg,
-            "errors": error_details,
-            "status": 422,
-            "code": 422
-        }
-    )
-    return response
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    logger.error(f"HTTP异常: {exc.detail}")
-    response = JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "detail": exc.detail,
-            "message": exc.detail,
-            "msg": exc.detail,
-            "status": exc.status_code,
-            "code": exc.status_code
-        }
-    )
-    return response
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    logger.error(f"未处理的异常: {str(exc)}", exc_info=True)
-    response = JSONResponse(
-        status_code=500,
-        content={
-            "detail": "服务器内部错误",
-            "message": "服务器处理请求时发生未知错误",
-            "status": 500
-        }
-    )
-    return response
+# 注册全局异常处理器
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # 根路径端点
 @app.get("/")
