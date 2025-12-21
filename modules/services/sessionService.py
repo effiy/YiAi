@@ -129,17 +129,11 @@ class SessionService:
         messages = session_data.get("messages")
         if messages is not None:
             existing_messages = existing.get("messages", [])
-            # 只有当新消息不为空，或者新消息为空但现有消息也为空时，才更新
-            # 这样可以防止用空数组覆盖现有的非空消息
+            # 如果消息有变化，则更新（包括用空数组清空消息的情况）
             if messages != existing_messages:
-                # 如果传入的是空数组，但现有消息不为空，则不更新（保护现有消息）
-                if len(messages) == 0 and len(existing_messages) > 0:
-                    # 不更新消息，避免用空数组覆盖现有消息
-                    pass
-                else:
-                    update_doc["messages"] = messages
-                    has_changes = True
-                    should_update_timestamp = True
+                update_doc["messages"] = messages
+                has_changes = True
+                should_update_timestamp = True
         
         # 检查其他字段是否有变化
         for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl"]:
