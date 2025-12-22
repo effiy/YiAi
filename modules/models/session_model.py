@@ -111,6 +111,7 @@ def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "pageDescription": session_doc.get("pageDescription", ""),
         "message_count": len(messages),
         "tags": session_doc.get("tags", []),
+        "isFavorite": session_doc.get("isFavorite", False),
         # 为了兼容前端，也提供 messages 字段（但为空数组，避免列表接口返回大量数据）
         # 前端如需完整消息，应调用单个会话接口
         "messages": [],  # 列表项不包含完整消息，减少数据传输
@@ -118,5 +119,6 @@ def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")
     }
+
 
 
