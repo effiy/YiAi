@@ -414,15 +414,46 @@ class SessionService:
             # 规范化 session_id
             session_id = self.normalize_session_id(session_id)
             
-            # 构建删除条件
+            # 构建查询条件（用于查找会话）
             query = {"key": session_id}
             if user_id and user_id != "default_user":
                 query["user_id"] = user_id
             
+            # 在删除之前，先获取会话的 URL，用于更新对应新闻的状态
+            session_doc = await self.mongo_client.find_one(
+                collection_name=self.collection_name,
+                query=query
+            )
+            
+            # 删除会话
             result = await self.mongo_client.delete_one(
                 collection_name=self.collection_name,
                 query=query
             )
+            
+            # 如果删除成功且会话有 URL，更新对应新闻的状态
+            if result > 0 and session_doc:
+                session_url = session_doc.get("url")
+                if session_url:
+                    try:
+                        # 查找对应的新闻（通过 link 字段）
+                        news_query = {"link": session_url}
+                        # 更新新闻状态：清除 sessionId，设置 isRead 为 false
+                        # 使用 $unset 清除 sessionId 字段（如果存在）
+                        # 使用 $set 设置 isRead 为 false
+                        update_data = {
+                            "$unset": {"sessionId": ""},
+                            "$set": {"isRead": False}
+                        }
+                        await self.mongo_client.update_many(
+                            collection_name="rss",
+                            query=news_query,
+                            update=update_data
+                        )
+                        logger.info(f"已更新会话对应的新闻状态: {session_url}")
+                    except Exception as e:
+                        # 更新新闻状态失败不影响删除会话的结果
+                        logger.warning(f"更新新闻状态失败: {str(e)}")
             
             return result > 0
         except Exception as e:
@@ -629,4 +660,5 @@ class SessionService:
         except Exception as e:
             logger.error(f"更新会话失败: {str(e)}", exc_info=True)
             raise
+
 
