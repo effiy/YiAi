@@ -91,6 +91,7 @@ class SessionService:
             "pageContent": session_data.get("pageContent", ""),
             "messages": session_data.get("messages", []),
             "tags": session_data.get("tags", []),
+            "isFavorite": session_data.get("isFavorite", False),
             "createdAt": session_data.get("createdAt") or current_time,
             "updatedAt": session_data.get("updatedAt") or current_time,
             "lastAccessTime": session_data.get("lastAccessTime") or current_time,
@@ -136,9 +137,9 @@ class SessionService:
                 should_update_timestamp = True
         
         # 检查其他字段是否有变化
-        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl"]:
+        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "isFavorite", "imageDataUrl"]:
             if field in session_data and session_data[field] is not None:
-                existing_value = existing.get(field, [] if field == "tags" else "")
+                existing_value = existing.get(field, [] if field == "tags" else False if field == "isFavorite" else "")
                 if session_data[field] != existing_value:
                     update_doc[field] = session_data[field]
                     has_changes = True
@@ -660,5 +661,6 @@ class SessionService:
         except Exception as e:
             logger.error(f"更新会话失败: {str(e)}", exc_info=True)
             raise
+
 
 
