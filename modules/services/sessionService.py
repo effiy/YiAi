@@ -41,6 +41,47 @@ class SessionService:
         if not self._initialized:
             await self.initialize()
     
+    def _deduplicate_and_convert_sessions(
+        self,
+        session_docs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        去重并转换会话文档为API格式
+        
+        去重逻辑：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
+        
+        Args:
+            session_docs: 会话文档列表
+        
+        Returns:
+            去重并转换后的会话列表（按 updatedAt 倒序）
+        """
+        # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
+        session_map = {}
+        for doc in session_docs:
+            session_key = doc.get("key")
+            if not session_key:
+                continue
+            
+            # 如果该 key 已存在，比较 updatedAt，保留更新的
+            if session_key in session_map:
+                existing_updated_at = session_map[session_key].get("updatedAt", 0)
+                current_updated_at = doc.get("updatedAt", 0)
+                if current_updated_at > existing_updated_at:
+                    session_map[session_key] = doc
+            else:
+                session_map[session_key] = doc
+        
+        # 使用统一的数据模型转换函数
+        sessions = []
+        for doc in session_map.values():
+            sessions.append(session_to_list_item(doc))
+        
+        # 重新排序，确保顺序正确（按 updatedAt 倒序）
+        sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
+        
+        return sessions
+    
     def normalize_session_id(self, session_id: str) -> str:
         """规范化 session_id"""
         return normalize_session_id(session_id)
@@ -365,29 +406,8 @@ class SessionService:
                 sort=[("updatedAt", -1), ("order", -1)]
             )
             
-            # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
-            session_map = {}
-            for doc in session_docs:
-                session_key = doc.get("key")
-                if not session_key:
-                    continue
-                
-                # 如果该 key 已存在，比较 updatedAt，保留更新的
-                if session_key in session_map:
-                    existing_updated_at = session_map[session_key].get("updatedAt", 0)
-                    current_updated_at = doc.get("updatedAt", 0)
-                    if current_updated_at > existing_updated_at:
-                        session_map[session_key] = doc
-                else:
-                    session_map[session_key] = doc
-            
-            # 使用统一的数据模型转换函数
-            sessions = []
-            for doc in session_map.values():
-                sessions.append(session_to_list_item(doc))
-            
-            # 重新排序，确保顺序正确（按 updatedAt 倒序）
-            sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
+            # 去重并转换为API格式
+            sessions = self._deduplicate_and_convert_sessions(session_docs)
             
             return sessions
         except Exception as e:
@@ -556,28 +576,8 @@ class SessionService:
                 sort=[("updatedAt", -1), ("order", -1)]
             )
             
-            # 去重：按 key 分组，每个 key 只保留 updatedAt 最新的那个会话
-            session_map = {}
-            for doc in session_docs:
-                session_key = doc.get("key")
-                if not session_key:
-                    continue
-                
-                if session_key in session_map:
-                    existing_updated_at = session_map[session_key].get("updatedAt", 0)
-                    current_updated_at = doc.get("updatedAt", 0)
-                    if current_updated_at > existing_updated_at:
-                        session_map[session_key] = doc
-                else:
-                    session_map[session_key] = doc
-            
-            # 使用统一的数据模型转换函数
-            sessions = []
-            for doc in session_map.values():
-                sessions.append(session_to_list_item(doc))
-            
-            # 重新排序
-            sessions.sort(key=lambda x: (x.get("updatedAt", 0), x.get("id", "")), reverse=True)
+            # 去重并转换为API格式
+            sessions = self._deduplicate_and_convert_sessions(session_docs)
             
             return sessions
         except Exception as e:

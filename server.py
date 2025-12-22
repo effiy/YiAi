@@ -15,7 +15,7 @@ from router.exceptions import (
     general_exception_handler
 )
 from middleware.auth import header_verification_middleware
-from config import Config
+from config import _config_instance as Config
 from database import db
 from contextlib import asynccontextmanager
 
@@ -127,18 +127,27 @@ app.include_router(apiRequest.router)
 if __name__ == "__main__":
     # 导入uvicorn服务器
     import uvicorn
+    from constants import (
+        DEFAULT_HOST,
+        DEFAULT_PORT,
+        UVICORN_RELOAD,
+        UVICORN_LIMIT_CONCURRENCY,
+        UVICORN_LIMIT_MAX_REQUESTS,
+        UVICORN_TIMEOUT_KEEP_ALIVE
+    )
+    
     # 启动uvicorn服务器，运行FastAPI应用
     # host="0.0.0.0" 允许外网访问
     # 注意：如果使用 nginx 等反向代理，需要在 nginx 配置中设置 client_max_body_size
     # 例如：client_max_body_size 50M;
     uvicorn.run(
         "server:app",  # 指定应用模块路径
-        host="0.0.0.0",  # 允许外网访问
-        port=8000,       # 可根据需要修改端口
-        reload=True,        # 启用热重载，便于开发调试
-        limit_concurrency=1000,  # 最大并发连接数
-        limit_max_requests=10000,  # 最大请求数（防止内存泄漏）
-        timeout_keep_alive=5,  # Keep-alive 超时时间
+        host=DEFAULT_HOST,  # 允许外网访问
+        port=DEFAULT_PORT,  # 可通过环境变量PORT配置
+        reload=UVICORN_RELOAD,  # 启用热重载，便于开发调试
+        limit_concurrency=UVICORN_LIMIT_CONCURRENCY,  # 最大并发连接数
+        limit_max_requests=UVICORN_LIMIT_MAX_REQUESTS,  # 最大请求数（防止内存泄漏）
+        timeout_keep_alive=UVICORN_TIMEOUT_KEEP_ALIVE,  # Keep-alive 超时时间
     )
 
 

@@ -3,39 +3,61 @@ from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from modules.database.mongoClient import MongoClient
+from constants import COLLECTION_RSS
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class Database:
+    """
+    数据库管理类（线程安全的单例模式）
+    
+    使用线程安全的单例模式，确保在整个应用中只有一个数据库实例
+    """
     _instance: Optional['Database'] = None
+    _lock = None  # 用于线程安全（如果需要的话）
     
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(Database, cls).__new__(cls)
             cls._instance._initialized = False
+            cls._instance._mongodb: Optional[MongoClient] = None
         return cls._instance
+    
+    @property
+    def mongodb(self) -> MongoClient:
+        """获取MongoDB客户端（延迟初始化）"""
+        if self._mongodb is None:
+            raise RuntimeError("数据库未初始化，请先调用 initialize()")
+        return self._mongodb
     
     async def initialize(self):
         """异步初始化数据库连接"""
         if self._initialized:
+            logger.debug("数据库已初始化，跳过重复初始化")
             return
             
-        # 初始化 MongoDB
-        self.mongodb = MongoClient()
-        await self.mongodb.initialize()  # 确保 MongoDB 客户端已初始化
-        
-        # 为 rss 集合创建 link 字段的唯一索引
-        await self._ensure_rss_link_index()
-        
-        self._initialized = True  # 设置初始化标志
-        logger.info("数据库连接已成功初始化")
+        try:
+            # 初始化 MongoDB
+            self._mongodb = MongoClient()
+            await self._mongodb.initialize()  # 确保 MongoDB 客户端已初始化
+            
+            # 为 rss 集合创建 link 字段的唯一索引
+            await self._ensure_rss_link_index()
+            
+            self._initialized = True  # 设置初始化标志
+            logger.info("数据库连接已成功初始化")
+        except Exception as e:
+            logger.error(f"数据库初始化失败: {str(e)}", exc_info=True)
+            self._initialized = False
+            raise
     
     async def _ensure_rss_link_index(self):
         """确保 rss 集合的 link 字段有唯一索引"""
         try:
-            collection = self.mongodb.db['rss']
+            collection = self.mongodb.db[COLLECTION_RSS]
             indexes = await collection.list_indexes().to_list(length=None)
             
             # 检查是否已有 link 的唯一索引
@@ -87,10 +109,15 @@ class Database:
     
     async def close(self):
         """关闭数据库连接"""
-        if hasattr(self, 'mongodb'):
-            await self.mongodb.close()
-        self._initialized = False  # 重置初始化标志
-        logger.info("数据库连接已成功关闭")
+        if self._mongodb is not None:
+            try:
+                await self._mongodb.close()
+                logger.info("数据库连接已成功关闭")
+            except Exception as e:
+                logger.error(f"关闭数据库连接时出错: {str(e)}", exc_info=True)
+            finally:
+                self._mongodb = None
+                self._initialized = False  # 重置初始化标志
 
 # 创建全局数据库实例
 db = Database()
