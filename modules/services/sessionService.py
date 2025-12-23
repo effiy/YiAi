@@ -178,9 +178,11 @@ class SessionService:
                 should_update_timestamp = True
         
         # 检查其他字段是否有变化
-        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "isFavorite", "imageDataUrl"]:
+        # 注意：不处理isFavorite字段，以保持原有收藏状态
+        # 如果需要更新收藏状态，应该使用专门的接口
+        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl"]:
             if field in session_data and session_data[field] is not None:
-                existing_value = existing.get(field, [] if field == "tags" else False if field == "isFavorite" else "")
+                existing_value = existing.get(field, [] if field == "tags" else "")
                 if session_data[field] != existing_value:
                     update_doc[field] = session_data[field]
                     has_changes = True
@@ -235,6 +237,66 @@ class SessionService:
             document=session_doc
         )
         logger.info(f"新会话 {session_id} 已创建")
+    
+    async def update_session_field(
+        self,
+        session_id: str,
+        field_name: str,
+        field_value: Any,
+        user_id: Optional[str] = None
+    ) -> bool:
+        """
+        更新会话的单个字段
+        
+        Args:
+            session_id: 会话ID
+            field_name: 字段名
+            field_value: 字段值
+            user_id: 用户ID（可选，用于权限检查）
+        
+        Returns:
+            是否更新成功
+        """
+        await self._ensure_initialized()
+        
+        try:
+            # 规范化 session_id
+            session_id = self.normalize_session_id(session_id)
+            
+            # 构建查询条件
+            query = {"key": session_id}
+            if user_id and user_id != "default_user":
+                query["user_id"] = user_id
+            
+            # 检查会话是否存在
+            existing = await self.mongo_client.find_one(
+                collection_name=self.collection_name,
+                query=query
+            )
+            
+            if not existing:
+                logger.warning(f"会话 {session_id} 不存在，无法更新字段 {field_name}")
+                return False
+            
+            # 更新字段
+            current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+            update_doc = {
+                field_name: field_value,
+                "updatedAt": current_time,
+                "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            }
+            
+            await self.mongo_client.update_one(
+                collection_name=self.collection_name,
+                query=query,
+                update={"$set": update_doc}
+            )
+            
+            logger.info(f"会话 {session_id} 的字段 {field_name} 已更新为 {field_value}")
+            return True
+        except Exception as e:
+            logger.error(f"更新会话字段失败: {str(e)}", exc_info=True)
+            raise
     
     async def _update_session(
         self,
@@ -661,6 +723,7 @@ class SessionService:
         except Exception as e:
             logger.error(f"更新会话失败: {str(e)}", exc_info=True)
             raise
+
 
 
 

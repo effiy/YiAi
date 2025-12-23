@@ -70,6 +70,8 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
     user_id = get_user_id(http_request, request.user_id)
     
     # 构建会话数据
+    # 注意：不包含isFavorite字段，以保持原有收藏状态
+    # 如果需要更新收藏状态，应该使用专门的接口（如toggleFavorite）
     session_data = {
         "id": request.id,
         "url": request.url,
@@ -79,7 +81,6 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         "pageContent": request.pageContent,
         "messages": request.messages,
         "tags": request.tags,
-        "isFavorite": request.isFavorite,
         "createdAt": request.createdAt,
         "updatedAt": request.updatedAt,
         "lastAccessTime": request.lastAccessTime
@@ -105,6 +106,47 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
             "session": saved_session  # 返回完整会话数据，便于前端更新
         },
         message="会话创建成功" if is_new else "会话更新成功"
+    )
+
+
+@router.put("/{session_id}/favorite")
+@handle_route_errors("更新收藏状态")
+async def update_favorite(
+    session_id: str,
+    isFavorite: bool = Query(..., description="收藏状态"),
+    http_request: Request = None,
+    user_id: Optional[str] = None
+):
+    """
+    更新会话的收藏状态
+    
+    Args:
+        session_id: 会话ID
+        isFavorite: 收藏状态（true/false）
+        user_id: 用户ID（可选）
+    
+    Returns:
+        更新结果
+    """
+    service = await get_session_service()
+    user_id = get_user_id(http_request, user_id)
+    
+    # 更新收藏状态
+    success = await service.update_session_field(session_id, "isFavorite", isFavorite, user_id=user_id)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    
+    # 获取更新后的完整会话数据
+    updated_session = await service.get_session(session_id, user_id=user_id)
+    
+    return success_response(
+        data={
+            "session_id": session_id,
+            "isFavorite": isFavorite,
+            "session": updated_session
+        },
+        message="收藏状态更新成功"
     )
 
 
@@ -251,5 +293,6 @@ async def update_session(
         },
         message="会话更新成功"
     )
+
 
 
