@@ -178,11 +178,16 @@ class SessionService:
                 should_update_timestamp = True
         
         # 检查其他字段是否有变化
-        # 注意：不处理isFavorite字段，以保持原有收藏状态
-        # 如果需要更新收藏状态，应该使用专门的接口
-        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl"]:
+        # 包括 isFavorite 字段，允许通过 save 接口更新收藏状态
+        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl", "isFavorite"]:
             if field in session_data and session_data[field] is not None:
-                existing_value = existing.get(field, [] if field == "tags" else "")
+                # 为不同字段设置合适的默认值
+                if field == "tags":
+                    existing_value = existing.get(field, [])
+                elif field == "isFavorite":
+                    existing_value = existing.get(field, False)
+                else:
+                    existing_value = existing.get(field, "")
                 if session_data[field] != existing_value:
                     update_doc[field] = session_data[field]
                     has_changes = True
@@ -723,6 +728,7 @@ class SessionService:
         except Exception as e:
             logger.error(f"更新会话失败: {str(e)}", exc_info=True)
             raise
+
 
 
 

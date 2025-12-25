@@ -80,6 +80,7 @@ def session_to_api_format(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "pageContent": session_doc.get("pageContent", ""),
         "messages": session_doc.get("messages", []),
         "tags": session_doc.get("tags", []),
+        "isFavorite": session_doc.get("isFavorite", False),
         "createdAt": session_doc.get("createdAt"),
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")
@@ -119,6 +120,7 @@ def session_to_list_item(session_doc: Dict[str, Any]) -> Dict[str, Any]:
         "updatedAt": session_doc.get("updatedAt"),
         "lastAccessTime": session_doc.get("lastAccessTime")
     }
+
 
 
 
