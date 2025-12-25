@@ -7,6 +7,30 @@ from fastapi.responses import JSONResponse
 logger = logging.getLogger(__name__)
 
 
+def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
+    """为响应添加 CORS 头（与 CORS 中间件配置保持一致）"""
+    origin = request.headers.get("origin")
+    if not origin:
+        return response
+    
+    # 获取 CORS 配置（与 server.py 中的配置保持一致）
+    cors_origins_env = os.getenv("CORS_ORIGINS", "https://effiy.cn,https://m.effiy.cn,http://localhost:3000,http://localhost:8000")
+    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    allow_any_origin = len(allowed_origins) == 1 and allowed_origins[0] == "*"
+    
+    # 如果配置了 "*" 或者 origin 在允许列表中，添加 CORS 头
+    if allow_any_origin or origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = "*" if allow_any_origin else origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        if not allow_any_origin:
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"] = "3600"
+    
+    return response
+
+
 async def header_verification_middleware(request: Request, call_next):
     """
     请求头验证中间件
@@ -42,13 +66,15 @@ async def header_verification_middleware(request: Request, call_next):
         # 验证请求头
         if x_token != required_token:
             logger.warning(f"无效的请求头: X-Token={x_token}")
-            return JSONResponse(
+            error_response = JSONResponse(
                 status_code=401,
                 content={
                     "detail": "Invalid or missing headers",
                     "message": "请提供有效的X-Token请求头"
                 },
             )
+            # 添加 CORS 头
+            return _add_cors_headers(error_response, request)
 
         response = await call_next(request)
         logger.info(f"请求处理完成: {request.method} {request.url}")
@@ -56,8 +82,11 @@ async def header_verification_middleware(request: Request, call_next):
         
     except Exception as e:
         logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
-        return JSONResponse(
+        error_response = JSONResponse(
             status_code=500,
             content={"detail": "服务器内部错误", "message": "中间件处理异常"}
         )
+        # 添加 CORS 头
+        return _add_cors_headers(error_response, request)
+
 
