@@ -696,7 +696,7 @@ class SessionService:
             }
             
             # 更新字段
-            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages", "tags", "imageDataUrl"]:
+            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages", "tags", "imageDataUrl", "isFavorite"]:
                 if field in session_data and session_data[field] is not None:
                     update_doc[field] = session_data[field]
             
@@ -728,6 +728,7 @@ class SessionService:
         except Exception as e:
             logger.error(f"更新会话失败: {str(e)}", exc_info=True)
             raise
+
 
 
 

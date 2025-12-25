@@ -70,8 +70,6 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
     user_id = get_user_id(http_request, request.user_id)
     
     # 构建会话数据
-    # 注意：不包含isFavorite字段，以保持原有收藏状态
-    # 如果需要更新收藏状态，应该使用专门的接口（如toggleFavorite）
     session_data = {
         "id": request.id,
         "url": request.url,
@@ -81,6 +79,7 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         "pageContent": request.pageContent,
         "messages": request.messages,
         "tags": request.tags,
+        "isFavorite": request.isFavorite if request.isFavorite is not None else False,
         "createdAt": request.createdAt,
         "updatedAt": request.updatedAt,
         "lastAccessTime": request.lastAccessTime
@@ -275,6 +274,7 @@ async def update_session(
         "pageContent": request.pageContent,
         "messages": request.messages,
         "tags": request.tags,
+        "isFavorite": request.isFavorite if request.isFavorite is not None else False,
         "updatedAt": request.updatedAt,
         "lastAccessTime": request.lastAccessTime
     }
@@ -293,6 +293,7 @@ async def update_session(
         },
         message="会话更新成功"
     )
+
 
 
 
