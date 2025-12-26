@@ -35,9 +35,19 @@ class Config:
         return self._cors_origins
     
     def allow_any_origin(self) -> bool:
-        """是否允许任意来源"""
-        origins = self.get_cors_origins()
-        return len(origins) == 1 and origins[0] == "*"
+        """是否允许任意来源（默认允许所有来源）"""
+        # 检查环境变量 CORS_ALLOW_ANY_ORIGIN，如果设置为 "false" 则禁用
+        allow_any_env = os.getenv("CORS_ALLOW_ANY_ORIGIN", "true").lower()
+        if allow_any_env == "false":
+            # 如果明确禁用，则检查 CORS_ORIGINS 配置
+            cors_origins_env = os.getenv("CORS_ORIGINS", "").strip()
+            if cors_origins_env == "*":
+                return True
+            origins = self.get_cors_origins()
+            return len(origins) == 1 and origins[0] == "*"
+        
+        # 默认允许所有来源
+        return True
     
     def is_rss_scheduler_enabled(self) -> bool:
         """是否启用RSS定时任务"""
@@ -50,4 +60,5 @@ class Config:
 
 # 创建全局配置实例（保持向后兼容）
 _config_instance = Config()
+
 
