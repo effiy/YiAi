@@ -8,25 +8,35 @@ logger = logging.getLogger(__name__)
 
 
 def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
-    """为响应添加 CORS 头（与 CORS 中间件配置保持一致）"""
-    origin = request.headers.get("origin")
-    if not origin:
-        return response
+    """为响应添加 CORS 头（允许所有来源）"""
+    # 默认允许所有来源，与 server.py 中的 CORS 配置保持一致
+    # 检查环境变量，如果明确设置为 "false" 则使用白名单模式
+    allow_any_env = os.getenv("CORS_ALLOW_ANY_ORIGIN", "true").lower()
+    allow_any_origin = allow_any_env != "false"
     
-    # 获取 CORS 配置（与 server.py 中的配置保持一致）
-    cors_origins_env = os.getenv("CORS_ORIGINS", "https://effiy.cn,https://m.effiy.cn,http://localhost:3000,http://localhost:8000")
-    allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
-    allow_any_origin = len(allowed_origins) == 1 and allowed_origins[0] == "*"
-    
-    # 如果配置了 "*" 或者 origin 在允许列表中，添加 CORS 头
-    if allow_any_origin or origin in allowed_origins:
-        response.headers["Access-Control-Allow-Origin"] = "*" if allow_any_origin else origin
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    if allow_any_origin:
+        # 允许所有来源
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Expose-Headers"] = "*"
-        if not allow_any_origin:
-            response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Max-Age"] = "3600"
+    else:
+        # 白名单模式（向后兼容）
+        origin = request.headers.get("origin")
+        if origin:
+            cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+            allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+            allow_any = len(allowed_origins) == 1 and allowed_origins[0] == "*"
+            
+            if allow_any or origin in allowed_origins:
+                response.headers["Access-Control-Allow-Origin"] = "*" if allow_any else origin
+                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+                response.headers["Access-Control-Allow-Headers"] = "*"
+                response.headers["Access-Control-Expose-Headers"] = "*"
+                if not allow_any:
+                    response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Max-Age"] = "3600"
     
     return response
 
