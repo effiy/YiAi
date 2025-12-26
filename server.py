@@ -85,20 +85,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# 配置 CORS
-cors_origins = config.get_cors_origins()
-allow_any_origin = config.allow_any_origin()
-
+# 配置 CORS - 允许所有跨域请求
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins if not allow_any_origin else ["*"],  # 使用配置的来源列表或允许所有
-    allow_credentials=True if not allow_any_origin else False,  # 使用 "*" 时 credentials 必须为 False
+    allow_origins=["*"],  # 允许所有来源
+    allow_credentials=False,  # 使用 "*" 时 credentials 必须为 False
     allow_methods=["*"],  # 允许所有 HTTP 方法 (GET, POST, PUT, DELETE, OPTIONS 等)
     allow_headers=["*"],  # 允许所有请求头
     expose_headers=["*"],  # 暴露所有响应头给客户端
     max_age=3600,  # 预检请求缓存时间（秒）
 )
-logger.info(f"CORS 配置: 已启用，允许的来源: {cors_origins if not allow_any_origin else '所有来源'}")
+logger.info("CORS 配置: 已启用，允许所有来源")
 
 # 添加认证中间件
 if config.is_auth_middleware_enabled():
@@ -154,6 +151,7 @@ if __name__ == "__main__":
         reload=reload,
         log_level="info"
     )
+
 
 
 
