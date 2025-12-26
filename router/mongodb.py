@@ -10,6 +10,7 @@ from Resp import RespOk
 from pymongo import UpdateOne, ReturnDocument
 
 from database import db
+from router.utils import create_response, handle_error
 
 router = APIRouter(
     prefix="/mongodb",
@@ -51,24 +52,6 @@ def is_number(value: Any) -> bool:
         return True
     except (ValueError, TypeError):
         return False
-
-def create_response(code: int, message: str, data: Any = None) -> dict:
-    """统一的响应格式"""
-    return {
-        "code": code,
-        "message": message,
-        "data": data
-    }
-
-def handle_error(e: Exception, status_code: int = 500) -> dict:
-    """统一的错误处理"""
-    error_msg = str(e)
-    logger.error(f"发生错误: {error_msg}")
-    return create_response(
-        code=status_code,
-        message=error_msg,
-        data=None
-    )
 
 def parse_published_date(date_str: str) -> Optional[datetime]:
     """解析 published 字段中的日期字符串，支持多种格式"""

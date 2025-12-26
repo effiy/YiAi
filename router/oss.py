@@ -8,6 +8,7 @@ from functools import lru_cache, wraps
 
 from database import db
 from Resp import RespOk
+from router.utils import create_response, handle_error
 
 # 设置日志
 logger = logging.getLogger(__name__)
@@ -31,23 +32,6 @@ def is_valid_date(date_str: str) -> bool:
         return True
     except (ValueError, TypeError):
         return False
-
-def create_response(code: int, message: str, data: Any = None) -> dict:
-    """统一的响应格式"""
-    return {
-        "code": code,
-        "message": message,
-        "data": data
-    }
-
-def handle_error(e: Exception, status_code: int = 500) -> dict:
-    """统一的错误处理"""
-    logger.error(f"Error occurred: {str(e)}")
-    return create_response(
-        code=status_code,
-        message=str(e),
-        data=None
-    )
 
 def build_oss_url(bucket_name: str, endpoint: str, object_key: str) -> str:
     """构建OSS文件的访问URL"""

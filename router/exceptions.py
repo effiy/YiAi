@@ -1,33 +1,11 @@
 """统一异常处理和响应构建工具"""
 import logging
-from typing import Dict, Any
 from fastapi import Request, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from router.utils import create_error_response
 
 logger = logging.getLogger(__name__)
-
-
-def create_error_response(
-    status_code: int,
-    detail: str,
-    message: str = None,
-    errors: list = None,
-    code: int = None
-) -> JSONResponse:
-    """创建统一的错误响应格式"""
-    content: Dict[str, Any] = {
-        "detail": detail,
-        "message": message or detail,
-        "msg": message or detail,
-        "status": status_code,
-        "code": code or status_code
-    }
-    
-    if errors is not None:
-        content["errors"] = errors
-    
-    return JSONResponse(status_code=status_code, content=content)
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:

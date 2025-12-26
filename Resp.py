@@ -26,16 +26,9 @@ PermissionDenied: Resp = Resp(1008, "权限拒绝", http_status.HTTP_403_FORBIDD
 ServerError: Resp = Resp(5000, "服务器繁忙", http_status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def RespOk(*, data: Union[list, dict, str] = None, pagination: dict = None, msg: str = "success") -> Response:
-    return JSONResponse(
-        status_code=http_status.HTTP_200_OK,
-        content=jsonable_encoder({
-            'status': 200,
-            'code': 200,
-            'msg': msg,
-            'data': data,
-            'pagination': pagination
-        })
-    )
+    """使用统一的响应工具函数（保持向后兼容）"""
+    from router.utils import resp_ok
+    return resp_ok(data=data, pagination=pagination, msg=msg)
 
 
 def RespFail(resp: Resp) -> Response:
