@@ -546,12 +546,7 @@ class SessionService:
                         logger.warning(f"更新新闻状态失败: {str(e)}")
                 
                 # 处理 aicr 项目文件删除
-                # 情况1：会话ID格式：aicr_{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
-                # 情况2：会话的tags中包含projectId
-                project_id = None
-                file_path = None
-                
-                # 检查是否是aicr_格式的会话ID
+                # 会话ID格式：aicr_{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
                 if session_id.startswith("aicr_"):
                     try:
                         # 提取项目ID和文件路径
@@ -562,34 +557,9 @@ class SessionService:
                             file_path_normalized = parts[2]
                             # 将下划线还原为斜杠，得到原始文件路径
                             file_path = file_path_normalized.replace("_", "/")
-                    except Exception as e:
-                        logger.warning(f"解析aicr会话ID失败: {str(e)}")
-                
-                # 如果不是aicr_格式，检查tags中是否包含projectId
-                if not project_id and session_doc:
-                    try:
-                        tags = session_doc.get("tags", [])
-                        if isinstance(tags, list) and len(tags) > 0:
-                            # 检查tags中的每个值，看是否是有效的projectId（通过查询projects集合验证）
-                            for tag in tags:
-                                if tag and isinstance(tag, str):
-                                    # 检查这个tag是否是项目ID（通过查询projects集合）
-                                    project_query = {"id": tag}
-                                    project_doc = await self.mongo_client.find_one(
-                                        collection_name="projects",
-                                        query=project_query
-                                    )
-                                    if project_doc:
-                                        project_id = tag
-                                        break
-                    except Exception as e:
-                        logger.warning(f"检查tags中的projectId失败: {str(e)}")
-                
-                # 如果找到了projectId，处理删除逻辑
-                if project_id:
-                    try:
-                        # 如果有filePath（aicr_格式），删除对应的项目文件
-                        if file_path:
+                            
+                            # 删除对应的项目文件
+                            # 从 projectFiles 集合中删除，通过 fileId 或 path 字段匹配
                             files_query = {
                                 "projectId": project_id,
                                 "$or": [
@@ -608,57 +578,43 @@ class SessionService:
                                 logger.info(f"已删除 aicr 项目文件: projectId={project_id}, filePath={file_path}, deleted={deleted_files}")
                             else:
                                 logger.debug(f"未找到对应的 aicr 项目文件: projectId={project_id}, filePath={file_path}")
-                        
-                        # 检查该projectId是否还有其他会话，如果没有，删除projectTree和所有projectFiles
-                        try:
-                            # 查询是否还有其他会话使用这个projectId（通过aicr_格式或tags）
-                            other_sessions_query = {
-                                "$or": [
-                                    {"key": {"$regex": f"^aicr_{project_id}_"}},
-                                    {"tags": project_id}
-                                ],
-                                "key": {"$ne": session_id}
-                            }
-                            # 如果提供了 user_id，也需要在查询中考虑 user_id
-                            if user_id and user_id != "default_user":
-                                other_sessions_query["user_id"] = user_id
                             
-                            other_sessions = await self.mongo_client.find_many(
-                                collection_name=self.collection_name,
-                                query=other_sessions_query
-                            )
-                            
-                            # 如果没有其他会话使用这个projectId，删除projectTree和所有projectFiles
-                            if not other_sessions or len(other_sessions) == 0:
-                                # 删除所有projectFiles
-                                try:
-                                    all_files_query = {"projectId": project_id}
-                                    deleted_all_files = await self.mongo_client.delete_many(
-                                        collection_name="projectFiles",
-                                        query=all_files_query
-                                    )
-                                    if deleted_all_files > 0:
-                                        logger.info(f"已删除所有 projectFiles: projectId={project_id}, deleted={deleted_all_files}")
-                                except Exception as e:
-                                    logger.warning(f"删除所有 projectFiles 失败: {str(e)}")
+                            # 检查该projectId是否还有其他aicr会话，如果没有，删除projectTree
+                            try:
+                                # 查询是否还有其他aicr_开头的会话使用这个projectId
+                                other_aicr_query = {
+                                    "$and": [
+                                        {"key": {"$regex": f"^aicr_{project_id}_"}},
+                                        {"key": {"$ne": session_id}}
+                                    ]
+                                }
+                                # 如果提供了 user_id，也需要在查询中考虑 user_id
+                                if user_id and user_id != "default_user":
+                                    other_aicr_query["user_id"] = user_id
                                 
-                                # 删除projectTree
-                                try:
-                                    tree_query = {"projectId": project_id}
-                                    deleted_trees = await self.mongo_client.delete_many(
-                                        collection_name="projectTree",
-                                        query=tree_query
-                                    )
-                                    if deleted_trees > 0:
-                                        logger.info(f"已删除 projectTree: projectId={project_id}, deleted={deleted_trees}")
-                                    else:
-                                        logger.debug(f"未找到对应的 projectTree: projectId={project_id}")
-                                except Exception as e:
-                                    # 删除projectTree失败不影响删除会话的结果
-                                    logger.warning(f"删除 projectTree 失败: {str(e)}")
-                        except Exception as e:
-                            # 检查其他会话失败不影响删除会话的结果
-                            logger.warning(f"检查其他会话失败: {str(e)}")
+                                other_aicr_sessions = await self.mongo_client.find_many(
+                                    collection_name=self.collection_name,
+                                    query=other_aicr_query
+                                )
+                                
+                                # 如果没有其他aicr会话，删除projectTree
+                                if not other_aicr_sessions or len(other_aicr_sessions) == 0:
+                                    try:
+                                        tree_query = {"projectId": project_id}
+                                        deleted_trees = await self.mongo_client.delete_many(
+                                            collection_name="projectTree",
+                                            query=tree_query
+                                        )
+                                        if deleted_trees > 0:
+                                            logger.info(f"已删除 aicr projectTree: projectId={project_id}, deleted={deleted_trees}")
+                                        else:
+                                            logger.debug(f"未找到对应的 aicr projectTree: projectId={project_id}")
+                                    except Exception as e:
+                                        # 删除projectTree失败不影响删除会话的结果
+                                        logger.warning(f"删除 aicr projectTree 失败: {str(e)}")
+                            except Exception as e:
+                                # 检查其他会话失败不影响删除会话的结果
+                                logger.warning(f"检查其他aicr会话失败: {str(e)}")
                     except Exception as e:
                         # 删除项目文件失败不影响删除会话的结果
                         logger.warning(f"删除 aicr 项目文件失败: {str(e)}")
