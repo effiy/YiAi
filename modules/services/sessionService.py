@@ -604,6 +604,10 @@ class SessionService:
                                     "tags.0": first_tag,
                                     "key": {"$ne": session_id}
                                 }
+                                # 如果提供了 user_id，也需要在查询中考虑 user_id
+                                if user_id and user_id != "default_user":
+                                    other_sessions_query["user_id"] = user_id
+                                
                                 other_sessions = await self.mongo_client.find_many(
                                     collection_name=self.collection_name,
                                     query=other_sessions_query
