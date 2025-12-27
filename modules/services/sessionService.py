@@ -519,9 +519,11 @@ class SessionService:
                 query=query
             )
             
-            # 如果删除成功且会话有 URL，更新对应新闻的状态
+            # 如果删除成功，处理关联数据
             if result > 0 and session_doc:
                 session_url = session_doc.get("url")
+                
+                # 处理新闻状态更新
                 if session_url:
                     try:
                         # 查找对应的新闻（通过 link 字段）
@@ -542,6 +544,43 @@ class SessionService:
                     except Exception as e:
                         # 更新新闻状态失败不影响删除会话的结果
                         logger.warning(f"更新新闻状态失败: {str(e)}")
+                
+                # 处理 aicr 项目文件删除
+                # 会话ID格式：aicr_{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
+                if session_id.startswith("aicr_"):
+                    try:
+                        # 提取项目ID和文件路径
+                        # 格式：aicr_{projectId}_{filePath}
+                        parts = session_id.split("_", 2)  # 最多分割2次
+                        if len(parts) >= 3:
+                            project_id = parts[1]
+                            file_path_normalized = parts[2]
+                            # 将下划线还原为斜杠，得到原始文件路径
+                            file_path = file_path_normalized.replace("_", "/")
+                            
+                            # 删除对应的项目文件
+                            # 从 projectFiles 集合中删除，通过 fileId 或 path 字段匹配
+                            files_query = {
+                                "projectId": project_id,
+                                "$or": [
+                                    {"fileId": file_path},
+                                    {"path": file_path},
+                                    {"id": file_path}
+                                ]
+                            }
+                            
+                            deleted_files = await self.mongo_client.delete_many(
+                                collection_name="projectFiles",
+                                query=files_query
+                            )
+                            
+                            if deleted_files > 0:
+                                logger.info(f"已删除 aicr 项目文件: projectId={project_id}, filePath={file_path}, deleted={deleted_files}")
+                            else:
+                                logger.debug(f"未找到对应的 aicr 项目文件: projectId={project_id}, filePath={file_path}")
+                    except Exception as e:
+                        # 删除项目文件失败不影响删除会话的结果
+                        logger.warning(f"删除 aicr 项目文件失败: {str(e)}")
             
             return result > 0
         except Exception as e:
@@ -581,6 +620,12 @@ class SessionService:
             if user_id and user_id != "default_user":
                 query["user_id"] = user_id
             
+            # 在删除之前，先获取所有要删除的会话（用于处理关联数据）
+            sessions_to_delete = await self.mongo_client.find_many(
+                collection_name=self.collection_name,
+                query=query
+            )
+            
             # 批量删除
             result = await self.mongo_client.delete_many(
                 collection_name=self.collection_name,
@@ -588,6 +633,49 @@ class SessionService:
             )
             
             deleted_count = result if isinstance(result, int) else (result.deleted_count if hasattr(result, 'deleted_count') else 0)
+            
+            # 处理关联数据：删除 aicr 项目文件
+            if deleted_count > 0 and sessions_to_delete:
+                aicr_sessions = [s for s in sessions_to_delete if s.get("key", "").startswith("aicr_")]
+                if aicr_sessions:
+                    try:
+                        # 收集所有需要删除的文件路径
+                        files_to_delete = []
+                        for session in aicr_sessions:
+                            session_id = session.get("key", "")
+                            if session_id.startswith("aicr_"):
+                                # 提取项目ID和文件路径
+                                parts = session_id.split("_", 2)
+                                if len(parts) >= 3:
+                                    project_id = parts[1]
+                                    file_path_normalized = parts[2]
+                                    file_path = file_path_normalized.replace("_", "/")
+                                    files_to_delete.append({
+                                        "projectId": project_id,
+                                        "filePath": file_path
+                                    })
+                        
+                        # 批量删除项目文件
+                        for file_info in files_to_delete:
+                            try:
+                                files_query = {
+                                    "projectId": file_info["projectId"],
+                                    "$or": [
+                                        {"fileId": file_info["filePath"]},
+                                        {"path": file_info["filePath"]},
+                                        {"id": file_info["filePath"]}
+                                    ]
+                                }
+                                deleted_files = await self.mongo_client.delete_many(
+                                    collection_name="projectFiles",
+                                    query=files_query
+                                )
+                                if deleted_files > 0:
+                                    logger.info(f"批量删除中已删除 aicr 项目文件: projectId={file_info['projectId']}, filePath={file_info['filePath']}, deleted={deleted_files}")
+                            except Exception as e:
+                                logger.warning(f"批量删除 aicr 项目文件失败: {str(e)}")
+                    except Exception as e:
+                        logger.warning(f"批量删除 aicr 项目文件处理失败: {str(e)}")
             
             return {
                 "success_count": deleted_count,
