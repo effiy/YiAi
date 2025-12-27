@@ -579,7 +579,7 @@ class SessionService:
                             else:
                                 logger.debug(f"未找到对应的 aicr 项目文件: projectId={project_id}, filePath={file_path}")
                             
-                            # 检查该projectId是否还有其他aicr会话，如果没有，删除projectTree
+                            # 检查该projectId是否还有其他aicr会话，如果没有，删除所有projectFiles和projectTree
                             try:
                                 # 查询是否还有其他aicr_开头的会话使用这个projectId
                                 other_aicr_query = {
@@ -597,8 +597,24 @@ class SessionService:
                                     query=other_aicr_query
                                 )
                                 
-                                # 如果没有其他aicr会话，删除projectTree
+                                # 如果没有其他aicr会话，删除所有projectFiles和projectTree
                                 if not other_aicr_sessions or len(other_aicr_sessions) == 0:
+                                    # 删除所有projectFiles
+                                    try:
+                                        all_files_query = {"projectId": project_id}
+                                        deleted_all_files = await self.mongo_client.delete_many(
+                                            collection_name="projectFiles",
+                                            query=all_files_query
+                                        )
+                                        if deleted_all_files > 0:
+                                            logger.info(f"已删除所有 aicr projectFiles: projectId={project_id}, deleted={deleted_all_files}")
+                                        else:
+                                            logger.debug(f"未找到对应的 aicr projectFiles: projectId={project_id}")
+                                    except Exception as e:
+                                        # 删除所有projectFiles失败不影响删除会话的结果
+                                        logger.warning(f"删除所有 aicr projectFiles 失败: {str(e)}")
+                                    
+                                    # 删除projectTree
                                     try:
                                         tree_query = {"projectId": project_id}
                                         deleted_trees = await self.mongo_client.delete_many(
