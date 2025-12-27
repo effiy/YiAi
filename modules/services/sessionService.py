@@ -581,6 +581,88 @@ class SessionService:
                     except Exception as e:
                         # 删除项目文件失败不影响删除会话的结果
                         logger.warning(f"删除 aicr 项目文件失败: {str(e)}")
+                
+                # 处理第一个标签是项目ID的情况
+                # 如果会话的第一个标签是项目ID，检查是否还有其他会话的第一个标签也是这个项目ID
+                # 如果没有其他会话，则删除项目（包括projectTree、projectFiles、comments和projects）
+                try:
+                    tags = session_doc.get("tags", [])
+                    if isinstance(tags, list) and len(tags) > 0:
+                        first_tag = tags[0]
+                        if first_tag and isinstance(first_tag, str):
+                            # 检查这个标签是否是项目ID（通过查询projects集合）
+                            project_query = {"id": first_tag}
+                            project_doc = await self.mongo_client.find_one(
+                                collection_name="projects",
+                                query=project_query
+                            )
+                            
+                            if project_doc:
+                                # 这是一个项目ID，检查是否还有其他会话的第一个标签也是这个项目ID
+                                # 查询所有会话，查找第一个标签匹配的会话（排除当前会话）
+                                other_sessions_query = {
+                                    "tags.0": first_tag,
+                                    "key": {"$ne": session_id}
+                                }
+                                other_sessions = await self.mongo_client.find_many(
+                                    collection_name=self.collection_name,
+                                    query=other_sessions_query
+                                )
+                                
+                                # 如果没有其他会话的第一个标签是这个项目ID，则删除项目
+                                if not other_sessions or len(other_sessions) == 0:
+                                    project_id = first_tag
+                                    logger.info(f"检测到会话的第一个标签是项目ID，且没有其他会话使用，开始删除项目: {project_id}")
+                                    
+                                    # 1. 删除projectTree
+                                    try:
+                                        tree_query = {"projectId": project_id}
+                                        deleted_trees = await self.mongo_client.delete_many(
+                                            collection_name="projectTree",
+                                            query=tree_query
+                                        )
+                                        logger.info(f"已删除 projectTree: projectId={project_id}, deleted={deleted_trees}")
+                                    except Exception as e:
+                                        logger.warning(f"删除 projectTree 失败: {str(e)}")
+                                    
+                                    # 2. 删除projectFiles
+                                    try:
+                                        files_query = {"projectId": project_id}
+                                        deleted_files = await self.mongo_client.delete_many(
+                                            collection_name="projectFiles",
+                                            query=files_query
+                                        )
+                                        logger.info(f"已删除 projectFiles: projectId={project_id}, deleted={deleted_files}")
+                                    except Exception as e:
+                                        logger.warning(f"删除 projectFiles 失败: {str(e)}")
+                                    
+                                    # 3. 删除comments
+                                    try:
+                                        comments_query = {"projectId": project_id}
+                                        deleted_comments = await self.mongo_client.delete_many(
+                                            collection_name="comments",
+                                            query=comments_query
+                                        )
+                                        logger.info(f"已删除 comments: projectId={project_id}, deleted={deleted_comments}")
+                                    except Exception as e:
+                                        logger.warning(f"删除 comments 失败: {str(e)}")
+                                    
+                                    # 4. 删除项目本身
+                                    try:
+                                        project_key = project_doc.get("key") or project_doc.get("_id") or project_doc.get("id")
+                                        if project_key:
+                                            deleted_project = await self.mongo_client.delete_one(
+                                                collection_name="projects",
+                                                query={"key": project_key}
+                                            )
+                                            logger.info(f"已删除项目: projectId={project_id}, deleted={deleted_project}")
+                                    except Exception as e:
+                                        logger.warning(f"删除项目失败: {str(e)}")
+                                else:
+                                    logger.debug(f"还有其他会话使用项目ID {first_tag}，不删除项目")
+                except Exception as e:
+                    # 处理项目删除失败不影响删除会话的结果
+                    logger.warning(f"处理第一个标签是项目ID的情况失败: {str(e)}")
             
             return result > 0
         except Exception as e:
