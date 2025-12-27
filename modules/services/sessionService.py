@@ -578,6 +578,43 @@ class SessionService:
                                 logger.info(f"已删除 aicr 项目文件: projectId={project_id}, filePath={file_path}, deleted={deleted_files}")
                             else:
                                 logger.debug(f"未找到对应的 aicr 项目文件: projectId={project_id}, filePath={file_path}")
+                            
+                            # 检查该projectId是否还有其他aicr会话，如果没有，删除projectTree
+                            try:
+                                # 查询是否还有其他aicr_开头的会话使用这个projectId
+                                other_aicr_query = {
+                                    "$and": [
+                                        {"key": {"$regex": f"^aicr_{project_id}_"}},
+                                        {"key": {"$ne": session_id}}
+                                    ]
+                                }
+                                # 如果提供了 user_id，也需要在查询中考虑 user_id
+                                if user_id and user_id != "default_user":
+                                    other_aicr_query["user_id"] = user_id
+                                
+                                other_aicr_sessions = await self.mongo_client.find_many(
+                                    collection_name=self.collection_name,
+                                    query=other_aicr_query
+                                )
+                                
+                                # 如果没有其他aicr会话，删除projectTree
+                                if not other_aicr_sessions or len(other_aicr_sessions) == 0:
+                                    try:
+                                        tree_query = {"projectId": project_id}
+                                        deleted_trees = await self.mongo_client.delete_many(
+                                            collection_name="projectTree",
+                                            query=tree_query
+                                        )
+                                        if deleted_trees > 0:
+                                            logger.info(f"已删除 aicr projectTree: projectId={project_id}, deleted={deleted_trees}")
+                                        else:
+                                            logger.debug(f"未找到对应的 aicr projectTree: projectId={project_id}")
+                                    except Exception as e:
+                                        # 删除projectTree失败不影响删除会话的结果
+                                        logger.warning(f"删除 aicr projectTree 失败: {str(e)}")
+                            except Exception as e:
+                                # 检查其他会话失败不影响删除会话的结果
+                                logger.warning(f"检查其他aicr会话失败: {str(e)}")
                     except Exception as e:
                         # 删除项目文件失败不影响删除会话的结果
                         logger.warning(f"删除 aicr 项目文件失败: {str(e)}")
