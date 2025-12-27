@@ -16,7 +16,8 @@ from modules.database.mongoClient import MongoClient
 from modules.utils.session_utils import normalize_session_id
 from modules.models.session_model import (
     session_to_api_format,
-    session_to_list_item
+    session_to_list_item,
+    normalize_message
 )
 
 logger = logging.getLogger(__name__)
@@ -122,6 +123,12 @@ class SessionService:
         Returns:
             会话文档字典
         """
+        # 规范化消息列表
+        messages = session_data.get("messages", [])
+        normalized_messages = []
+        if messages:
+            normalized_messages = [normalize_message(msg) for msg in messages if msg]
+        
         doc = {
             "key": session_id,
             "user_id": user_id,
@@ -130,7 +137,7 @@ class SessionService:
             "pageTitle": session_data.get("pageTitle", ""),
             "pageDescription": session_data.get("pageDescription", ""),
             "pageContent": session_data.get("pageContent", ""),
-            "messages": session_data.get("messages", []),
+            "messages": normalized_messages,
             "tags": session_data.get("tags", []),
             "isFavorite": session_data.get("isFavorite", False),
             "createdAt": session_data.get("createdAt") or current_time,
@@ -170,10 +177,15 @@ class SessionService:
         # 检查消息是否有变化
         messages = session_data.get("messages")
         if messages is not None:
+            # 规范化消息列表
+            normalized_messages = []
+            if messages:
+                normalized_messages = [normalize_message(msg) for msg in messages if msg]
+            
             existing_messages = existing.get("messages", [])
             # 如果消息有变化，则更新（包括用空数组清空消息的情况）
-            if messages != existing_messages:
-                update_doc["messages"] = messages
+            if normalized_messages != existing_messages:
+                update_doc["messages"] = normalized_messages
                 has_changes = True
                 should_update_timestamp = True
         
@@ -923,9 +935,17 @@ class SessionService:
             }
             
             # 更新字段
-            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "messages", "tags", "imageDataUrl", "isFavorite"]:
+            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl", "isFavorite"]:
                 if field in session_data and session_data[field] is not None:
                     update_doc[field] = session_data[field]
+            
+            # 特殊处理 messages 字段，需要规范化
+            if "messages" in session_data and session_data["messages"] is not None:
+                messages = session_data["messages"]
+                normalized_messages = []
+                if messages:
+                    normalized_messages = [normalize_message(msg) for msg in messages if msg]
+                update_doc["messages"] = normalized_messages
             
             # 更新时间戳
             if session_data.get("updatedAt") is not None:
