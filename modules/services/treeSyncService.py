@@ -229,6 +229,11 @@ class TreeSyncService:
         """
         同步单个 projectFile 到 static 目录
         
+        确保文件路径格式与 ZIP 导入保持一致：
+        - ZIP 导入：fileId 不包含 projectId（如 "src/file.js"），需要添加 projectId 前缀
+        - 创建文件：fileId 包含 projectId（如 "myProject/src/file.js"），直接使用
+        - 处理重复：如果 fileId 包含重复的 projectId（如 "myProject/myProject/src/file.js"），去除重复部分
+        
         Args:
             file_id: 文件ID
             project_id: 项目ID
@@ -240,18 +245,39 @@ class TreeSyncService:
         await self._ensure_initialized()
         
         try:
-            # 确保文件ID以项目ID开头
-            if not file_id.startswith(f"{project_id}/"):
-                file_id = f"{project_id}/{file_id}"
+            # 规范化文件路径
+            # 1. 去除开头的斜杠和多余的空格，统一路径分隔符
+            normalized_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+            
+            # 2. 分割路径为部分，去除空部分
+            parts = [p for p in normalized_file_id.split('/') if p]
+            
+            if not parts:
+                # 空路径，使用 project_id 作为文件名（不应该发生，但做保护）
+                normalized_file_id = project_id
+            else:
+                # 3. 去除所有重复的 project_id 前缀（不区分大小写）
+                # 从前往后查找，去除所有连续的重复 project_id
+                while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
+                    # 去除第一个重复的 project_id
+                    parts = parts[1:]
+                
+                # 4. 确保路径以 project_id 开头（不区分大小写）
+                if parts[0].lower() != project_id.lower():
+                    # 不以 project_id 开头，添加前缀
+                    normalized_file_id = f"{project_id}/{'/'.join(parts)}"
+                else:
+                    # 已经以 project_id 开头，直接使用
+                    normalized_file_id = '/'.join(parts)
             
             # 写入文件系统
-            success = self.file_storage.write_file_content(file_id, content)
+            success = self.file_storage.write_file_content(normalized_file_id, content)
             
             if success:
-                logger.info(f"同步文件到 static 目录成功: fileId={file_id}")
-                return {"success": True, "file_id": file_id}
+                logger.info(f"同步文件到 static 目录成功: fileId={normalized_file_id} (原始: {file_id})")
+                return {"success": True, "file_id": normalized_file_id}
             else:
-                logger.warning(f"同步文件到 static 目录失败: fileId={file_id}")
+                logger.warning(f"同步文件到 static 目录失败: fileId={normalized_file_id}")
                 return {"success": False, "error": "写入文件失败"}
         
         except Exception as e:
