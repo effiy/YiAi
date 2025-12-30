@@ -21,7 +21,7 @@ def normalize_file_path_to_session_id(file_path: str, project_id: str) -> str:
         project_id: 项目ID，如：developer
     
     Returns:
-        Session ID，如：aicr_developer_process_process_claim_2025-12_xxx_md
+        Session ID，如：developer_process_process_claim_2025-12_xxx_md
     
     Raises:
         ValueError: 如果参数无效
@@ -63,7 +63,7 @@ def normalize_file_path_to_session_id(file_path: str, project_id: str) -> str:
     if file_ext:
         normalized = f'{normalized}_{file_ext}'
     
-    session_id = f'aicr_{project_id}_{normalized}'
+    session_id = f'{project_id}_{normalized}'
     logger.debug(f"文件路径转换为 Session ID: {file_path} -> {session_id}")
     return session_id
 
@@ -77,7 +77,7 @@ def parse_session_id_to_file_path(session_id: str, project_id: str) -> Optional[
     哪些是文件名的一部分。此方法会尝试多种可能的路径组合。
     
     Args:
-        session_id: Session ID，如：aicr_knowledge_constructing_codereview_test_md
+        session_id: Session ID，如：knowledge_constructing_codereview_test_md
         project_id: 项目ID，如：knowledge
     
     Returns:
@@ -86,7 +86,7 @@ def parse_session_id_to_file_path(session_id: str, project_id: str) -> Optional[
     if not session_id or not project_id:
         return None
     
-    prefix = f'aicr_{project_id}_'
+    prefix = f'{project_id}_'
     if not session_id.startswith(prefix):
         return None
     
@@ -153,12 +153,14 @@ def extract_project_id_from_file_path(file_path: str) -> Optional[str]:
 def is_aicr_session_id(session_id: str) -> bool:
     """
     判断是否是 AICR 相关的 Session ID
+    注意：此函数保留用于兼容性，但不再检查 aicr_ 前缀
     
     Args:
         session_id: Session ID
     
     Returns:
-        是否是 AICR 相关的 Session ID
+        是否是 AICR 相关的 Session ID（现在总是返回 False，因为不再使用前缀）
     """
-    return session_id and session_id.startswith('aicr_')
+    # 不再使用 aicr_ 前缀，此函数保留用于兼容性
+    return False
 

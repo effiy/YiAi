@@ -102,7 +102,7 @@ class SessionService:
         """
         从 Session ID 尝试解析文件路径，尝试多种路径组合
         
-        对于 session ID 如 aicr_knowledge_constructing_codereview_test_666_md，
+        对于 session ID 如 knowledge_constructing_codereview_test_666_md，
         会尝试以下路径组合：
         1. knowledge/constructing/codereview/test_666.md (将下划线转换为斜杠)
         2. knowledge/constructing_codereview/test_666.md
@@ -110,7 +110,7 @@ class SessionService:
         4. knowledge/constructing_codereview_test_666.md (保持所有下划线)
         
         Args:
-            session_id: Session ID，如：aicr_knowledge_constructing_codereview_test_666_md
+            session_id: Session ID，如：knowledge_constructing_codereview_test_666_md
         
         Returns:
             文件路径（如果找到存在的文件），否则返回 None
@@ -528,7 +528,7 @@ class SessionService:
                     file_id = mapping.get("fileId")
                 else:
                     # 尝试从 Session ID 解析
-                    # Session ID 格式：aicr_{projectId}_{filePath}
+                    # Session ID 格式：{projectId}_{filePath}
                     parts = session_id.split("_", 2)
                     if len(parts) >= 3:
                         project_id = parts[1]
@@ -757,7 +757,7 @@ class SessionService:
                         logger.warning(f"更新新闻状态失败: {str(e)}")
                 
                 # 处理 aicr 项目文件删除
-                # 会话ID格式：aicr_{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
+                # 会话ID格式：{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
                 if is_aicr_session_id(session_id):
                     try:
                         # 首先尝试从映射表获取文件ID
@@ -789,7 +789,7 @@ class SessionService:
                                 logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
                         
                         # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
-                        # 格式：aicr_{projectId}_{filePath}
+                        # 格式：{projectId}_{filePath}
                         parts = session_id.split("_", 2)  # 最多分割2次
                         if len(parts) >= 3:
                             project_id = parts[1]
@@ -820,10 +820,10 @@ class SessionService:
                             
                             # 检查该projectId是否还有其他aicr会话，如果没有，删除所有projectFiles和projectTree
                             try:
-                                # 查询是否还有其他aicr_开头的会话使用这个projectId
+                                # 查询是否还有其他会话使用这个projectId
                                 other_aicr_query = {
                                     "$and": [
-                                        {"key": {"$regex": f"^aicr_{project_id}_"}},
+                                        {"key": {"$regex": f"^{project_id}_"}},
                                         {"key": {"$ne": session_id}}
                                     ]
                                 }
