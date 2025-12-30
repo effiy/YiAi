@@ -758,9 +758,37 @@ class SessionService:
                 
                 # 处理 aicr 项目文件删除
                 # 会话ID格式：aicr_{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
-                if session_id.startswith("aicr_"):
+                if is_aicr_session_id(session_id):
                     try:
-                        # 提取项目ID和文件路径
+                        # 首先尝试从映射表获取文件ID
+                        file_id = None
+                        mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                        if mapping:
+                            file_id = mapping.get("fileId")
+                            logger.debug(f"找到映射关系: sessionId={session_id}, fileId={file_id}")
+                        
+                        # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
+                        if not file_id:
+                            file_id = self._try_parse_file_path_from_session_id(session_id)
+                            if file_id:
+                                logger.debug(f"从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
+                        
+                        # 删除静态文件系统中的文件
+                        if file_id:
+                            try:
+                                if self.file_storage.file_exists(file_id):
+                                    deleted = self.file_storage.delete_file(file_id)
+                                    if deleted:
+                                        logger.info(f"已删除 aicr 静态文件: sessionId={session_id}, fileId={file_id}")
+                                    else:
+                                        logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}")
+                                else:
+                                    logger.debug(f"静态文件不存在，跳过删除: sessionId={session_id}, fileId={file_id}")
+                            except Exception as e:
+                                # 删除静态文件失败不影响删除会话的结果
+                                logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
+                        
+                        # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
                         # 格式：aicr_{projectId}_{filePath}
                         parts = session_id.split("_", 2)  # 最多分割2次
                         if len(parts) >= 3:
@@ -986,15 +1014,40 @@ class SessionService:
             
             # 处理关联数据：删除 aicr 项目文件
             if deleted_count > 0 and sessions_to_delete:
-                aicr_sessions = [s for s in sessions_to_delete if s.get("key", "").startswith("aicr_")]
+                aicr_sessions = [s for s in sessions_to_delete if is_aicr_session_id(s.get("key", ""))]
                 if aicr_sessions:
                     try:
                         # 收集所有需要删除的文件路径
                         files_to_delete = []
                         for session in aicr_sessions:
                             session_id = session.get("key", "")
-                            if session_id.startswith("aicr_"):
-                                # 提取项目ID和文件路径
+                            if is_aicr_session_id(session_id):
+                                # 首先尝试从映射表获取文件ID
+                                file_id = None
+                                try:
+                                    mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                                    if mapping:
+                                        file_id = mapping.get("fileId")
+                                except Exception as e:
+                                    logger.debug(f"获取映射关系失败: sessionId={session_id}, 错误: {str(e)}")
+                                
+                                # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
+                                if not file_id:
+                                    file_id = self._try_parse_file_path_from_session_id(session_id)
+                                
+                                # 删除静态文件系统中的文件
+                                if file_id:
+                                    try:
+                                        if self.file_storage.file_exists(file_id):
+                                            deleted = self.file_storage.delete_file(file_id)
+                                            if deleted:
+                                                logger.info(f"批量删除中已删除 aicr 静态文件: sessionId={session_id}, fileId={file_id}")
+                                            else:
+                                                logger.warning(f"批量删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}")
+                                    except Exception as e:
+                                        logger.warning(f"批量删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
+                                
+                                # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
                                 parts = session_id.split("_", 2)
                                 if len(parts) >= 3:
                                     project_id = parts[1]
