@@ -7,6 +7,7 @@ ID 转换工具 - 处理 ProjectFiles ID 与 Session ID 之间的转换
 """
 import re
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
