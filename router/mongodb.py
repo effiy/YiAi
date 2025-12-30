@@ -2,6 +2,8 @@ from functools import wraps
 from fastapi import APIRouter, Request, Body, HTTPException
 from typing import Dict, Any, List, Optional
 import re
+import os
+import shutil
 from datetime import datetime, timedelta
 import uuid
 import logging
@@ -14,6 +16,7 @@ from database import db
 from router.utils import create_response, handle_error
 from modules.services.fileStorageService import FileStorageService
 from modules.services.syncService import SyncService
+from modules.services.treeSyncService import TreeSyncService
 from modules.utils.idConverter import (
     normalize_file_path_to_session_id,
     extract_project_id_from_file_path
@@ -31,6 +34,7 @@ logger = logging.getLogger(__name__)
 # 初始化文件存储和同步服务
 _file_storage = None
 _sync_service = None
+_tree_sync_service = None
 
 async def get_file_storage() -> FileStorageService:
     """获取文件存储服务实例（单例）"""
@@ -46,6 +50,14 @@ async def get_sync_service() -> SyncService:
         _sync_service = SyncService()
         await _sync_service.initialize()
     return _sync_service
+
+async def get_tree_sync_service() -> TreeSyncService:
+    """获取树同步服务实例（单例）"""
+    global _tree_sync_service
+    if _tree_sync_service is None:
+        _tree_sync_service = TreeSyncService()
+        await _tree_sync_service.initialize()
+    return _tree_sync_service
 
 def ensure_initialized():
     """确保数据库已初始化的装饰器"""
@@ -491,7 +503,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
             result = await collection.insert_one(data_copy)
             logger.info(f"数据创建成功 - 集合: {cname}, ID: {result.inserted_id}")
             
-            # 对于 projectFiles 集合，同步到 Session
+            # 对于 projectFiles 集合，同步到 Session 和 static 目录
             if cname == 'projectFiles' and file_id and project_id:
                 try:
                     sync_service = await get_sync_service()
@@ -506,6 +518,35 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
                         logger.warning(f"ProjectFiles 同步到 Session 失败: fileId={file_id}, 错误: {sync_result.get('error')}")
                 except Exception as e:
                     logger.warning(f"同步 ProjectFiles 到 Session 失败: {str(e)}")
+                
+                # 同步到 static 目录
+                try:
+                    tree_sync_service = await get_tree_sync_service()
+                    tree_sync_result = await tree_sync_service.sync_project_file_to_static(
+                        file_id=file_id,
+                        project_id=project_id,
+                        content=content
+                    )
+                    if tree_sync_result.get("success"):
+                        logger.info(f"ProjectFiles 已同步到 static 目录: fileId={file_id}")
+                    else:
+                        logger.warning(f"ProjectFiles 同步到 static 目录失败: fileId={file_id}, 错误: {tree_sync_result.get('error')}")
+                except Exception as e:
+                    logger.warning(f"同步 ProjectFiles 到 static 目录失败: {str(e)}")
+            
+            # 对于 projectTree 集合，同步到 static 目录
+            if cname == 'projectTree':
+                project_id = data_copy.get('projectId')
+                if project_id:
+                    try:
+                        tree_sync_service = await get_tree_sync_service()
+                        tree_sync_result = await tree_sync_service.sync_project_tree_to_static(project_id)
+                        if tree_sync_result.get("success"):
+                            logger.info(f"ProjectTree 已同步到 static 目录: projectId={project_id}")
+                        else:
+                            logger.warning(f"ProjectTree 同步到 static 目录失败: projectId={project_id}, 错误: {tree_sync_result.get('error')}")
+                    except Exception as e:
+                        logger.warning(f"同步 ProjectTree 到 static 目录失败: {str(e)}")
         except Exception as e:
             # 捕获唯一索引冲突错误
             if 'duplicate key' in str(e).lower() or 'E11000' in str(e):
@@ -641,7 +682,7 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
         if not result:
             raise ValueError(f"未找到{identifier_type}为 {identifier} 的数据")
 
-        # 对于 projectFiles 集合，同步到 Session
+        # 对于 projectFiles 集合，同步到 Session 和 static 目录
         if cname == 'projectFiles' and file_id and project_id:
             try:
                 sync_service = await get_sync_service()
@@ -656,6 +697,44 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                     logger.warning(f"ProjectFiles 同步到 Session 失败: fileId={file_id}, 错误: {sync_result.get('error')}")
             except Exception as e:
                 logger.warning(f"同步 ProjectFiles 到 Session 失败: {str(e)}")
+            
+            # 同步到 static 目录
+            if content:
+                try:
+                    tree_sync_service = await get_tree_sync_service()
+                    tree_sync_result = await tree_sync_service.sync_project_file_to_static(
+                        file_id=file_id,
+                        project_id=project_id,
+                        content=content
+                    )
+                    if tree_sync_result.get("success"):
+                        logger.info(f"ProjectFiles 已同步到 static 目录: fileId={file_id}")
+                    else:
+                        logger.warning(f"ProjectFiles 同步到 static 目录失败: fileId={file_id}, 错误: {tree_sync_result.get('error')}")
+                except Exception as e:
+                    logger.warning(f"同步 ProjectFiles 到 static 目录失败: {str(e)}")
+            
+            # 如果更新了文件，同步整个项目树
+            if content:
+                try:
+                    tree_sync_service = await get_tree_sync_service()
+                    await tree_sync_service.sync_project_tree_to_static(project_id)
+                except Exception as e:
+                    logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+        
+        # 对于 projectTree 集合，同步到 static 目录
+        if cname == 'projectTree':
+            project_id = data.get('projectId')
+            if project_id:
+                try:
+                    tree_sync_service = await get_tree_sync_service()
+                    tree_sync_result = await tree_sync_service.sync_project_tree_to_static(project_id)
+                    if tree_sync_result.get("success"):
+                        logger.info(f"ProjectTree 已同步到 static 目录: projectId={project_id}")
+                    else:
+                        logger.warning(f"ProjectTree 同步到 static 目录失败: projectId={project_id}, 错误: {tree_sync_result.get('error')}")
+                except Exception as e:
+                    logger.warning(f"同步 ProjectTree 到 static 目录失败: {str(e)}")
 
         # 返回实际使用的key值
         actual_key = result.get('key', identifier)
@@ -688,6 +767,43 @@ async def delete(request: Request):
             if not keys_list:
                 raise ValueError("keys参数不能为空")
 
+            # 对于 projectFiles 集合，删除前获取文件信息以便同步删除 static 目录
+            if cname == 'projectFiles':
+                files_to_delete = await collection.find_many({'key': {'$in': keys_list}})
+                for file_doc in files_to_delete:
+                    file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
+                    project_id = file_doc.get('projectId')
+                    if file_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            await tree_sync_service.delete_project_file_from_static(file_id)
+                        except Exception as e:
+                            logger.warning(f"删除 static 目录文件失败: fileId={file_id}, 错误: {str(e)}")
+                    
+                    # 同步整个项目树
+                    if project_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            await tree_sync_service.sync_project_tree_to_static(project_id)
+                        except Exception as e:
+                            logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+            
+            # 对于 projectTree 集合，删除前获取项目ID以便同步删除 static 目录
+            if cname == 'projectTree':
+                trees_to_delete = await collection.find_many({'key': {'$in': keys_list}})
+                for tree_doc in trees_to_delete:
+                    project_id = tree_doc.get('projectId')
+                    if project_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            # 删除整个项目的 static 目录
+                            project_static_dir = tree_sync_service.file_storage.get_file_path(project_id)
+                            if os.path.exists(project_static_dir):
+                                shutil.rmtree(project_static_dir)
+                                logger.info(f"已删除项目 static 目录: projectId={project_id}")
+                        except Exception as e:
+                            logger.warning(f"删除项目 static 目录失败: projectId={project_id}, 错误: {str(e)}")
+
             result = await collection.delete_many({'key': {'$in': keys_list}})
             return RespOk(data={"deleted_count": result.deleted_count})
         
@@ -701,6 +817,43 @@ async def delete(request: Request):
 
         # 单个删除
         elif key:
+            # 对于 projectFiles 集合，删除前获取文件信息以便同步删除 static 目录
+            if cname == 'projectFiles':
+                file_doc = await collection.find_one({'key': key})
+                if file_doc:
+                    file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
+                    project_id = file_doc.get('projectId')
+                    if file_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            await tree_sync_service.delete_project_file_from_static(file_id)
+                        except Exception as e:
+                            logger.warning(f"删除 static 目录文件失败: fileId={file_id}, 错误: {str(e)}")
+                    
+                    # 同步整个项目树
+                    if project_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            await tree_sync_service.sync_project_tree_to_static(project_id)
+                        except Exception as e:
+                            logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+            
+            # 对于 projectTree 集合，删除前获取项目ID以便同步删除 static 目录
+            if cname == 'projectTree':
+                tree_doc = await collection.find_one({'key': key})
+                if tree_doc:
+                    project_id = tree_doc.get('projectId')
+                    if project_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            # 删除整个项目的 static 目录
+                            project_static_dir = tree_sync_service.file_storage.get_file_path(project_id)
+                            if os.path.exists(project_static_dir):
+                                shutil.rmtree(project_static_dir)
+                                logger.info(f"已删除项目 static 目录: projectId={project_id}")
+                        except Exception as e:
+                            logger.warning(f"删除项目 static 目录失败: projectId={project_id}, 错误: {str(e)}")
+            
             # 优先使用key字段
             result = await collection.delete_one({'key': key})
             if result.deleted_count == 0:
