@@ -17,7 +17,7 @@ def normalize_file_path_to_session_id(file_path: str, project_id: str) -> str:
     将文件路径转换为 Session ID
     
     Args:
-        file_path: 文件路径，如：developer/process/process_claim_2025-12_xxx.md
+        file_path: 文件路径，如：developer/process/process_claim_2025-12_xxx.md 或 process/process_claim_2025-12_xxx.md
         project_id: 项目ID，如：developer
     
     Returns:
@@ -29,8 +29,23 @@ def normalize_file_path_to_session_id(file_path: str, project_id: str) -> str:
     if not file_path or not project_id:
         raise ValueError("file_path 和 project_id 是必需的")
     
-    # 移除文件扩展名（保留在路径中用于反向解析）
-    path_without_ext = file_path.rsplit('.', 1)[0] if '.' in file_path else file_path
+    # 提取文件扩展名
+    file_ext = ''
+    if '.' in file_path:
+        parts = file_path.rsplit('.', 1)
+        path_without_ext = parts[0]
+        file_ext = parts[1] if len(parts) > 1 else ''
+    else:
+        path_without_ext = file_path
+    
+    # 如果文件路径以项目ID开头，去除项目ID前缀（避免重复）
+    # 例如：knowledge/constructing/test.md -> constructing/test.md
+    if path_without_ext.startswith(f'{project_id}/'):
+        path_without_ext = path_without_ext[len(project_id) + 1:]
+    elif path_without_ext.startswith(project_id):
+        # 处理没有斜杠的情况（虽然不太可能）
+        if len(path_without_ext) > len(project_id) and path_without_ext[len(project_id)] in ['/', '_']:
+            path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
     
     # 替换特殊字符为下划线（保留斜杠用于路径识别）
     normalized = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
@@ -43,6 +58,10 @@ def normalize_file_path_to_session_id(file_path: str, project_id: str) -> str:
     
     # 移除首尾下划线
     normalized = normalized.strip('_')
+    
+    # 如果有扩展名，添加到末尾（用下划线分隔）
+    if file_ext:
+        normalized = f'{normalized}_{file_ext}'
     
     session_id = f'aicr_{project_id}_{normalized}'
     logger.debug(f"文件路径转换为 Session ID: {file_path} -> {session_id}")
@@ -70,11 +89,23 @@ def parse_session_id_to_file_path(session_id: str, project_id: str) -> Optional[
     
     path_part = session_id[len(prefix):]
     
+    # 处理扩展名（格式：path_md -> path.md）
+    file_ext = ''
+    if '_' in path_part:
+        # 检查最后一部分是否是扩展名（通常是 1-5 个字符）
+        parts = path_part.rsplit('_', 1)
+        if len(parts) == 2 and len(parts[1]) <= 5 and parts[1].isalnum():
+            path_part = parts[0]
+            file_ext = parts[1]
+    
     # 将下划线还原为斜杠
     file_path = path_part.replace('_', '/')
     
-    # 添加 .md 扩展名（如果原路径有扩展名）
-    if not file_path.endswith('.md'):
+    # 添加扩展名
+    if file_ext:
+        file_path = f'{file_path}.{file_ext}'
+    elif not file_path.endswith('.md'):
+        # 如果没有扩展名，默认添加 .md
         file_path += '.md'
     
     # 确保文件路径以项目ID开头
