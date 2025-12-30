@@ -537,25 +537,36 @@ class SessionService:
                 logger.debug(f"检测到 AICR 会话，尝试从文件系统读取 pageContent: sessionId={session_id}")
                 # 查询映射表获取文件ID
                 mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                file_id = None
                 if mapping:
                     file_id = mapping.get("fileId")
                     logger.debug(f"找到映射关系: sessionId={session_id}, fileId={file_id}")
-                    if file_id:
-                        if self.file_storage.file_exists(file_id):
-                            try:
-                                page_content = self.file_storage.read_file_content(file_id)
-                                logger.info(f"成功从文件系统读取 pageContent: sessionId={session_id}, fileId={file_id}, 大小={len(page_content)} 字节")
-                                # 替换 MongoDB 中的 pageContent（可能是空的或哈希值）
-                                session_doc["pageContent"] = page_content
-                            except Exception as e:
-                                logger.warning(f"从文件系统读取 pageContent 失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
-                                # 如果读取失败，保持原有内容（可能为空）
-                        else:
-                            logger.warning(f"文件不存在: sessionId={session_id}, fileId={file_id}")
+                
+                # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
+                if not file_id:
+                    from modules.utils.idConverter import parse_session_id_to_file_path
+                    # 从 Session ID 提取项目ID
+                    parts = session_id.split("_", 2)
+                    if len(parts) >= 3:
+                        project_id = parts[1]
+                        file_id = parse_session_id_to_file_path(session_id, project_id)
+                        if file_id:
+                            logger.debug(f"从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
+                
+                if file_id:
+                    if self.file_storage.file_exists(file_id):
+                        try:
+                            page_content = self.file_storage.read_file_content(file_id)
+                            logger.info(f"成功从文件系统读取 pageContent: sessionId={session_id}, fileId={file_id}, 大小={len(page_content)} 字节")
+                            # 替换 MongoDB 中的 pageContent（可能是空的或哈希值）
+                            session_doc["pageContent"] = page_content
+                        except Exception as e:
+                            logger.warning(f"从文件系统读取 pageContent 失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
+                            # 如果读取失败，保持原有内容（可能为空）
                     else:
-                        logger.warning(f"映射关系中缺少 fileId: sessionId={session_id}, mapping={mapping}")
+                        logger.warning(f"文件不存在: sessionId={session_id}, fileId={file_id}")
                 else:
-                    logger.warning(f"未找到映射关系: sessionId={session_id}")
+                    logger.warning(f"无法获取文件ID: sessionId={session_id}, mapping={mapping}")
             
             # 使用统一的数据模型转换函数
             return session_to_api_format(session_doc)

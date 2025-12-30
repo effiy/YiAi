@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 class FileStorageService:
     """文件存储服务"""
     
-    def __init__(self, base_dir: str = "./static/files"):
+    def __init__(self, base_dir: str = "./static"):
         """
         初始化文件存储服务
         
         Args:
-            base_dir: 基础目录，默认：YiAi 项目的 ./static/files 目录
+            base_dir: 基础目录，默认：YiAi 项目的 ./static 目录
         """
         self.base_dir = os.path.abspath(base_dir)
         self._ensure_base_dir()
@@ -45,7 +45,7 @@ class FileStorageService:
             project_files_id: ProjectFiles ID，如：developer/process/process_claim_2025-12_xxx.md
         
         Returns:
-            完整文件路径，如：./static/files/developer/process/process_claim_2025-12_xxx.md
+            完整文件路径，如：./static/developer/process/process_claim_2025-12_xxx.md
         
         Raises:
             ValueError: 如果路径不安全（包含路径遍历攻击）
