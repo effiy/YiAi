@@ -152,15 +152,42 @@ def extract_project_id_from_file_path(file_path: str) -> Optional[str]:
 
 def is_aicr_session_id(session_id: str) -> bool:
     """
-    判断是否是 AICR 相关的 Session ID
-    注意：此函数保留用于兼容性，但不再检查 aicr_ 前缀
+    判断是否是 AICR 相关的 Session ID（需要从文件系统读取 pageContent）
+    
+    判断规则：
+    - Session ID 格式为 {projectId}_{filePath}，其中包含至少一个下划线分隔的项目ID和文件路径
+    - 常见的项目ID包括：knowledge, developer 等
+    - 如果 Session ID 包含下划线且格式符合 {projectId}_{...}，则认为是 AICR Session
     
     Args:
         session_id: Session ID
     
     Returns:
-        是否是 AICR 相关的 Session ID（现在总是返回 False，因为不再使用前缀）
+        是否是 AICR 相关的 Session ID
     """
-    # 不再使用 aicr_ 前缀，此函数保留用于兼容性
+    if not session_id:
+        return False
+    
+    # 检查是否包含下划线（格式：{projectId}_{filePath}）
+    if '_' not in session_id:
+        return False
+    
+    # 检查是否以常见的项目ID开头（如 knowledge, developer 等）
+    # 或者检查格式是否符合 {projectId}_{...} 的模式
+    parts = session_id.split('_', 2)
+    if len(parts) >= 3:
+        # 格式：{projectId}_{pathPart1}_{pathPart2}...
+        # 这很可能是 AICR Session ID
+        return True
+    
+    # 如果只有两部分，检查是否符合 {projectId}_{filePath} 格式
+    # 但这种情况可能不是 AICR Session（可能是普通的 URL-based Session ID）
+    if len(parts) == 2:
+        # 如果第二部分看起来像文件路径（包含多个下划线或特定模式），则认为是 AICR Session
+        second_part = parts[1]
+        # 如果第二部分包含多个下划线，可能是文件路径
+        if second_part.count('_') >= 1:
+            return True
+    
     return False
 
