@@ -73,19 +73,59 @@ class TreeSyncService:
                 query={"projectId": project_id}
             )
             
-            # 构建文件映射：fileId -> content
+            # 规范化函数（提前定义，供 files_map 构建使用）
+            def normalize_file_id_for_map(file_id: str) -> str:
+                """规范化文件ID，去除重复的 project_id 前缀"""
+                if not file_id:
+                    return ""
+                
+                # 去除开头的斜杠和多余的空格，统一路径分隔符
+                normalized = file_id.strip().lstrip('/').replace('\\', '/')
+                
+                # 分割路径为部分，去除空部分
+                parts = [p for p in normalized.split('/') if p]
+                
+                if not parts:
+                    return ""
+                
+                # 去除所有重复的 project_id 前缀（不区分大小写）
+                while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
+                    # 去除第一个重复的 project_id
+                    parts = parts[1:]
+                
+                # 确保路径以 project_id 开头（不区分大小写）
+                if parts[0].lower() != project_id.lower():
+                    # 不以 project_id 开头，添加前缀
+                    return f"{project_id}/{'/'.join(parts)}"
+                else:
+                    # 已经以 project_id 开头，直接使用
+                    return '/'.join(parts)
+            
+            # 构建文件映射：fileId -> content（同时支持原始和规范化的 file_id）
             files_map = {}
             for file_doc in files_docs:
                 file_id = file_doc.get("fileId") or file_doc.get("id") or file_doc.get("path")
                 if file_id:
-                    # 从文件系统读取内容
-                    if self.file_storage.file_exists(file_id):
+                    # 规范化 file_id
+                    normalized_file_id = normalize_file_id_for_map(file_id)
+                    
+                    # 从文件系统读取内容（优先使用规范化后的 file_id）
+                    content = ""
+                    if normalized_file_id and self.file_storage.file_exists(normalized_file_id):
+                        try:
+                            content = self.file_storage.read_file_content(normalized_file_id)
+                        except Exception as e:
+                            logger.warning(f"读取文件内容失败: fileId={normalized_file_id}, 错误: {str(e)}")
+                    elif self.file_storage.file_exists(file_id):
                         try:
                             content = self.file_storage.read_file_content(file_id)
-                            files_map[file_id] = content
                         except Exception as e:
                             logger.warning(f"读取文件内容失败: fileId={file_id}, 错误: {str(e)}")
-                            files_map[file_id] = ""
+                    
+                    # 同时存储原始和规范化的 file_id，方便查找
+                    files_map[file_id] = content
+                    if normalized_file_id and normalized_file_id != file_id:
+                        files_map[normalized_file_id] = content
             
             # 3. 递归构建 static 目录结构
             created_dirs = []
@@ -111,6 +151,9 @@ class TreeSyncService:
             # 从树数据构建应该存在的文件集合
             expected_files = set()
             
+            # 使用与 files_map 相同的规范化函数
+            normalize_node_id = normalize_file_id_for_map
+            
             def process_tree_node(node: Dict[str, Any], parent_path: str = ""):
                 """递归处理树节点"""
                 node_id = node.get("id", "")
@@ -120,11 +163,25 @@ class TreeSyncService:
                 if not node_id:
                     return
                 
+                # 规范化 node_id，去除重复的 project_id 前缀
+                normalized_node_id = normalize_node_id(node_id)
+                
                 # 构建完整路径
                 if parent_path:
-                    full_path = f"{parent_path}/{node_name}"
+                    # 如果 parent_path 存在，使用 parent_path + node_name
+                    # 但需要确保 parent_path 和 node_name 不会导致重复的 project_id
+                    parent_parts = [p for p in parent_path.split('/') if p]
+                    # 如果 parent_path 已经以 project_id 开头，且 node_name 也是 project_id，则跳过
+                    if parent_parts and parent_parts[0].lower() == project_id.lower() and node_name.lower() == project_id.lower():
+                        full_path = parent_path
+                    else:
+                        full_path = f"{parent_path}/{node_name}"
                 else:
-                    full_path = node_id
+                    # 如果没有 parent_path，使用规范化后的 node_id
+                    full_path = normalized_node_id
+                
+                # 再次规范化 full_path，确保没有重复的 project_id
+                full_path = normalize_node_id(full_path)
                 
                 if node_type == "folder":
                     # 创建目录
@@ -132,7 +189,7 @@ class TreeSyncService:
                     if not os.path.exists(dir_path):
                         os.makedirs(dir_path, exist_ok=True)
                         created_dirs.append(full_path)
-                        logger.debug(f"创建目录: {full_path}")
+                        logger.debug(f"创建目录: {full_path} (原始 node_id: {node_id})")
                     
                     # 递归处理子节点
                     children = node.get("children", [])
@@ -140,12 +197,14 @@ class TreeSyncService:
                         process_tree_node(child, full_path)
                 
                 elif node_type == "file":
-                    # 处理文件
-                    expected_files.add(node_id)
+                    # 处理文件 - 使用规范化后的 node_id
+                    normalized_file_id = normalized_node_id
+                    expected_files.add(normalized_file_id)
                     
                     # 确保文件存在且内容正确
-                    file_path = self.file_storage.get_file_path(node_id)
-                    file_content = files_map.get(node_id, "")
+                    file_path = self.file_storage.get_file_path(normalized_file_id)
+                    # 使用原始 node_id 从 files_map 获取内容（因为 files_map 的 key 可能是原始 node_id）
+                    file_content = files_map.get(node_id, "") or files_map.get(normalized_file_id, "")
                     
                     # 检查文件是否存在
                     if os.path.exists(file_path):
@@ -155,19 +214,19 @@ class TreeSyncService:
                                 existing_content = f.read()
                             if existing_content != file_content:
                                 # 内容不一致，更新文件
-                                self.file_storage.write_file_content(node_id, file_content)
-                                updated_files.append(node_id)
-                                logger.debug(f"更新文件: {node_id}")
+                                self.file_storage.write_file_content(normalized_file_id, file_content)
+                                updated_files.append(normalized_file_id)
+                                logger.debug(f"更新文件: {normalized_file_id} (原始 node_id: {node_id})")
                         except Exception as e:
-                            logger.warning(f"读取文件失败: {node_id}, 错误: {str(e)}")
+                            logger.warning(f"读取文件失败: {normalized_file_id}, 错误: {str(e)}")
                             # 重新写入文件
-                            self.file_storage.write_file_content(node_id, file_content)
-                            updated_files.append(node_id)
+                            self.file_storage.write_file_content(normalized_file_id, file_content)
+                            updated_files.append(normalized_file_id)
                     else:
                         # 文件不存在，创建文件
-                        self.file_storage.write_file_content(node_id, file_content)
-                        created_files.append(node_id)
-                        logger.debug(f"创建文件: {node_id}")
+                        self.file_storage.write_file_content(normalized_file_id, file_content)
+                        created_files.append(normalized_file_id)
+                        logger.debug(f"创建文件: {normalized_file_id} (原始 node_id: {node_id})")
             
             # 处理所有树节点
             for root_node in tree_data:
