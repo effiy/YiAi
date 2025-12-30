@@ -5,12 +5,19 @@ import re
 from datetime import datetime, timedelta
 import uuid
 import logging
+import hashlib
 from bson import ObjectId
 from Resp import RespOk
 from pymongo import UpdateOne, ReturnDocument
 
 from database import db
 from router.utils import create_response, handle_error
+from modules.services.fileStorageService import FileStorageService
+from modules.services.syncService import SyncService
+from modules.utils.idConverter import (
+    normalize_file_path_to_session_id,
+    extract_project_id_from_file_path
+)
 
 router = APIRouter(
     prefix="/mongodb",
@@ -20,6 +27,25 @@ router = APIRouter(
 
 # 配置日志记录器
 logger = logging.getLogger(__name__)
+
+# 初始化文件存储和同步服务
+_file_storage = None
+_sync_service = None
+
+async def get_file_storage() -> FileStorageService:
+    """获取文件存储服务实例（单例）"""
+    global _file_storage
+    if _file_storage is None:
+        _file_storage = FileStorageService()
+    return _file_storage
+
+async def get_sync_service() -> SyncService:
+    """获取同步服务实例（单例）"""
+    global _sync_service
+    if _sync_service is None:
+        _sync_service = SyncService()
+        await _sync_service.initialize()
+    return _sync_service
 
 def ensure_initialized():
     """确保数据库已初始化的装饰器"""
@@ -316,6 +342,19 @@ async def query(request: Request):
         total = await collection.count_documents(filter_dict)
         total_pages = (total + page_size - 1) // page_size
 
+        # 对于 projectFiles 集合，从文件系统读取 content
+        if cname == 'projectFiles':
+            file_storage = await get_file_storage()
+            for item in data:
+                file_id = item.get('fileId') or item.get('id') or item.get('path')
+                if file_id and file_storage.file_exists(file_id):
+                    try:
+                        content = file_storage.read_file_content(file_id)
+                        item['content'] = content
+                    except Exception as e:
+                        logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
+                        item['content'] = ''  # 如果读取失败，设置为空字符串
+
         return RespOk(
             data={
                 'list': data,
@@ -335,13 +374,30 @@ async def query(request: Request):
 @router.get("/detail")
 @ensure_initialized()
 async def get_detail(cname: str, id: str):
-    """获取MongoDB集合中的单条数据详情"""
+    """
+    获取MongoDB集合中的单条数据详情
+    
+    对于 projectFiles 集合，会从文件系统读取 content。
+    """
     try:
         collection = db.mongodb.db[cname]
         document = await collection.find_one({'key': id}, {'_id': 0})
 
         if not document:
             raise ValueError(f"未找到ID为 {id} 的数据")
+
+        # 对于 projectFiles 集合，从文件系统读取 content
+        if cname == 'projectFiles':
+            file_id = document.get('fileId') or document.get('id') or document.get('path')
+            if file_id:
+                file_storage = await get_file_storage()
+                if file_storage.file_exists(file_id):
+                    try:
+                        content = file_storage.read_file_content(file_id)
+                        document['content'] = content
+                    except Exception as e:
+                        logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
+                        document['content'] = ''  # 如果读取失败，设置为空字符串
 
         return RespOk(data=document)
     except ValueError as e:
@@ -354,7 +410,11 @@ async def get_detail(cname: str, id: str):
 @router.post("/")
 @ensure_initialized()
 async def create(request: Request, data: Dict[str, Any] = Body(...)):
-    """创建MongoDB集合数据"""
+    """
+    创建MongoDB集合数据
+    
+    对于 projectFiles 集合，会将 content 字段写入文件系统，并同步到 Session。
+    """
     try:
         # 获取集合名称
         query_params = dict(request.query_params)
@@ -382,6 +442,30 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
         # 准备数据
         data_copy = {k: (str(v) if isinstance(v, ObjectId) else v) for k, v in data.items()}
 
+        # 对于 projectFiles 集合，处理文件存储
+        content = None
+        file_id = None
+        project_id = None
+        if cname == 'projectFiles':
+            # 获取文件ID（fileId 或 id 或 path）
+            file_id = data_copy.get('fileId') or data_copy.get('id') or data_copy.get('path')
+            project_id = data_copy.get('projectId')
+            content = data_copy.get('content', '')
+            
+            if file_id and content:
+                # 写入文件系统
+                file_storage = await get_file_storage()
+                success = file_storage.write_file_content(file_id, content)
+                if success:
+                    # 计算内容哈希值
+                    content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+                    data_copy['contentHash'] = content_hash
+                    # 不存储实际内容到 MongoDB
+                    data_copy['content'] = ''
+                    logger.info(f"ProjectFiles 内容已写入文件系统: fileId={file_id}")
+                else:
+                    logger.warning(f"ProjectFiles 内容写入文件系统失败: fileId={file_id}")
+
         # 生成基础字段
         current_time = get_current_time()
         data_copy.update({
@@ -406,6 +490,22 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
         try:
             result = await collection.insert_one(data_copy)
             logger.info(f"数据创建成功 - 集合: {cname}, ID: {result.inserted_id}")
+            
+            # 对于 projectFiles 集合，同步到 Session
+            if cname == 'projectFiles' and file_id and project_id:
+                try:
+                    sync_service = await get_sync_service()
+                    sync_result = await sync_service.sync_project_file_to_session(
+                        file_id=file_id,
+                        project_id=project_id,
+                        source_client="yiweb"
+                    )
+                    if sync_result.get("success"):
+                        logger.info(f"ProjectFiles 已同步到 Session: fileId={file_id}")
+                    else:
+                        logger.warning(f"ProjectFiles 同步到 Session 失败: fileId={file_id}, 错误: {sync_result.get('error')}")
+                except Exception as e:
+                    logger.warning(f"同步 ProjectFiles 到 Session 失败: {str(e)}")
         except Exception as e:
             # 捕获唯一索引冲突错误
             if 'duplicate key' in str(e).lower() or 'E11000' in str(e):
@@ -427,7 +527,11 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
 @router.put("/")
 @ensure_initialized()
 async def update(request: Request, data: Dict[str, Any] = Body(...)):
-    """更新MongoDB集合数据"""
+    """
+    更新MongoDB集合数据
+    
+    对于 projectFiles 集合，会将 content 字段写入文件系统，并同步到 Session。
+    """
     try:
         # 获取集合名称
         query_params = dict(request.query_params)
@@ -485,6 +589,32 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                         if new_link != link and existing_key:
                             raise ValueError(f"link 字段值 '{new_link}' 已被其他记录使用（key: {existing_key}）")
 
+        # 对于 projectFiles 集合，处理文件存储
+        content = None
+        file_id = None
+        project_id = None
+        if cname == 'projectFiles' and 'content' in data:
+            # 先获取现有数据以确定 fileId 和 projectId
+            existing_doc = await collection.find_one(query_filter)
+            if existing_doc:
+                file_id = existing_doc.get('fileId') or existing_doc.get('id') or existing_doc.get('path')
+                project_id = existing_doc.get('projectId')
+                content = data.get('content', '')
+                
+                if file_id and content:
+                    # 写入文件系统
+                    file_storage = await get_file_storage()
+                    success = file_storage.write_file_content(file_id, content)
+                    if success:
+                        # 计算内容哈希值
+                        content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+                        data['contentHash'] = content_hash
+                        # 不存储实际内容到 MongoDB
+                        data['content'] = ''
+                        logger.info(f"ProjectFiles 内容已写入文件系统: fileId={file_id}")
+                    else:
+                        logger.warning(f"ProjectFiles 内容写入文件系统失败: fileId={file_id}")
+
         # 准备更新数据
         # 如果使用key查找，排除key字段（避免更新主键），但允许更新link字段
         # 如果使用link查找，允许更新所有字段（包括key和link）
@@ -510,6 +640,22 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
 
         if not result:
             raise ValueError(f"未找到{identifier_type}为 {identifier} 的数据")
+
+        # 对于 projectFiles 集合，同步到 Session
+        if cname == 'projectFiles' and file_id and project_id:
+            try:
+                sync_service = await get_sync_service()
+                sync_result = await sync_service.sync_project_file_to_session(
+                    file_id=file_id,
+                    project_id=project_id,
+                    source_client="yiweb"
+                )
+                if sync_result.get("success"):
+                    logger.info(f"ProjectFiles 已同步到 Session: fileId={file_id}")
+                else:
+                    logger.warning(f"ProjectFiles 同步到 Session 失败: fileId={file_id}, 错误: {sync_result.get('error')}")
+            except Exception as e:
+                logger.warning(f"同步 ProjectFiles 到 Session 失败: {str(e)}")
 
         # 返回实际使用的key值
         actual_key = result.get('key', identifier)

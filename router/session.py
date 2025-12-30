@@ -65,9 +65,19 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
     - 否则创建新会话
     
     返回完整的会话数据，便于前端更新缓存
+    
+    支持客户端标识（通过 X-Client 请求头）：
+    - yiweb: YiWeb 客户端
+    - yipet: YiPet 扩展（默认）
+    - yih5: YiH5 移动端
     """
     service = await get_session_service()
     user_id = get_user_id(http_request, request.user_id)
+    
+    # 从请求头获取客户端标识
+    source_client = http_request.headers.get("X-Client", "yipet")
+    if source_client not in ["yiweb", "yipet", "yih5"]:
+        source_client = "yipet"  # 默认值
     
     # 构建会话数据
     session_data = {
@@ -90,7 +100,7 @@ async def save_session(request: SaveSessionRequest, http_request: Request):
         session_data["imageDataUrl"] = request.imageDataUrl
     
     # 调用服务层保存会话
-    result = await service.save_session(session_data, user_id=user_id)
+    result = await service.save_session(session_data, user_id=user_id, source_client=source_client)
     session_id = result["session_id"]
     is_new = result.get("is_new", False)
     
@@ -261,9 +271,19 @@ async def update_session(
 ):
     """
     更新会话数据
+    
+    支持客户端标识（通过 X-Client 请求头）：
+    - yiweb: YiWeb 客户端
+    - yipet: YiPet 扩展（默认）
+    - yih5: YiH5 移动端
     """
     service = await get_session_service()
     user_id = get_user_id(http_request, request.user_id)
+    
+    # 从请求头获取客户端标识
+    source_client = http_request.headers.get("X-Client", "yipet")
+    if source_client not in ["yiweb", "yipet", "yih5"]:
+        source_client = "yipet"  # 默认值
     
     # 构建会话数据
     session_data = {
@@ -284,7 +304,7 @@ async def update_session(
         session_data["imageDataUrl"] = request.imageDataUrl
     
     # 调用服务层更新会话
-    result = await service.update_session(session_id, session_data, user_id=user_id)
+    result = await service.update_session(session_id, session_data, user_id=user_id, source_client=source_client)
     
     return success_response(
         data={

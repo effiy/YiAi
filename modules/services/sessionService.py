@@ -7,6 +7,7 @@
 - 与ChatService的区别：
   - SessionService: 管理完整的会话上下文（页面内容、标题、URL等），用于YiPet扩展
   - ChatService: 管理聊天记录和向量搜索，用于AI对话服务
+- 支持文件化存储：AICR 相关的 Session 的 pageContent 存储在文件系统中
 """
 import logging
 import uuid
@@ -14,6 +15,13 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
 from modules.database.mongoClient import MongoClient
 from modules.utils.session_utils import normalize_session_id
+from modules.utils.idConverter import (
+    is_aicr_session_id,
+    extract_project_id_from_file_path,
+    parse_session_id_to_file_path
+)
+from modules.services.fileStorageService import FileStorageService
+from modules.services.syncService import SyncService
 from modules.models.session_model import (
     session_to_api_format,
     session_to_list_item,
@@ -29,12 +37,15 @@ class SessionService:
     def __init__(self):
         self.mongo_client = MongoClient()
         self.collection_name = "sessions"
+        self.file_storage = FileStorageService()
+        self.sync_service = SyncService()
         self._initialized = False
         
     async def initialize(self):
         """初始化服务"""
         if not self._initialized:
             await self.mongo_client.initialize()
+            await self.sync_service.initialize()
             self._initialized = True
     
     async def _ensure_initialized(self):
@@ -114,6 +125,9 @@ class SessionService:
         """
         准备会话文档数据
         
+        注意：对于 AICR 相关的 Session，pageContent 不存储在 MongoDB 中，
+        而是存储在文件系统中，这里只存储哈希值用于一致性检测。
+        
         Args:
             session_id: 会话ID
             session_data: 会话数据
@@ -129,6 +143,16 @@ class SessionService:
         if messages:
             normalized_messages = [normalize_message(msg) for msg in messages if msg]
         
+        page_content = session_data.get("pageContent", "")
+        
+        # 对于 AICR 相关的 Session，计算 pageContent 的哈希值
+        page_content_hash = None
+        if is_aicr_session_id(session_id) and page_content:
+            import hashlib
+            page_content_hash = hashlib.md5(page_content.encode('utf-8')).hexdigest()
+            # 不存储实际内容，只存储哈希值
+            page_content = ""
+        
         doc = {
             "key": session_id,
             "user_id": user_id,
@@ -136,7 +160,8 @@ class SessionService:
             "title": session_data.get("title", ""),
             "pageTitle": session_data.get("pageTitle", ""),
             "pageDescription": session_data.get("pageDescription", ""),
-            "pageContent": session_data.get("pageContent", ""),
+            "pageContent": page_content,  # AICR 相关的 Session 这里为空
+            "pageContentHash": page_content_hash,  # 存储哈希值用于一致性检测
             "messages": normalized_messages,
             "tags": session_data.get("tags", []),
             "isFavorite": session_data.get("isFavorite", False),
@@ -191,7 +216,8 @@ class SessionService:
         
         # 检查其他字段是否有变化
         # 包括 isFavorite 字段，允许通过 save 接口更新收藏状态
-        for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl", "isFavorite"]:
+        # 注意：对于 AICR 相关的 Session，pageContent 需要特殊处理
+        for field in ["url", "title", "pageTitle", "pageDescription", "tags", "imageDataUrl", "isFavorite"]:
             if field in session_data and session_data[field] is not None:
                 # 为不同字段设置合适的默认值
                 if field == "tags":
@@ -203,6 +229,30 @@ class SessionService:
                 if session_data[field] != existing_value:
                     update_doc[field] = session_data[field]
                     has_changes = True
+        
+        # 特殊处理 pageContent 字段（对于 AICR 相关的 Session）
+        if "pageContent" in session_data and session_data["pageContent"] is not None:
+            page_content = session_data["pageContent"]
+            session_id = existing.get("key", "")
+            
+            if is_aicr_session_id(session_id):
+                # 对于 AICR 相关的 Session，计算哈希值而不是存储内容
+                import hashlib
+                page_content_hash = hashlib.md5(page_content.encode('utf-8')).hexdigest()
+                existing_hash = existing.get("pageContentHash", "")
+                
+                if page_content_hash != existing_hash:
+                    update_doc["pageContentHash"] = page_content_hash
+                    update_doc["pageContent"] = ""  # 不存储实际内容
+                    has_changes = True
+                    should_update_timestamp = True
+            else:
+                # 对于非 AICR 相关的 Session，正常处理
+                existing_content = existing.get("pageContent", "")
+                if page_content != existing_content:
+                    update_doc["pageContent"] = page_content
+                    has_changes = True
+                    should_update_timestamp = True
         
         # 更新时间戳
         updated_at = session_data.get("updatedAt")
@@ -341,10 +391,13 @@ class SessionService:
     async def save_session(
         self,
         session_data: Dict[str, Any],
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        source_client: str = "yipet"
     ) -> Dict[str, Any]:
         """
         保存会话数据（自动判断创建或更新）
+        
+        对于 AICR 相关的 Session，会将 pageContent 写入文件系统并同步到 ProjectFiles。
         
         Args:
             session_data: 会话数据，包含：
@@ -357,6 +410,7 @@ class SessionService:
                 - updatedAt: 更新时间
                 - lastAccessTime: 最后访问时间
             user_id: 用户ID（可选，如果不提供则自动生成）
+            source_client: 来源客户端：yiweb/yipet/yih5（默认：yipet）
         
         Returns:
             保存结果，包含session_id和success状态
@@ -380,6 +434,37 @@ class SessionService:
             
             # 获取当前时间
             current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+            
+            # 对于 AICR 相关的 Session，处理文件存储和同步
+            page_content = session_data.get("pageContent", "")
+            if is_aicr_session_id(session_id) and page_content:
+                # 提取项目ID
+                project_id = None
+                # 尝试从映射表获取
+                mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                if mapping:
+                    project_id = mapping.get("projectId")
+                    file_id = mapping.get("fileId")
+                else:
+                    # 尝试从 Session ID 解析
+                    # Session ID 格式：aicr_{projectId}_{filePath}
+                    parts = session_id.split("_", 2)
+                    if len(parts) >= 3:
+                        project_id = parts[1]
+                        file_id = parse_session_id_to_file_path(session_id, project_id)
+                    else:
+                        file_id = None
+                
+                if project_id and file_id:
+                    # 同步到文件系统
+                    sync_result = await self.sync_service.sync_session_to_project_file(
+                        session_id=session_id,
+                        content=page_content,
+                        project_id=project_id,
+                        source_client=source_client
+                    )
+                    if not sync_result.get("success"):
+                        logger.warning(f"同步 Session 到文件系统失败: {session_id}, 错误: {sync_result.get('error')}")
             
             # 检查是否已存在
             existing = await self.mongo_client.find_one(
@@ -418,6 +503,8 @@ class SessionService:
         """
         根据会话ID获取会话数据
         
+        对于 AICR 相关的 Session，会从文件系统读取 pageContent。
+        
         Args:
             session_id: 会话ID
             user_id: 用户ID（可选，用于权限检查）
@@ -444,6 +531,21 @@ class SessionService:
             
             if not session_doc:
                 return None
+            
+            # 对于 AICR 相关的 Session，从文件系统读取 pageContent
+            if is_aicr_session_id(session_id):
+                # 查询映射表获取文件ID
+                mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                if mapping:
+                    file_id = mapping.get("fileId")
+                    if file_id and self.file_storage.file_exists(file_id):
+                        try:
+                            page_content = self.file_storage.read_file_content(file_id)
+                            # 替换 MongoDB 中的 pageContent（可能是空的或哈希值）
+                            session_doc["pageContent"] = page_content
+                        except Exception as e:
+                            logger.warning(f"从文件系统读取 pageContent 失败: fileId={file_id}, 错误: {str(e)}")
+                            # 如果读取失败，保持原有内容（可能为空）
             
             # 使用统一的数据模型转换函数
             return session_to_api_format(session_doc)
@@ -894,15 +996,19 @@ class SessionService:
         self,
         session_id: str,
         session_data: Dict[str, Any],
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        source_client: str = "yipet"
     ) -> Dict[str, Any]:
         """
         更新会话数据
+        
+        对于 AICR 相关的 Session，会将 pageContent 写入文件系统并同步到 ProjectFiles。
         
         Args:
             session_id: 会话ID
             session_data: 要更新的会话数据
             user_id: 用户ID（可选）
+            source_client: 来源客户端：yiweb/yipet/yih5（默认：yipet）
         
         Returns:
             更新结果
@@ -926,6 +1032,36 @@ class SessionService:
             if not existing:
                 raise ValueError(f"会话 {session_id} 不存在")
             
+            # 对于 AICR 相关的 Session，处理文件存储和同步
+            page_content = session_data.get("pageContent")
+            if is_aicr_session_id(session_id) and page_content is not None:
+                # 提取项目ID
+                project_id = None
+                # 尝试从映射表获取
+                mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                if mapping:
+                    project_id = mapping.get("projectId")
+                    file_id = mapping.get("fileId")
+                else:
+                    # 尝试从 Session ID 解析
+                    parts = session_id.split("_", 2)
+                    if len(parts) >= 3:
+                        project_id = parts[1]
+                        file_id = parse_session_id_to_file_path(session_id, project_id)
+                    else:
+                        file_id = None
+                
+                if project_id and file_id:
+                    # 同步到文件系统
+                    sync_result = await self.sync_service.sync_session_to_project_file(
+                        session_id=session_id,
+                        content=page_content,
+                        project_id=project_id,
+                        source_client=source_client
+                    )
+                    if not sync_result.get("success"):
+                        logger.warning(f"同步 Session 到文件系统失败: {session_id}, 错误: {sync_result.get('error')}")
+            
             # 获取当前时间
             current_time = int(datetime.now(timezone.utc).timestamp() * 1000)
             
@@ -935,9 +1071,22 @@ class SessionService:
             }
             
             # 更新字段
-            for field in ["url", "title", "pageTitle", "pageDescription", "pageContent", "tags", "imageDataUrl", "isFavorite"]:
+            for field in ["url", "title", "pageTitle", "pageDescription", "tags", "imageDataUrl", "isFavorite"]:
                 if field in session_data and session_data[field] is not None:
                     update_doc[field] = session_data[field]
+            
+            # 特殊处理 pageContent 字段（对于 AICR 相关的 Session）
+            if "pageContent" in session_data and session_data["pageContent"] is not None:
+                page_content = session_data["pageContent"]
+                if is_aicr_session_id(session_id):
+                    # 对于 AICR 相关的 Session，计算哈希值而不是存储内容
+                    import hashlib
+                    page_content_hash = hashlib.md5(page_content.encode('utf-8')).hexdigest()
+                    update_doc["pageContentHash"] = page_content_hash
+                    update_doc["pageContent"] = ""  # 不存储实际内容
+                else:
+                    # 对于非 AICR 相关的 Session，正常处理
+                    update_doc["pageContent"] = page_content
             
             # 特殊处理 messages 字段，需要规范化
             if "messages" in session_data and session_data["messages"] is not None:
@@ -962,7 +1111,7 @@ class SessionService:
             await self.mongo_client.update_one(
                 collection_name=self.collection_name,
                 query={"key": session_id},
-                update=update_doc
+                update={"$set": update_doc}
             )
             
             logger.info(f"会话 {session_id} 已更新")
