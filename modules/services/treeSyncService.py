@@ -203,8 +203,41 @@ class TreeSyncService:
                     
                     # 确保文件存在且内容正确
                     file_path = self.file_storage.get_file_path(normalized_file_id)
-                    # 使用原始 node_id 从 files_map 获取内容（因为 files_map 的 key 可能是原始 node_id）
+                    
+                    # 尝试从多个可能的路径获取文件内容：
+                    # 1. 使用原始 node_id（可能包含旧路径）
+                    # 2. 使用规范化后的 node_id（新路径）
+                    # 3. 如果文件在新路径已存在，直接从文件系统读取
+                    file_content = ""
+                    
+                    # 首先尝试从 files_map 获取（支持原始和规范化路径）
                     file_content = files_map.get(node_id, "") or files_map.get(normalized_file_id, "")
+                    
+                    # 如果 files_map 中没有找到，且文件在新路径已存在，直接从文件系统读取
+                    if not file_content and os.path.exists(file_path):
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                file_content = f.read()
+                        except Exception as e:
+                            logger.warning(f"从文件系统读取内容失败: {normalized_file_id}, 错误: {str(e)}")
+                    
+                    # 如果仍然没有内容，尝试从旧路径读取（处理重命名情况）
+                    if not file_content:
+                        # 尝试从 existing_files 中找到可能的旧路径
+                        # 通过文件名匹配（不包含路径）
+                        file_name = os.path.basename(normalized_file_id)
+                        for existing_file in existing_files:
+                            if existing_file.endswith(file_name) and existing_file != normalized_file_id:
+                                # 找到可能的旧路径，尝试读取
+                                try:
+                                    old_file_path = self.file_storage.get_file_path(existing_file)
+                                    if os.path.exists(old_file_path):
+                                        with open(old_file_path, 'r', encoding='utf-8') as f:
+                                            file_content = f.read()
+                                        logger.info(f"从旧路径读取文件内容: {existing_file} -> {normalized_file_id}")
+                                        break
+                                except Exception as e:
+                                    logger.debug(f"从旧路径读取失败: {existing_file}, 错误: {str(e)}")
                     
                     # 检查文件是否存在
                     if os.path.exists(file_path):
@@ -232,16 +265,49 @@ class TreeSyncService:
             for root_node in tree_data:
                 process_tree_node(root_node, "")
             
-            # 4. 删除不应该存在的文件
+            # 4. 删除不应该存在的文件（但需要检查是否是重命名导致的）
             for existing_file in existing_files:
                 if existing_file not in expected_files:
-                    try:
-                        if self.file_storage.file_exists(existing_file):
-                            self.file_storage.delete_file(existing_file)
-                            deleted_files.append(existing_file)
-                            logger.debug(f"删除文件: {existing_file}")
-                    except Exception as e:
-                        logger.warning(f"删除文件失败: {existing_file}, 错误: {str(e)}")
+                    # 检查是否是因为重命名导致的路径变化
+                    # 通过文件名匹配，如果新路径中已经有同名文件，则可能是重命名
+                    file_name = os.path.basename(existing_file)
+                    is_renamed = False
+                    for expected_file in expected_files:
+                        if os.path.basename(expected_file) == file_name and expected_file != existing_file:
+                            # 可能是重命名，检查文件内容是否相同
+                            try:
+                                old_path = self.file_storage.get_file_path(existing_file)
+                                new_path = self.file_storage.get_file_path(expected_file)
+                                if os.path.exists(old_path) and os.path.exists(new_path):
+                                    with open(old_path, 'r', encoding='utf-8') as f:
+                                        old_content = f.read()
+                                    with open(new_path, 'r', encoding='utf-8') as f:
+                                        new_content = f.read()
+                                    if old_content == new_content:
+                                        # 内容相同，确认是重命名，删除旧文件
+                                        is_renamed = True
+                                        break
+                            except Exception as e:
+                                logger.debug(f"检查重命名失败: {existing_file} -> {expected_file}, 错误: {str(e)}")
+                    
+                    if not is_renamed:
+                        # 不是重命名，删除文件
+                        try:
+                            if self.file_storage.file_exists(existing_file):
+                                self.file_storage.delete_file(existing_file)
+                                deleted_files.append(existing_file)
+                                logger.debug(f"删除文件: {existing_file}")
+                        except Exception as e:
+                            logger.warning(f"删除文件失败: {existing_file}, 错误: {str(e)}")
+                    else:
+                        # 是重命名，删除旧路径的文件
+                        try:
+                            if self.file_storage.file_exists(existing_file):
+                                self.file_storage.delete_file(existing_file)
+                                deleted_files.append(existing_file)
+                                logger.debug(f"删除重命名前的旧文件: {existing_file}")
+                        except Exception as e:
+                            logger.warning(f"删除重命名前的旧文件失败: {existing_file}, 错误: {str(e)}")
             
             # 5. 清理空目录
             self._cleanup_empty_dirs(project_id)
