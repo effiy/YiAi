@@ -888,22 +888,37 @@ async def delete(request: Request):
                     )
                     project_id = file_doc.get('projectId') or data_field.get('projectId')
                     
+                    # 规范化 fileId（如果存在 projectId）
+                    if file_id and project_id:
+                        from modules.utils.idConverter import normalize_project_file_id
+                        try:
+                            normalized_file_id = normalize_project_file_id(file_id, project_id)
+                            if normalized_file_id != file_id:
+                                logger.debug(f"[删除] fileId 已规范化: {file_id} -> {normalized_file_id}")
+                                file_id = normalized_file_id
+                        except Exception as e:
+                            logger.warning(f"[删除] fileId 规范化失败: {file_id}, 错误: {str(e)}")
+                    
+                    # 添加详细的日志输出，帮助调试
                     logger.info(f"[删除] 找到文件文档: key={key}, fileId={file_id}, projectId={project_id}")
+                    logger.debug(f"[删除] 文档结构: {file_doc}")
                 else:
-                    logger.warning(f"[删除] 未找到文件文档，尝试通过其他方式删除静态文件: key={key}")
+                    logger.warning(f"[删除] 未找到文件文档: key={key}")
                     # 即使找不到文档，也尝试通过 key 查找可能的文件路径
                     # 这里可以尝试从其他集合或缓存中查找
                 
                 # 删除静态文件（如果找到了 fileId）
                 if file_id:
+                    logger.info(f"[删除] 准备删除静态文件: fileId={file_id}")
                     try:
                         tree_sync_service = await get_tree_sync_service()
                         # 检查是文件还是文件夹
                         file_path = tree_sync_service.file_storage.get_file_path(file_id)
+                        logger.debug(f"[删除] 静态文件路径: {file_path}")
                         is_folder = os.path.exists(file_path) and os.path.isdir(file_path)
                         
                         if is_folder:
-                            logger.info(f"[删除] 检测到文件夹，开始递归删除静态文件夹: fileId={file_id}")
+                            logger.info(f"[删除] 检测到文件夹，开始递归删除静态文件夹: fileId={file_id}, path={file_path}")
                             result = await tree_sync_service.delete_project_folder_from_static(file_id)
                             if result.get('success'):
                                 deleted_count = result.get('deleted_count', 0)
@@ -915,21 +930,21 @@ async def delete(request: Request):
                                 logger.error(f"[删除] 删除静态文件夹失败: fileId={file_id}, 错误: {result.get('error')}")
                                 # 即使删除静态文件夹失败，也继续删除 MongoDB 记录
                         else:
-                            logger.info(f"[删除] 开始删除静态文件: fileId={file_id}")
+                            logger.info(f"[删除] 开始删除静态文件: fileId={file_id}, path={file_path}")
                             result = await tree_sync_service.delete_project_file_from_static(file_id)
                             if result.get('success'):
                                 if result.get('skipped'):
-                                    logger.info(f"[删除] 静态文件不存在（已跳过）: fileId={file_id}")
+                                    logger.info(f"[删除] 静态文件不存在（已跳过）: fileId={file_id}, path={file_path}")
                                 else:
-                                    logger.info(f"[删除] 成功删除静态文件: fileId={file_id}")
+                                    logger.info(f"[删除] 成功删除静态文件: fileId={file_id}, path={file_path}")
                             else:
-                                logger.error(f"[删除] 删除静态文件失败: fileId={file_id}, 错误: {result.get('error')}")
+                                logger.error(f"[删除] 删除静态文件失败: fileId={file_id}, path={file_path}, 错误: {result.get('error')}")
                                 # 即使删除静态文件失败，也继续删除 MongoDB 记录
                     except Exception as e:
                         logger.error(f"[删除] 删除静态文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
                         # 即使删除静态文件异常，也继续删除 MongoDB 记录
                 else:
-                    logger.warning(f"[删除] 无法获取 fileId，无法删除静态文件: key={key}")
+                    logger.warning(f"[删除] 无法获取 fileId，无法删除静态文件: key={key}, 文档: {file_doc if file_doc else '未找到'}")
                 
                 # 同步整个项目树（如果找到了 projectId）
                 if project_id:
@@ -958,9 +973,15 @@ async def delete(request: Request):
                             logger.warning(f"删除项目 static 目录失败: projectId={project_id}, 错误: {str(e)}")
             
             # 优先使用key字段
+            # 注意：对于 projectFiles，静态文件已经在上面删除了
             result = await collection.delete_one({'key': key})
             if result.deleted_count == 0:
                 raise ValueError(f"未找到key为 {key} 的数据")
+            
+            # 对于 projectFiles，记录删除结果
+            if cname == 'projectFiles':
+                logger.info(f"[删除] MongoDB 记录删除成功: key={key}, deleted_count={result.deleted_count}")
+            
             return RespOk(data={"deleted_count": result.deleted_count})
         
         elif link:
