@@ -376,32 +376,30 @@ class TreeSyncService:
             
             # 如果提供了 project_id，尝试多种路径格式
             if project_id:
-                from modules.utils.idConverter import normalize_project_file_id
-                
                 # 规范化 file_id（去除首尾空格和斜杠）
                 clean_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+                
+                # 1. 使用统一的规范化方法（与写入时完全一致）- 这是最重要的路径
+                normalized_file_id = self._normalize_file_id_for_static(clean_file_id, project_id)
+                if normalized_file_id:
+                    paths_to_try.insert(0, normalized_file_id)  # 放在最前面，优先尝试
+                
+                # 2. 尝试原始 fileId（可能已经包含 projectId）
+                if clean_file_id not in paths_to_try:
+                    paths_to_try.append(clean_file_id)
+                
+                # 3. 如果 file_id 已经包含 projectId，尝试去除 projectId 前缀
                 parts = [p for p in clean_file_id.split('/') if p]
-                
-                # 1. 规范化后的路径（确保以 projectId 开头）- 使用 normalize_project_file_id
-                normalized = normalize_project_file_id(clean_file_id, project_id)
-                paths_to_try.append(normalized)
-                
-                # 2. 如果 file_id 已经包含 projectId，尝试去除 projectId 前缀
                 if parts and len(parts) > 1 and parts[0].lower() == project_id.lower():
                     without_prefix = '/'.join(parts[1:])
-                    if without_prefix:
+                    if without_prefix and without_prefix not in paths_to_try:
                         paths_to_try.append(without_prefix)
                 
-                # 3. 如果 file_id 不包含 projectId，尝试添加 projectId 前缀
+                # 4. 如果 file_id 不包含 projectId，尝试添加 projectId 前缀（简单拼接）
                 if not parts or parts[0].lower() != project_id.lower():
                     with_prefix = f"{project_id}/{clean_file_id}"
-                    paths_to_try.append(with_prefix)
-                
-                # 4. 使用 sync_project_file_to_static 的规范化逻辑（与写入时保持一致）
-                # 这个逻辑与写入文件时使用的逻辑完全一致
-                normalized_file_id = self._normalize_file_id_for_static(clean_file_id, project_id)
-                if normalized_file_id and normalized_file_id not in paths_to_try:
-                    paths_to_try.append(normalized_file_id)
+                    if with_prefix not in paths_to_try:
+                        paths_to_try.append(with_prefix)
             
             # 添加原始 file_id（去重）
             if file_id not in paths_to_try:
@@ -415,22 +413,29 @@ class TreeSyncService:
                     seen.add(path)
                     unique_paths.append(path)
             
-            logger.debug(f"[删除静态文件] 尝试路径列表: fileId={file_id}, projectId={project_id}, paths={unique_paths}")
+            logger.info(f"[删除静态文件] 开始删除: 原始fileId={file_id}, projectId={project_id}")
+            logger.debug(f"[删除静态文件] 尝试路径列表 ({len(unique_paths)} 个): {unique_paths}")
             
             # 尝试每个路径
-            for path in unique_paths:
+            for idx, path in enumerate(unique_paths, 1):
                 try:
-                    if self.file_storage.file_exists(path):
+                    file_path = self.file_storage.get_file_path(path)
+                    exists = self.file_storage.file_exists(path)
+                    logger.debug(f"[删除静态文件] 尝试路径 {idx}/{len(unique_paths)}: {path}, 完整路径={file_path}, 存在={exists}")
+                    
+                    if exists:
                         success = self.file_storage.delete_file(path)
                         if success:
-                            logger.info(f"从 static 目录删除文件成功: fileId={path} (原始: {file_id})")
+                            logger.info(f"[删除静态文件] ✓ 成功删除: fileId={path} (原始: {file_id})")
                             return {"success": True, "file_id": path, "original_file_id": file_id}
                         else:
-                            logger.warning(f"从 static 目录删除文件失败: fileId={path}")
+                            logger.warning(f"[删除静态文件] ✗ 删除操作失败: fileId={path}")
                             # 继续尝试下一个路径
                             continue
+                    else:
+                        logger.debug(f"[删除静态文件] - 文件不存在: {path}")
                 except Exception as e:
-                    logger.debug(f"检查路径失败: {path}, 错误: {str(e)}")
+                    logger.debug(f"[删除静态文件] ✗ 检查路径异常: {path}, 错误: {str(e)}")
                     continue
             
             # 如果所有路径都尝试过了还没找到，尝试通过文件名扫描匹配

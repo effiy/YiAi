@@ -886,20 +886,11 @@ async def delete(request: Request):
                     )
                     project_id = file_doc.get('projectId') or data_field.get('projectId')
                     
-                    # 规范化 fileId（如果存在 projectId）
-                    if file_id and project_id:
-                        from modules.utils.idConverter import normalize_project_file_id
-                        try:
-                            normalized_file_id = normalize_project_file_id(file_id, project_id)
-                            if normalized_file_id != file_id:
-                                logger.debug(f"[删除] fileId 已规范化: {file_id} -> {normalized_file_id}")
-                                file_id = normalized_file_id
-                        except Exception as e:
-                            logger.warning(f"[删除] fileId 规范化失败: {file_id}, 错误: {str(e)}")
-                    
                     # 添加详细的日志输出，帮助调试
                     logger.info(f"[删除] 找到文件文档: key={key}, fileId={file_id}, projectId={project_id}")
-                    logger.debug(f"[删除] 文档结构: {file_doc}")
+                    logger.debug(f"[删除] 文档结构: fileId={file_id}, projectId={project_id}, fileId字段={file_doc.get('fileId')}, id字段={file_doc.get('id')}, path字段={file_doc.get('path')}")
+                    
+                    # 注意：不在这里规范化 fileId，让 delete_project_file_from_static 使用统一的规范化逻辑
                 else:
                     logger.warning(f"[删除] 未找到文件文档: key={key}")
                     # 即使找不到文档，也尝试通过 key 查找可能的文件路径
