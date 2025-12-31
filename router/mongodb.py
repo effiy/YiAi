@@ -770,23 +770,48 @@ async def delete(request: Request):
             # 对于 projectFiles 集合，删除前获取文件信息以便同步删除 static 目录
             if cname == 'projectFiles':
                 files_to_delete = await collection.find_many({'key': {'$in': keys_list}})
+                project_ids = set()  # 收集所有涉及的项目ID
+                tree_sync_service = None
+                
+                # 删除所有静态文件
                 for file_doc in files_to_delete:
-                    file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
-                    project_id = file_doc.get('projectId')
+                    # 从多个位置获取 fileId：顶层和 data 字段
+                    data_field = file_doc.get('data', {}) if isinstance(file_doc.get('data'), dict) else {}
+                    file_id = (
+                        file_doc.get('fileId') or 
+                        file_doc.get('id') or 
+                        file_doc.get('path') or
+                        data_field.get('fileId') or
+                        data_field.get('id') or
+                        data_field.get('path')
+                    )
+                    project_id = file_doc.get('projectId') or data_field.get('projectId')
+                    
+                    if project_id:
+                        project_ids.add(project_id)
+                    
                     if file_id:
                         try:
-                            tree_sync_service = await get_tree_sync_service()
-                            await tree_sync_service.delete_project_file_from_static(file_id)
+                            if tree_sync_service is None:
+                                tree_sync_service = await get_tree_sync_service()
+                            result = await tree_sync_service.delete_project_file_from_static(file_id)
+                            if result.get('success'):
+                                logger.info(f"成功删除 static 目录文件: fileId={file_id}")
+                            else:
+                                logger.warning(f"删除 static 目录文件失败: fileId={file_id}, 错误: {result.get('error')}")
                         except Exception as e:
-                            logger.warning(f"删除 static 目录文件失败: fileId={file_id}, 错误: {str(e)}")
-                    
-                    # 同步整个项目树
-                    if project_id:
+                            logger.error(f"删除 static 目录文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
+                    else:
+                        logger.warning(f"无法获取 fileId，跳过删除静态文件: key={file_doc.get('key')}")
+                
+                # 所有文件删除后，同步一次项目树（如果有项目ID）
+                if project_ids and tree_sync_service:
+                    for project_id in project_ids:
                         try:
-                            tree_sync_service = await get_tree_sync_service()
                             await tree_sync_service.sync_project_tree_to_static(project_id)
+                            logger.info(f"同步项目树到 static 目录成功: projectId={project_id}")
                         except Exception as e:
-                            logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+                            logger.warning(f"同步项目树到 static 目录失败: projectId={project_id}, 错误: {str(e)}")
             
             # 对于 projectTree 集合，删除前获取项目ID以便同步删除 static 目录
             if cname == 'projectTree':
@@ -821,22 +846,43 @@ async def delete(request: Request):
             if cname == 'projectFiles':
                 file_doc = await collection.find_one({'key': key})
                 if file_doc:
-                    file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
-                    project_id = file_doc.get('projectId')
+                    # 从多个位置获取 fileId：顶层和 data 字段
+                    data_field = file_doc.get('data', {}) if isinstance(file_doc.get('data'), dict) else {}
+                    file_id = (
+                        file_doc.get('fileId') or 
+                        file_doc.get('id') or 
+                        file_doc.get('path') or
+                        data_field.get('fileId') or
+                        data_field.get('id') or
+                        data_field.get('path')
+                    )
+                    project_id = file_doc.get('projectId') or data_field.get('projectId')
+                    
+                    logger.info(f"删除 projectFiles: key={key}, fileId={file_id}, projectId={project_id}")
+                    
                     if file_id:
                         try:
                             tree_sync_service = await get_tree_sync_service()
-                            await tree_sync_service.delete_project_file_from_static(file_id)
+                            result = await tree_sync_service.delete_project_file_from_static(file_id)
+                            if result.get('success'):
+                                logger.info(f"成功删除 static 目录文件: fileId={file_id}")
+                            else:
+                                logger.warning(f"删除 static 目录文件失败: fileId={file_id}, 错误: {result.get('error')}")
                         except Exception as e:
-                            logger.warning(f"删除 static 目录文件失败: fileId={file_id}, 错误: {str(e)}")
+                            logger.error(f"删除 static 目录文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
+                    else:
+                        logger.warning(f"无法获取 fileId，跳过删除静态文件: key={key}")
                     
                     # 同步整个项目树
                     if project_id:
                         try:
                             tree_sync_service = await get_tree_sync_service()
                             await tree_sync_service.sync_project_tree_to_static(project_id)
+                            logger.info(f"同步项目树到 static 目录成功: projectId={project_id}")
                         except Exception as e:
-                            logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+                            logger.warning(f"同步项目树到 static 目录失败: projectId={project_id}, 错误: {str(e)}")
+                else:
+                    logger.warning(f"未找到要删除的文件: key={key}")
             
             # 对于 projectTree 集合，删除前获取项目ID以便同步删除 static 目录
             if cname == 'projectTree':
@@ -872,33 +918,54 @@ async def delete(request: Request):
             file_id = query_params.get('fileId')
             if cname == 'projectFiles':
                 # 先查找文件，获取文件信息以便删除静态文件
+                # 同时检查顶层和 data 字段
                 file_doc = await collection.find_one({
                     '$or': [
                         {'fileId': file_id},
                         {'id': file_id},
-                        {'path': file_id}
+                        {'path': file_id},
+                        {'data.fileId': file_id},
+                        {'data.id': file_id},
+                        {'data.path': file_id}
                     ]
                 })
                 if file_doc:
-                    doc_file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
-                    project_id = file_doc.get('projectId')
+                    # 从多个位置获取 fileId：顶层和 data 字段
+                    data_field = file_doc.get('data', {}) if isinstance(file_doc.get('data'), dict) else {}
+                    doc_file_id = (
+                        file_doc.get('fileId') or 
+                        file_doc.get('id') or 
+                        file_doc.get('path') or
+                        data_field.get('fileId') or
+                        data_field.get('id') or
+                        data_field.get('path')
+                    )
+                    project_id = file_doc.get('projectId') or data_field.get('projectId')
                     doc_key = file_doc.get('key')
                     
-                    # 删除静态文件
-                    if doc_file_id:
+                    logger.info(f"通过 fileId 删除 projectFiles: fileId={file_id}, doc_fileId={doc_file_id}, projectId={project_id}")
+                    
+                    # 删除静态文件（使用文档中的 fileId，如果存在，否则使用查询的 fileId）
+                    target_file_id = doc_file_id or file_id
+                    if target_file_id:
                         try:
                             tree_sync_service = await get_tree_sync_service()
-                            await tree_sync_service.delete_project_file_from_static(doc_file_id)
+                            result = await tree_sync_service.delete_project_file_from_static(target_file_id)
+                            if result.get('success'):
+                                logger.info(f"成功删除 static 目录文件: fileId={target_file_id}")
+                            else:
+                                logger.warning(f"删除 static 目录文件失败: fileId={target_file_id}, 错误: {result.get('error')}")
                         except Exception as e:
-                            logger.warning(f"删除 static 目录文件失败: fileId={doc_file_id}, 错误: {str(e)}")
+                            logger.error(f"删除 static 目录文件异常: fileId={target_file_id}, 错误: {str(e)}", exc_info=True)
                     
                     # 同步整个项目树
                     if project_id:
                         try:
                             tree_sync_service = await get_tree_sync_service()
                             await tree_sync_service.sync_project_tree_to_static(project_id)
+                            logger.info(f"同步项目树到 static 目录成功: projectId={project_id}")
                         except Exception as e:
-                            logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+                            logger.warning(f"同步项目树到 static 目录失败: projectId={project_id}, 错误: {str(e)}")
                     
                     # 使用 key 删除（如果存在），否则使用 fileId/id/path 删除
                     if doc_key:
