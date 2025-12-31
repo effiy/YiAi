@@ -394,49 +394,174 @@ class TreeSyncService:
         
         try:
             # 尝试删除的路径列表（按优先级排序）
-            paths_to_try = [file_id]
+            paths_to_try = []
             
             # 如果提供了 project_id，尝试多种路径格式
             if project_id:
                 from modules.utils.idConverter import normalize_project_file_id
-                # 1. 规范化后的路径（确保以 projectId 开头）
-                normalized = normalize_project_file_id(file_id, project_id)
-                if normalized != file_id:
-                    paths_to_try.insert(0, normalized)
+                
+                # 规范化 file_id（去除首尾空格和斜杠）
+                clean_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+                parts = [p for p in clean_file_id.split('/') if p]
+                
+                # 1. 规范化后的路径（确保以 projectId 开头）- 使用 normalize_project_file_id
+                normalized = normalize_project_file_id(clean_file_id, project_id)
+                paths_to_try.append(normalized)
                 
                 # 2. 如果 file_id 已经包含 projectId，尝试去除 projectId 前缀
-                parts = file_id.replace('\\', '/').strip().lstrip('/').split('/')
                 if parts and len(parts) > 1 and parts[0].lower() == project_id.lower():
-                    # 去除第一个 projectId 部分
                     without_prefix = '/'.join(parts[1:])
-                    if without_prefix and without_prefix != file_id:
+                    if without_prefix:
                         paths_to_try.append(without_prefix)
                 
                 # 3. 如果 file_id 不包含 projectId，尝试添加 projectId 前缀
                 if not parts or parts[0].lower() != project_id.lower():
-                    with_prefix = f"{project_id}/{file_id.lstrip('/')}"
-                    if with_prefix != file_id:
-                        paths_to_try.append(with_prefix)
+                    with_prefix = f"{project_id}/{clean_file_id}"
+                    paths_to_try.append(with_prefix)
+                
+                # 4. 使用 sync_project_file_to_static 的规范化逻辑（与写入时保持一致）
+                # 这个逻辑与写入文件时使用的逻辑完全一致
+                normalized_file_id = clean_file_id
+                if parts:
+                    # 去除重复的 project_id 前缀
+                    while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
+                        parts = parts[1:]
+                    
+                    # 确保路径以 project_id 开头
+                    if parts[0].lower() != project_id.lower():
+                        normalized_file_id = f"{project_id}/{'/'.join(parts)}"
+                    else:
+                        normalized_file_id = '/'.join(parts)
+                
+                if normalized_file_id not in paths_to_try:
+                    paths_to_try.append(normalized_file_id)
+            
+            # 添加原始 file_id（去重）
+            if file_id not in paths_to_try:
+                paths_to_try.append(file_id)
+            
+            # 去重并保持顺序
+            seen = set()
+            unique_paths = []
+            for path in paths_to_try:
+                if path and path not in seen:
+                    seen.add(path)
+                    unique_paths.append(path)
+            
+            logger.debug(f"[删除静态文件] 尝试路径列表: fileId={file_id}, projectId={project_id}, paths={unique_paths}")
             
             # 尝试每个路径
-            for path in paths_to_try:
-                if self.file_storage.file_exists(path):
-                    success = self.file_storage.delete_file(path)
-                    if success:
-                        logger.info(f"从 static 目录删除文件成功: fileId={path} (原始: {file_id})")
-                        return {"success": True, "file_id": path, "original_file_id": file_id}
-                    else:
-                        logger.warning(f"从 static 目录删除文件失败: fileId={path}")
-                        # 继续尝试下一个路径
-                        continue
+            for path in unique_paths:
+                try:
+                    if self.file_storage.file_exists(path):
+                        success = self.file_storage.delete_file(path)
+                        if success:
+                            logger.info(f"从 static 目录删除文件成功: fileId={path} (原始: {file_id})")
+                            return {"success": True, "file_id": path, "original_file_id": file_id}
+                        else:
+                            logger.warning(f"从 static 目录删除文件失败: fileId={path}")
+                            # 继续尝试下一个路径
+                            continue
+                except Exception as e:
+                    logger.debug(f"检查路径失败: {path}, 错误: {str(e)}")
+                    continue
             
-            # 所有路径都尝试过了，文件不存在
-            logger.debug(f"文件不存在，跳过删除: fileId={file_id}, 尝试的路径: {paths_to_try}")
+            # 如果所有路径都尝试过了还没找到，尝试通过文件名扫描匹配
+            if project_id:
+                logger.debug(f"路径匹配失败，尝试通过文件名扫描匹配: fileId={file_id}, projectId={project_id}")
+                matched_path = await self._find_file_by_name_in_project(file_id, project_id)
+                if matched_path:
+                    try:
+                        if self.file_storage.file_exists(matched_path):
+                            success = self.file_storage.delete_file(matched_path)
+                            if success:
+                                logger.info(f"通过文件名扫描找到并删除文件: fileId={matched_path} (原始: {file_id})")
+                                return {"success": True, "file_id": matched_path, "original_file_id": file_id, "found_by_scan": True}
+                    except Exception as e:
+                        logger.warning(f"删除扫描到的文件失败: {matched_path}, 错误: {str(e)}")
+            
+            # 所有方法都尝试过了，文件不存在
+            logger.debug(f"文件不存在，跳过删除: fileId={file_id}, 尝试的路径: {unique_paths}")
             return {"success": True, "file_id": file_id, "skipped": True}
         
         except Exception as e:
             logger.error(f"从 static 目录删除文件失败: fileId={file_id}, 错误: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
+    
+    async def _find_file_by_name_in_project(self, file_id: str, project_id: str) -> Optional[str]:
+        """
+        通过扫描项目目录，根据文件名匹配找到文件路径
+        
+        Args:
+            file_id: 文件ID（可能是完整路径或只是文件名）
+            project_id: 项目ID
+        
+        Returns:
+            找到的文件路径，如果没找到返回 None
+        """
+        try:
+            # 获取文件名（路径的最后一部分）
+            file_name = os.path.basename(file_id.replace('\\', '/'))
+            if not file_name:
+                return None
+            
+            # 获取项目目录路径
+            project_dir = self.file_storage.get_file_path(project_id)
+            if not os.path.exists(project_dir) or not os.path.isdir(project_dir):
+                logger.debug(f"项目目录不存在: {project_dir}")
+                return None
+            
+            logger.debug(f"扫描项目目录查找文件: projectId={project_id}, fileName={file_name}, projectDir={project_dir}")
+            
+            # 递归扫描项目目录下的所有文件
+            matched_files = []
+            for root, dirs, files in os.walk(project_dir):
+                for file in files:
+                    if file == file_name:
+                        # 找到匹配的文件，构建相对路径
+                        full_path = os.path.join(root, file)
+                        # 转换为相对于 static 目录的路径
+                        relative_path = os.path.relpath(full_path, self.file_storage.base_dir)
+                        # 统一使用正斜杠
+                        relative_path = relative_path.replace('\\', '/')
+                        matched_files.append(relative_path)
+                        logger.debug(f"找到匹配文件: {relative_path}")
+            
+            if matched_files:
+                # 如果有多个匹配，优先选择路径最接近 file_id 的
+                if len(matched_files) == 1:
+                    return matched_files[0]
+                else:
+                    # 如果有多个匹配，尝试找到路径最接近的
+                    file_id_parts = file_id.replace('\\', '/').strip('/').split('/')
+                    best_match = None
+                    best_score = -1
+                    
+                    for matched_path in matched_files:
+                        matched_parts = matched_path.replace('\\', '/').strip('/').split('/')
+                        # 计算匹配度：相同路径部分的数量
+                        score = 0
+                        min_len = min(len(file_id_parts), len(matched_parts))
+                        for i in range(min_len):
+                            if i < len(file_id_parts) and i < len(matched_parts):
+                                if file_id_parts[-1-i].lower() == matched_parts[-1-i].lower():
+                                    score += 1
+                                else:
+                                    break
+                        
+                        if score > best_score:
+                            best_score = score
+                            best_match = matched_path
+                    
+                    logger.info(f"找到 {len(matched_files)} 个匹配文件，选择最佳匹配: {best_match}")
+                    return best_match if best_match else matched_files[0]
+            
+            logger.debug(f"未找到匹配文件: fileName={file_name}, projectId={project_id}")
+            return None
+            
+        except Exception as e:
+            logger.warning(f"扫描项目目录查找文件失败: fileId={file_id}, projectId={project_id}, 错误: {str(e)}")
+            return None
     
     async def delete_project_folder_from_static(self, folder_id: str) -> Dict[str, Any]:
         """

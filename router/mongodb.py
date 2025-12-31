@@ -464,19 +464,15 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
             project_id = data_copy.get('projectId')
             content = data_copy.get('content', '')
             
+            # 注意：文件写入由 sync_project_file_to_static 统一处理，这里不再单独写入
+            # 这样可以确保文件路径格式一致（规范化后的路径）
             if file_id and content:
-                # 写入文件系统
-                file_storage = await get_file_storage()
-                success = file_storage.write_file_content(file_id, content)
-                if success:
-                    # 计算内容哈希值
-                    content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
-                    data_copy['contentHash'] = content_hash
-                    # 不存储实际内容到 MongoDB
-                    data_copy['content'] = ''
-                    logger.info(f"ProjectFiles 内容已写入文件系统: fileId={file_id}")
-                else:
-                    logger.warning(f"ProjectFiles 内容写入文件系统失败: fileId={file_id}")
+                # 计算内容哈希值（用于 MongoDB 存储）
+                content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
+                data_copy['contentHash'] = content_hash
+                # 不存储实际内容到 MongoDB（内容存储在文件系统）
+                data_copy['content'] = ''
+                logger.debug(f"ProjectFiles 内容准备同步到文件系统: fileId={file_id}")
 
         # 生成基础字段
         current_time = get_current_time()
