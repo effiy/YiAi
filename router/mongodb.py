@@ -272,53 +272,6 @@ def validate_collection_name(cname: Optional[str]) -> str:
         raise ValueError("必须提供集合名称(cname)")
     return cname
 
-def _generate_frontend_session_id(file_path: str, project_id: str) -> str:
-    """
-    生成前端格式的 Session ID（与前端 sessionSyncService.generateSessionId 逻辑一致）
-    
-    前端格式：${projectId}_${normalizedPath}（单下划线分隔）
-    例如：knowledge_constructing_codereview_a
-    
-    Args:
-        file_path: 文件路径
-        project_id: 项目ID
-    
-    Returns:
-        Session ID（前端格式）
-    """
-    if not file_path or not project_id:
-        return f"{project_id}_{int(datetime.now().timestamp() * 1000)}"
-    
-    # 提取文件扩展名
-    path_without_ext = file_path
-    file_ext = ''
-    if '.' in file_path:
-        parts = file_path.rsplit('.', 1)
-        path_without_ext = parts[0]
-        file_ext = parts[1] if len(parts) > 1 else ''
-    
-    # 如果文件路径以项目ID开头，去除项目ID前缀（避免重复）
-    if path_without_ext.startswith(f'{project_id}/'):
-        path_without_ext = path_without_ext[len(project_id) + 1:]
-    elif path_without_ext.startswith(project_id) and len(path_without_ext) > len(project_id):
-        next_char = path_without_ext[len(project_id)]
-        if next_char in ['/', '_']:
-            path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
-    
-    # 规范化文件路径：替换特殊字符为下划线，将斜杠替换为下划线
-    normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
-    normalized_path = re.sub(r'/+/', '_', normalized_path)  # 将斜杠替换为下划线
-    normalized_path = re.sub(r'^_+|_+$', '', normalized_path)  # 移除首尾下划线
-    normalized_path = re.sub(r'_+', '_', normalized_path)  # 合并连续下划线
-    
-    # 如果有扩展名，添加到末尾（用下划线分隔）
-    if file_ext:
-        normalized_path = f'{normalized_path}_{file_ext}'
-    
-    session_id = f'{project_id}_{normalized_path}'
-    logger.debug(f"生成前端格式 Session ID: {file_path} -> {session_id}")
-    return session_id
-
 def build_sort_list(sort_param: str, sort_order: int) -> List[tuple]:
     """构建排序列表"""
     sort_list = []
@@ -873,8 +826,9 @@ async def delete(request: Request):
                             # 删除对应的会话（如果是文件且找到了 projectId）
                             if project_id and not is_folder:
                                 try:
-                                    # 生成 sessionId（使用与前端一致的逻辑）
-                                    session_id = _generate_frontend_session_id(file_id, project_id)
+                                    from modules.utils.idConverter import normalize_file_path_to_session_id
+                                    # 生成 sessionId
+                                    session_id = normalize_file_path_to_session_id(file_id, project_id)
                                     logger.info(f"[批量删除] 准备删除会话: sessionId={session_id}, fileId={file_id}, projectId={project_id}")
                                     
                                     # 调用会话删除服务
@@ -1005,9 +959,10 @@ async def delete(request: Request):
                     # 删除对应的会话（如果是文件且找到了 projectId）
                     if project_id and not is_folder:
                         try:
+                            from modules.utils.idConverter import normalize_file_path_to_session_id
                             # 生成 sessionId（使用与前端一致的逻辑）
-                            # 前端格式：${projectId}_${normalizedPath}（单下划线分隔）
-                            session_id = _generate_frontend_session_id(file_id, project_id)
+                            # 使用原始 file_id 生成 sessionId，确保与创建时一致
+                            session_id = normalize_file_path_to_session_id(file_id, project_id)
                             logger.info(f"[删除] 准备删除会话: sessionId={session_id}, fileId={file_id}, projectId={project_id}")
                             
                             # 调用会话删除服务
@@ -1151,8 +1106,9 @@ async def delete(request: Request):
                         # 删除对应的会话（如果是文件且找到了 projectId）
                         if project_id and not is_folder:
                             try:
-                                # 生成 sessionId（使用与前端一致的逻辑）
-                                session_id = _generate_frontend_session_id(target_file_id, project_id)
+                                from modules.utils.idConverter import normalize_file_path_to_session_id
+                                # 生成 sessionId
+                                session_id = normalize_file_path_to_session_id(target_file_id, project_id)
                                 logger.info(f"[删除] 准备删除会话: sessionId={session_id}, fileId={target_file_id}, projectId={project_id}")
                                 
                                 # 调用会话删除服务
