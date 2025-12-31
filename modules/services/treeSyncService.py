@@ -265,49 +265,19 @@ class TreeSyncService:
             for root_node in tree_data:
                 process_tree_node(root_node, "")
             
-            # 4. 删除不应该存在的文件（但需要检查是否是重命名导致的）
+            # 4. 删除不应该存在的文件
+            # 注意：如果文件被重命名，新路径的文件已经在步骤3中创建，这里只需要删除旧路径的文件
             for existing_file in existing_files:
                 if existing_file not in expected_files:
-                    # 检查是否是因为重命名导致的路径变化
-                    # 通过文件名匹配，如果新路径中已经有同名文件，则可能是重命名
-                    file_name = os.path.basename(existing_file)
-                    is_renamed = False
-                    for expected_file in expected_files:
-                        if os.path.basename(expected_file) == file_name and expected_file != existing_file:
-                            # 可能是重命名，检查文件内容是否相同
-                            try:
-                                old_path = self.file_storage.get_file_path(existing_file)
-                                new_path = self.file_storage.get_file_path(expected_file)
-                                if os.path.exists(old_path) and os.path.exists(new_path):
-                                    with open(old_path, 'r', encoding='utf-8') as f:
-                                        old_content = f.read()
-                                    with open(new_path, 'r', encoding='utf-8') as f:
-                                        new_content = f.read()
-                                    if old_content == new_content:
-                                        # 内容相同，确认是重命名，删除旧文件
-                                        is_renamed = True
-                                        break
-                            except Exception as e:
-                                logger.debug(f"检查重命名失败: {existing_file} -> {expected_file}, 错误: {str(e)}")
-                    
-                    if not is_renamed:
-                        # 不是重命名，删除文件
-                        try:
-                            if self.file_storage.file_exists(existing_file):
-                                self.file_storage.delete_file(existing_file)
-                                deleted_files.append(existing_file)
-                                logger.debug(f"删除文件: {existing_file}")
-                        except Exception as e:
-                            logger.warning(f"删除文件失败: {existing_file}, 错误: {str(e)}")
-                    else:
-                        # 是重命名，删除旧路径的文件
-                        try:
-                            if self.file_storage.file_exists(existing_file):
-                                self.file_storage.delete_file(existing_file)
-                                deleted_files.append(existing_file)
-                                logger.debug(f"删除重命名前的旧文件: {existing_file}")
-                        except Exception as e:
-                            logger.warning(f"删除重命名前的旧文件失败: {existing_file}, 错误: {str(e)}")
+                    # 文件不在预期列表中，需要删除
+                    # 这包括：被删除的文件、被重命名后旧路径的文件
+                    try:
+                        if self.file_storage.file_exists(existing_file):
+                            self.file_storage.delete_file(existing_file)
+                            deleted_files.append(existing_file)
+                            logger.debug(f"删除文件: {existing_file}")
+                    except Exception as e:
+                        logger.warning(f"删除文件失败: {existing_file}, 错误: {str(e)}")
             
             # 5. 清理空目录
             self._cleanup_empty_dirs(project_id)
