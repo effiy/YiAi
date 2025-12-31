@@ -316,17 +316,17 @@ class TreeSyncService:
                 normalized_file_id = project_id
             else:
                 # 3. 去除所有重复的 project_id 前缀（不区分大小写）
-                # 从前往后查找，去除所有连续的重复 project_id
+                # 只去除开头的连续重复 project_id，保留路径中间可能存在的同名目录
                 while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
                     # 去除第一个重复的 project_id
                     parts = parts[1:]
                 
-                # 4. 确保路径以 project_id 开头（不区分大小写）
+                # 4. 确保路径以 project_id 开头（不区分大小写），且只有一个 project_id 前缀
                 if parts[0].lower() != project_id.lower():
                     # 不以 project_id 开头，添加前缀
                     normalized_file_id = f"{project_id}/{'/'.join(parts)}"
                 else:
-                    # 已经以 project_id 开头，直接使用
+                    # 已经以 project_id 开头，直接使用（已经处理了开头的连续重复）
                     normalized_file_id = '/'.join(parts)
             
             # 写入文件系统
