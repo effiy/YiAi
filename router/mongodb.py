@@ -826,21 +826,58 @@ async def delete(request: Request):
                             # 删除对应的会话（如果是文件且找到了 projectId）
                             if project_id and not is_folder:
                                 try:
-                                    from modules.utils.idConverter import normalize_file_path_to_session_id
-                                    # 生成 sessionId
-                                    session_id = normalize_file_path_to_session_id(file_id, project_id)
-                                    logger.info(f"[批量删除] 准备删除会话: sessionId={session_id}, fileId={file_id}, projectId={project_id}")
+                                    # 生成两种格式的 sessionId（前端格式和后端格式）
+                                    import re
+                                    clean_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+                                    path_without_ext = clean_file_id
+                                    file_ext = ''
+                                    if '.' in clean_file_id:
+                                        parts = clean_file_id.rsplit('.', 1)
+                                        path_without_ext = parts[0]
+                                        file_ext = parts[1] if len(parts) > 1 else ''
                                     
-                                    # 调用会话删除服务
+                                    # 去除 projectId 前缀
+                                    if path_without_ext.startswith(f'{project_id}/'):
+                                        path_without_ext = path_without_ext[len(project_id) + 1:]
+                                    elif path_without_ext.startswith(project_id) and len(path_without_ext) > len(project_id):
+                                        next_char = path_without_ext[len(project_id)]
+                                        if next_char in ['/', '_']:
+                                            path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
+                                    
+                                    # 规范化路径（前端格式：斜杠替换为单下划线）
+                                    normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
+                                    normalized_path = re.sub(r'/+/', '_', normalized_path)
+                                    normalized_path = re.sub(r'^_+|_+$', '', normalized_path)
+                                    normalized_path = re.sub(r'_+', '_', normalized_path)
+                                    
+                                    if file_ext:
+                                        normalized_path = f'{normalized_path}_{file_ext}'
+                                    
+                                    frontend_session_id = f'{project_id}_{normalized_path}'
+                                    
+                                    # 生成后端格式的 sessionId
+                                    from modules.utils.idConverter import normalize_file_path_to_session_id
+                                    backend_session_id = normalize_file_path_to_session_id(file_id, project_id)
+                                    
+                                    logger.info(f"[批量删除] 准备删除会话: fileId={file_id}, projectId={project_id}")
+                                    logger.debug(f"[批量删除] 前端格式 sessionId: {frontend_session_id}, 后端格式: {backend_session_id}")
+                                    
+                                    # 调用会话删除服务（优先尝试前端格式）
                                     from modules.services.sessionService import SessionService
                                     session_service = SessionService()
                                     await session_service.initialize()
-                                    success = await session_service.delete_session(session_id)
                                     
+                                    success = await session_service.delete_session(frontend_session_id)
                                     if success:
-                                        logger.info(f"[批量删除] ✓ 成功删除会话: sessionId={session_id}, fileId={file_id}")
+                                        logger.info(f"[批量删除] ✓ 成功删除会话（前端格式）: sessionId={frontend_session_id}")
+                                    elif backend_session_id != frontend_session_id:
+                                        success = await session_service.delete_session(backend_session_id)
+                                        if success:
+                                            logger.info(f"[批量删除] ✓ 成功删除会话（后端格式）: sessionId={backend_session_id}")
+                                        else:
+                                            logger.warning(f"[批量删除] ✗ 两种格式的会话都删除失败: 前端={frontend_session_id}, 后端={backend_session_id}")
                                     else:
-                                        logger.warning(f"[批量删除] ✗ 会话删除失败或不存在: sessionId={session_id}, fileId={file_id}")
+                                        logger.warning(f"[批量删除] ✗ 会话删除失败或不存在: sessionId={frontend_session_id}")
                                 except Exception as e:
                                     logger.warning(f"[批量删除] ✗ 删除会话异常（已忽略）: fileId={file_id}, projectId={project_id}, 错误: {str(e)}")
                         except Exception as e:
@@ -959,22 +996,67 @@ async def delete(request: Request):
                     # 删除对应的会话（如果是文件且找到了 projectId）
                     if project_id and not is_folder:
                         try:
-                            from modules.utils.idConverter import normalize_file_path_to_session_id
-                            # 生成 sessionId（使用与前端一致的逻辑）
-                            # 使用原始 file_id 生成 sessionId，确保与创建时一致
-                            session_id = normalize_file_path_to_session_id(file_id, project_id)
-                            logger.info(f"[删除] 准备删除会话: sessionId={session_id}, fileId={file_id}, projectId={project_id}")
+                            # 生成两种格式的 sessionId（前端格式和后端格式）
+                            # 前端格式：{projectId}_{normalizedPath}（单下划线分隔）
+                            # 后端格式：{projectId}__{normalizedPath}（双下划线分隔目录）
                             
-                            # 调用会话删除服务
+                            # 1. 生成前端格式的 sessionId（与前端 sessionSyncService.generateSessionId 一致）
+                            import re
+                            clean_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+                            path_without_ext = clean_file_id
+                            file_ext = ''
+                            if '.' in clean_file_id:
+                                parts = clean_file_id.rsplit('.', 1)
+                                path_without_ext = parts[0]
+                                file_ext = parts[1] if len(parts) > 1 else ''
+                            
+                            # 去除 projectId 前缀
+                            if path_without_ext.startswith(f'{project_id}/'):
+                                path_without_ext = path_without_ext[len(project_id) + 1:]
+                            elif path_without_ext.startswith(project_id) and len(path_without_ext) > len(project_id):
+                                next_char = path_without_ext[len(project_id)]
+                                if next_char in ['/', '_']:
+                                    path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
+                            
+                            # 规范化路径（前端格式：斜杠替换为单下划线）
+                            normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
+                            normalized_path = re.sub(r'/+/', '_', normalized_path)
+                            normalized_path = re.sub(r'^_+|_+$', '', normalized_path)
+                            normalized_path = re.sub(r'_+', '_', normalized_path)
+                            
+                            if file_ext:
+                                normalized_path = f'{normalized_path}_{file_ext}'
+                            
+                            frontend_session_id = f'{project_id}_{normalized_path}'
+                            
+                            # 2. 生成后端格式的 sessionId
+                            from modules.utils.idConverter import normalize_file_path_to_session_id
+                            backend_session_id = normalize_file_path_to_session_id(file_id, project_id)
+                            
+                            logger.info(f"[删除] 准备删除会话: fileId={file_id}, projectId={project_id}")
+                            logger.debug(f"[删除] 前端格式 sessionId: {frontend_session_id}")
+                            logger.debug(f"[删除] 后端格式 sessionId: {backend_session_id}")
+                            
+                            # 调用会话删除服务（优先尝试前端格式，因为前端会调用这个格式）
                             from modules.services.sessionService import SessionService
                             session_service = SessionService()
                             await session_service.initialize()
-                            success = await session_service.delete_session(session_id)
                             
+                            # 尝试删除前端格式的会话
+                            success = await session_service.delete_session(frontend_session_id)
                             if success:
-                                logger.info(f"[删除] ✓ 成功删除会话: sessionId={session_id}, fileId={file_id}")
+                                logger.info(f"[删除] ✓ 成功删除会话（前端格式）: sessionId={frontend_session_id}")
                             else:
-                                logger.warning(f"[删除] ✗ 会话删除失败或不存在: sessionId={session_id}, fileId={file_id}")
+                                # 如果前端格式删除失败，尝试后端格式
+                                logger.debug(f"[删除] 前端格式删除失败，尝试后端格式: {backend_session_id}")
+                                if backend_session_id != frontend_session_id:
+                                    success = await session_service.delete_session(backend_session_id)
+                                    if success:
+                                        logger.info(f"[删除] ✓ 成功删除会话（后端格式）: sessionId={backend_session_id}")
+                                    else:
+                                        logger.warning(f"[删除] ✗ 两种格式的会话都删除失败: 前端={frontend_session_id}, 后端={backend_session_id}")
+                                else:
+                                    logger.warning(f"[删除] ✗ 会话删除失败或不存在: sessionId={frontend_session_id}")
                         except Exception as e:
                             logger.warning(f"[删除] ✗ 删除会话异常（已忽略）: fileId={file_id}, projectId={project_id}, 错误: {str(e)}")
                             # 即使删除会话失败，也继续删除 MongoDB 记录
@@ -1106,21 +1188,58 @@ async def delete(request: Request):
                         # 删除对应的会话（如果是文件且找到了 projectId）
                         if project_id and not is_folder:
                             try:
-                                from modules.utils.idConverter import normalize_file_path_to_session_id
-                                # 生成 sessionId
-                                session_id = normalize_file_path_to_session_id(target_file_id, project_id)
-                                logger.info(f"[删除] 准备删除会话: sessionId={session_id}, fileId={target_file_id}, projectId={project_id}")
+                                # 生成两种格式的 sessionId（前端格式和后端格式）
+                                import re
+                                clean_file_id = target_file_id.strip().lstrip('/').replace('\\', '/')
+                                path_without_ext = clean_file_id
+                                file_ext = ''
+                                if '.' in clean_file_id:
+                                    parts = clean_file_id.rsplit('.', 1)
+                                    path_without_ext = parts[0]
+                                    file_ext = parts[1] if len(parts) > 1 else ''
                                 
-                                # 调用会话删除服务
+                                # 去除 projectId 前缀
+                                if path_without_ext.startswith(f'{project_id}/'):
+                                    path_without_ext = path_without_ext[len(project_id) + 1:]
+                                elif path_without_ext.startswith(project_id) and len(path_without_ext) > len(project_id):
+                                    next_char = path_without_ext[len(project_id)]
+                                    if next_char in ['/', '_']:
+                                        path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
+                                
+                                # 规范化路径（前端格式：斜杠替换为单下划线）
+                                normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
+                                normalized_path = re.sub(r'/+/', '_', normalized_path)
+                                normalized_path = re.sub(r'^_+|_+$', '', normalized_path)
+                                normalized_path = re.sub(r'_+', '_', normalized_path)
+                                
+                                if file_ext:
+                                    normalized_path = f'{normalized_path}_{file_ext}'
+                                
+                                frontend_session_id = f'{project_id}_{normalized_path}'
+                                
+                                # 生成后端格式的 sessionId
+                                from modules.utils.idConverter import normalize_file_path_to_session_id
+                                backend_session_id = normalize_file_path_to_session_id(target_file_id, project_id)
+                                
+                                logger.info(f"[删除] 准备删除会话: fileId={target_file_id}, projectId={project_id}")
+                                logger.debug(f"[删除] 前端格式 sessionId: {frontend_session_id}, 后端格式: {backend_session_id}")
+                                
+                                # 调用会话删除服务（优先尝试前端格式）
                                 from modules.services.sessionService import SessionService
                                 session_service = SessionService()
                                 await session_service.initialize()
-                                success = await session_service.delete_session(session_id)
                                 
+                                success = await session_service.delete_session(frontend_session_id)
                                 if success:
-                                    logger.info(f"[删除] ✓ 成功删除会话: sessionId={session_id}, fileId={target_file_id}")
+                                    logger.info(f"[删除] ✓ 成功删除会话（前端格式）: sessionId={frontend_session_id}")
+                                elif backend_session_id != frontend_session_id:
+                                    success = await session_service.delete_session(backend_session_id)
+                                    if success:
+                                        logger.info(f"[删除] ✓ 成功删除会话（后端格式）: sessionId={backend_session_id}")
+                                    else:
+                                        logger.warning(f"[删除] ✗ 两种格式的会话都删除失败: 前端={frontend_session_id}, 后端={backend_session_id}")
                                 else:
-                                    logger.warning(f"[删除] ✗ 会话删除失败或不存在: sessionId={session_id}, fileId={target_file_id}")
+                                    logger.warning(f"[删除] ✗ 会话删除失败或不存在: sessionId={frontend_session_id}")
                             except Exception as e:
                                 logger.warning(f"[删除] ✗ 删除会话异常（已忽略）: fileId={target_file_id}, projectId={project_id}, 错误: {str(e)}")
                     except Exception as e:
