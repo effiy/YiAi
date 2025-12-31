@@ -724,7 +724,8 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
         
         # 对于 projectTree 集合，同步到 static 目录
         if cname == 'projectTree':
-            project_id = data.get('projectId')
+            # 从更新后的文档中获取 projectId（因为更新请求可能不包含 projectId 字段）
+            project_id = result.get('projectId') if result else data.get('projectId')
             if project_id:
                 try:
                     tree_sync_service = await get_tree_sync_service()
@@ -735,6 +736,8 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                         logger.warning(f"ProjectTree 同步到 static 目录失败: projectId={project_id}, 错误: {tree_sync_result.get('error')}")
                 except Exception as e:
                     logger.warning(f"同步 ProjectTree 到 static 目录失败: {str(e)}")
+            else:
+                logger.warning(f"ProjectTree 更新后无法获取 projectId，跳过同步到 static 目录")
 
         # 返回实际使用的key值
         actual_key = result.get('key', identifier)
