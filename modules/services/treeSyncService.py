@@ -340,30 +340,8 @@ class TreeSyncService:
         await self._ensure_initialized()
         
         try:
-            # 规范化文件路径
-            # 1. 去除开头的斜杠和多余的空格，统一路径分隔符
-            normalized_file_id = file_id.strip().lstrip('/').replace('\\', '/')
-            
-            # 2. 分割路径为部分，去除空部分
-            parts = [p for p in normalized_file_id.split('/') if p]
-            
-            if not parts:
-                # 空路径，使用 project_id 作为文件名（不应该发生，但做保护）
-                normalized_file_id = project_id
-            else:
-                # 3. 去除所有重复的 project_id 前缀（不区分大小写）
-                # 只去除开头的连续重复 project_id，保留路径中间可能存在的同名目录
-                while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
-                    # 去除第一个重复的 project_id
-                    parts = parts[1:]
-                
-                # 4. 确保路径以 project_id 开头（不区分大小写），且只有一个 project_id 前缀
-                if parts[0].lower() != project_id.lower():
-                    # 不以 project_id 开头，添加前缀
-                    normalized_file_id = f"{project_id}/{'/'.join(parts)}"
-                else:
-                    # 已经以 project_id 开头，直接使用（已经处理了开头的连续重复）
-                    normalized_file_id = '/'.join(parts)
+            # 使用统一的规范化方法，确保与删除时使用完全相同的逻辑
+            normalized_file_id = self._normalize_file_id_for_static(file_id, project_id)
             
             # 写入文件系统
             success = self.file_storage.write_file_content(normalized_file_id, content)
@@ -421,19 +399,8 @@ class TreeSyncService:
                 
                 # 4. 使用 sync_project_file_to_static 的规范化逻辑（与写入时保持一致）
                 # 这个逻辑与写入文件时使用的逻辑完全一致
-                normalized_file_id = clean_file_id
-                if parts:
-                    # 去除重复的 project_id 前缀
-                    while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
-                        parts = parts[1:]
-                    
-                    # 确保路径以 project_id 开头
-                    if parts[0].lower() != project_id.lower():
-                        normalized_file_id = f"{project_id}/{'/'.join(parts)}"
-                    else:
-                        normalized_file_id = '/'.join(parts)
-                
-                if normalized_file_id not in paths_to_try:
+                normalized_file_id = self._normalize_file_id_for_static(clean_file_id, project_id)
+                if normalized_file_id and normalized_file_id not in paths_to_try:
                     paths_to_try.append(normalized_file_id)
             
             # 添加原始 file_id（去重）
@@ -487,6 +454,43 @@ class TreeSyncService:
         except Exception as e:
             logger.error(f"从 static 目录删除文件失败: fileId={file_id}, 错误: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
+    
+    def _normalize_file_id_for_static(self, file_id: str, project_id: str) -> str:
+        """
+        规范化文件ID，与 sync_project_file_to_static 使用完全相同的逻辑
+        
+        Args:
+            file_id: 文件ID
+            project_id: 项目ID
+        
+        Returns:
+            规范化后的文件ID
+        """
+        # 1. 去除开头的斜杠和多余的空格，统一路径分隔符
+        normalized_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+        
+        # 2. 分割路径为部分，去除空部分
+        parts = [p for p in normalized_file_id.split('/') if p]
+        
+        if not parts:
+            # 空路径，使用 project_id 作为文件名（不应该发生，但做保护）
+            return project_id
+        
+        # 3. 去除所有重复的 project_id 前缀（不区分大小写）
+        # 只去除开头的连续重复 project_id，保留路径中间可能存在的同名目录
+        while len(parts) > 1 and parts[0].lower() == project_id.lower() and parts[1].lower() == project_id.lower():
+            # 去除第一个重复的 project_id
+            parts = parts[1:]
+        
+        # 4. 确保路径以 project_id 开头（不区分大小写），且只有一个 project_id 前缀
+        if parts[0].lower() != project_id.lower():
+            # 不以 project_id 开头，添加前缀
+            normalized_file_id = f"{project_id}/{'/'.join(parts)}"
+        else:
+            # 已经以 project_id 开头，直接使用（已经处理了开头的连续重复）
+            normalized_file_id = '/'.join(parts)
+        
+        return normalized_file_id
     
     async def _find_file_by_name_in_project(self, file_id: str, project_id: str) -> Optional[str]:
         """
