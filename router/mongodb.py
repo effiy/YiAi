@@ -866,9 +866,72 @@ async def delete(request: Request):
             if result.deleted_count == 0:
                 raise ValueError(f"未找到link为 {link} 的数据")
             return RespOk(data={"deleted_count": result.deleted_count})
+        
+        elif query_params.get('fileId'):
+            # 支持通过 fileId 删除（主要用于 projectFiles 集合）
+            file_id = query_params.get('fileId')
+            if cname == 'projectFiles':
+                # 先查找文件，获取文件信息以便删除静态文件
+                file_doc = await collection.find_one({
+                    '$or': [
+                        {'fileId': file_id},
+                        {'id': file_id},
+                        {'path': file_id}
+                    ]
+                })
+                if file_doc:
+                    doc_file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
+                    project_id = file_doc.get('projectId')
+                    doc_key = file_doc.get('key')
+                    
+                    # 删除静态文件
+                    if doc_file_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            await tree_sync_service.delete_project_file_from_static(doc_file_id)
+                        except Exception as e:
+                            logger.warning(f"删除 static 目录文件失败: fileId={doc_file_id}, 错误: {str(e)}")
+                    
+                    # 同步整个项目树
+                    if project_id:
+                        try:
+                            tree_sync_service = await get_tree_sync_service()
+                            await tree_sync_service.sync_project_tree_to_static(project_id)
+                        except Exception as e:
+                            logger.warning(f"同步项目树到 static 目录失败: {str(e)}")
+                    
+                    # 使用 key 删除（如果存在），否则使用 fileId/id/path 删除
+                    if doc_key:
+                        result = await collection.delete_one({'key': doc_key})
+                    else:
+                        result = await collection.delete_one({
+                            '$or': [
+                                {'fileId': file_id},
+                                {'id': file_id},
+                                {'path': file_id}
+                            ]
+                        })
+                    
+                    if result.deleted_count == 0:
+                        raise ValueError(f"未找到fileId为 {file_id} 的数据")
+                    return RespOk(data={"deleted_count": result.deleted_count})
+                else:
+                    raise ValueError(f"未找到fileId为 {file_id} 的数据")
+            else:
+                # 非 projectFiles 集合，直接通过 fileId 删除
+                result = await collection.delete_one({
+                    '$or': [
+                        {'fileId': file_id},
+                        {'id': file_id},
+                        {'path': file_id}
+                    ]
+                })
+                if result.deleted_count == 0:
+                    raise ValueError(f"未找到fileId为 {file_id} 的数据")
+                return RespOk(data={"deleted_count": result.deleted_count})
 
         else:
-            raise ValueError("删除操作必须提供有效的key、link、keys或links参数")
+            raise ValueError("删除操作必须提供有效的key、link、keys、links或fileId参数")
 
     except ValueError as e:
         logger.warning(f"删除数据验证失败: {str(e)}")
