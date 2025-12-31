@@ -100,104 +100,47 @@ class SessionService:
     
     def _try_parse_file_path_from_session_id(self, session_id: str) -> Optional[str]:
         """
-        从 Session ID 尝试解析文件路径，尝试多种路径组合
+        从 Session ID 尝试解析文件路径
         
-        对于 session ID 如 knowledge_constructing_codereview_cr_claim_amount_2025_12_md，
-        会尝试以下路径组合：
-        1. knowledge/constructing/codereview/cr_claim_amount_2025_12.md (将下划线转换为斜杠)
-        2. knowledge/constructing/codereview/cr_claim-amount_2025-12.md (尝试连字符变体)
-        3. knowledge/constructing/codereview/cr_claim_amount_2025_12_*.md (模糊匹配)
-        4. 其他可能的组合...
+        使用新的 ID 转换工具，支持：
+        1. 新格式：使用双下划线 `__` 作为目录分隔符（准确）
+        2. 旧格式：通过文件系统查找确定正确的路径（兼容）
         
         Args:
-            session_id: Session ID，如：knowledge_constructing_codereview_cr_claim_amount_2025_12_md
+            session_id: Session ID，如：knowledge__constructing__codereview__test_md 或 knowledge_constructing_codereview_test_md
         
         Returns:
             文件路径（如果找到存在的文件），否则返回 None
         """
-        import os
-        import glob
-        from modules.utils.idConverter import parse_session_id_to_file_path
+        from modules.utils.idConverter import parse_session_id_to_file_path, extract_project_id_from_file_path
         
         # 从 Session ID 提取项目ID
-        # 格式：{projectId}_{pathPart1}_{pathPart2}...
-        # 例如：knowledge_constructing_codereview_test_md
-        # parts[0] = 'knowledge' (项目ID)
-        # parts[1] = 'constructing' (路径第一部分)
-        # parts[2] = 'codereview_test_md' (路径剩余部分)
-        parts = session_id.split("_", 2)
-        if len(parts) < 2:
-            return None
-        
-        project_id = parts[0]  # 项目ID是第一部分
-        if len(parts) >= 3:
-            # 合并路径部分
-            path_part = f"{parts[1]}_{parts[2]}"
+        # 新格式：{projectId}__{path}
+        # 旧格式：{projectId}_{path}
+        if '__' in session_id:
+            # 新格式
+            parts = session_id.split('__', 1)
+            project_id = parts[0]
         else:
-            path_part = parts[1] if len(parts) > 1 else ""
+            # 旧格式
+            parts = session_id.split('_', 1)
+            if len(parts) < 2:
+                return None
+            project_id = parts[0]
         
-        # 处理扩展名（格式：path_md -> path.md）
-        file_ext = ''
-        if '_' in path_part:
-            # 检查最后一部分是否是扩展名（通常是 1-5 个字符）
-            path_parts = path_part.rsplit('_', 1)
-            if len(path_parts) == 2 and len(path_parts[1]) <= 5 and path_parts[1].isalnum():
-                path_part = path_parts[0]
-                file_ext = path_parts[1]
+        # 使用新的解析函数，传入文件存储的基础目录
+        base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
+        file_path = parse_session_id_to_file_path(session_id, project_id, base_dir)
         
-        # 如果没有扩展名，默认使用 .md
-        if not file_ext:
-            file_ext = 'md'
-        
-        # 生成可能的路径组合
-        # 将下划线分隔的路径部分转换为可能的文件路径
-        path_segments = path_part.split('_')
-        
-        # 尝试不同的下划线到斜杠的转换方式
-        # 策略：优先尝试将下划线转换为斜杠的路径（更符合目录结构）
-        possible_paths = []
-        
-        # 优先尝试：将下划线转换为斜杠的路径（从最深层到最浅层）
-        # 例如：constructing_codereview_cr_claim_amount_2025_12 -> constructing/codereview/cr_claim_amount_2025_12
-        if len(path_segments) >= 2:
-            # 尝试不同的分割点，从后往前（保留更多目录层级）
-            for i in range(1, len(path_segments)):
-                dir_part = '/'.join(path_segments[:i])
-                file_part = '_'.join(path_segments[i:])
-                # 基本路径
-                possible_paths.append(f"{project_id}/{dir_part}/{file_part}.{file_ext}")
-                # 尝试连字符变体（将文件名中的下划线替换为连字符）
-                # 例如：cr_claim_amount -> cr_claim-amount
-                if '_' in file_part:
-                    file_part_with_dash = file_part.replace('_', '-', 1) if file_part.count('_') > 0 else file_part
-                    if file_part_with_dash != file_part:
-                        possible_paths.append(f"{project_id}/{dir_part}/{file_part_with_dash}.{file_ext}")
-        
-        # 备用方案：保持所有下划线不变（原始逻辑）
-        original_path = '_'.join(path_segments)
-        possible_paths.append(f"{project_id}/{original_path}.{file_ext}")
-        
-        # 去重（保持顺序）
-        seen = set()
-        unique_paths = []
-        for path in possible_paths:
-            if path not in seen:
-                seen.add(path)
-                unique_paths.append(path)
-        possible_paths = unique_paths
-        
-        # 检查每个可能的路径，返回第一个存在的文件
-        for file_path in possible_paths:
+        if file_path:
+            # 验证文件是否存在
             if self.file_storage.file_exists(file_path):
                 logger.debug(f"找到存在的文件路径: sessionId={session_id}, filePath={file_path}")
                 return file_path
+            else:
+                logger.debug(f"解析的文件路径不存在: sessionId={session_id}, filePath={file_path}")
         
-        # 如果精确匹配都失败，尝试模糊匹配（查找相似的文件名）
-        # 例如：constructing_codereview_cr_claim_amount_2025_12 可能对应 constructing/codereview/cr_claim-amount_2025-12_胡俊天.md
-        # 策略：尝试不同的目录/文件名分割点，在目录中查找匹配的文件
-        if len(path_segments) >= 2:
-            # 尝试不同的分割点：从 2 个目录段开始，到 len(path_segments)-1
-            # 例如：对于 constructing_codereview_cr_claim_amount_2025_12
+        return None
             # 尝试：constructing/codereview/ + cr_claim_amount_2025_12*
             #       constructing/ + codereview_cr_claim_amount_2025_12*
             for dir_end_idx in range(1, len(path_segments)):
@@ -254,8 +197,9 @@ class SessionService:
                             logger.debug(f"通过模糊匹配（连字符变体）找到文件: sessionId={session_id}, filePath={file_path}")
                             return file_path
         
-        # 如果所有路径都不存在，返回默认解析的路径（使用原始逻辑）
-        default_path = parse_session_id_to_file_path(session_id, project_id)
+        # 如果所有路径都不存在，返回默认解析的路径（使用原始逻辑，但传入 base_dir）
+        base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
+        default_path = parse_session_id_to_file_path(session_id, project_id, base_dir)
         logger.debug(f"未找到存在的文件，使用默认路径: sessionId={session_id}, filePath={default_path}")
         return default_path
     
@@ -608,15 +552,18 @@ class SessionService:
                     file_id = mapping.get("fileId")
                 else:
                     # 尝试从 Session ID 解析
-                    # Session ID 格式：{projectId}_{filePath}
-                    # 例如：knowledge_constructing_codereview_test_md
-                    # parts[0] = 'knowledge' (项目ID)
-                    # parts[1] = 'constructing' (路径第一部分)
-                    # parts[2] = 'codereview_test_md' (路径剩余部分)
-                    parts = session_id.split("_", 2)
-                    if len(parts) >= 2:
-                        project_id = parts[0]  # 项目ID是第一部分
-                        file_id = parse_session_id_to_file_path(session_id, project_id)
+                    # Session ID 格式：{projectId}_{filePath} 或 {projectId}__{filePath}
+                    # 例如：knowledge_constructing_codereview_test_md 或 knowledge__constructing__codereview__test_md
+                    if '__' in session_id:
+                        parts = session_id.split('__', 1)
+                        project_id = parts[0]
+                    else:
+                        parts = session_id.split("_", 2)
+                        project_id = parts[0] if len(parts) >= 1 else None
+                    
+                    if project_id:
+                        base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
+                        file_id = parse_session_id_to_file_path(session_id, project_id, base_dir)
                     else:
                         project_id = None
                         file_id = None
@@ -916,50 +863,50 @@ class SessionService:
                     try:
                         
                         # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
-                        # 格式：{projectId}_{filePath}
-                        # 例如：knowledge_constructing_codereview_test_md
-                        # parts[0] = 'knowledge' (项目ID)
-                        # parts[1] = 'constructing' (路径第一部分)
-                        # parts[2] = 'codereview_test_md' (路径剩余部分)
-                        parts = session_id.split("_", 2)  # 最多分割2次
-                        if len(parts) >= 2:
-                            project_id = parts[0]  # 项目ID是第一部分
-                            if len(parts) >= 3:
-                                # 将路径部分合并，下划线转换为斜杠
-                                file_path_normalized = f"{parts[1]}/{parts[2].replace('_', '/')}"
-                            else:
-                                file_path_normalized = parts[1]
-                            # 处理扩展名（如果最后一部分是扩展名，如 _md）
-                            if '_' in file_path_normalized:
-                                path_parts = file_path_normalized.rsplit('_', 1)
-                                if len(path_parts) == 2 and len(path_parts[1]) <= 5 and path_parts[1].isalnum():
-                                    # 最后一部分是扩展名，转换为点号格式
-                                    file_path = f"{path_parts[0]}.{path_parts[1]}"
+                        # 使用新的解析方法，支持新格式和旧格式
+                        from modules.utils.idConverter import parse_session_id_to_file_path, normalize_project_file_id
+                        
+                        # 提取项目ID
+                        if '__' in session_id:
+                            # 新格式：{projectId}__{path}
+                            parts = session_id.split('__', 1)
+                            project_id = parts[0]
+                        else:
+                            # 旧格式：{projectId}_{path}
+                            parts = session_id.split('_', 1)
+                            project_id = parts[0] if len(parts) >= 1 else None
+                        
+                        if project_id:
+                            # 使用新的解析方法，传入 base_dir 以便通过文件系统查找
+                            base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
+                            file_path = parse_session_id_to_file_path(session_id, project_id, base_dir)
+                            
+                            if file_path:
+                                # 规范化文件路径，确保格式统一
+                                normalized_file_path = normalize_project_file_id(file_path, project_id)
+                                
+                                # 删除对应的项目文件
+                                # 从 projectFiles 集合中删除，通过 fileId 或 path 字段匹配
+                                files_query = {
+                                    "projectId": project_id,
+                                    "$or": [
+                                        {"fileId": normalized_file_path},
+                                        {"path": normalized_file_path},
+                                        {"id": normalized_file_path}
+                                    ]
+                                }
+                                
+                                deleted_files = await self.mongo_client.delete_many(
+                                    collection_name="projectFiles",
+                                    query=files_query
+                                )
+                                
+                                if deleted_files > 0:
+                                    logger.info(f"[删除会话] 已删除 aicr 项目文件: projectId={project_id}, filePath={normalized_file_path}, deleted={deleted_files}")
                                 else:
-                                    file_path = file_path_normalized.replace("_", "/")
+                                    logger.debug(f"[删除会话] 未找到对应的 aicr 项目文件: projectId={project_id}, filePath={normalized_file_path}")
                             else:
-                                file_path = file_path_normalized
-                            
-                            # 删除对应的项目文件
-                            # 从 projectFiles 集合中删除，通过 fileId 或 path 字段匹配
-                            files_query = {
-                                "projectId": project_id,
-                                "$or": [
-                                    {"fileId": file_path},
-                                    {"path": file_path},
-                                    {"id": file_path}
-                                ]
-                            }
-                            
-                            deleted_files = await self.mongo_client.delete_many(
-                                collection_name="projectFiles",
-                                query=files_query
-                            )
-                            
-                            if deleted_files > 0:
-                                logger.info(f"已删除 aicr 项目文件: projectId={project_id}, filePath={file_path}, deleted={deleted_files}")
-                            else:
-                                logger.debug(f"未找到对应的 aicr 项目文件: projectId={project_id}, filePath={file_path}")
+                                logger.warning(f"[删除会话] 无法解析文件路径: sessionId={session_id}")
                             
                             # 检查该projectId是否还有其他aicr会话，如果没有，删除所有projectFiles和projectTree
                             try:
@@ -1227,28 +1174,34 @@ class SessionService:
                             
                             # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles，仅对 AICR 格式的 session）
                             if is_aicr_session_id(session_id):
-                                parts = session_id.split("_", 2)
-                                if len(parts) >= 2:
-                                    project_id = parts[0]  # 项目ID是第一部分
-                                    if len(parts) >= 3:
-                                        # 将路径部分合并，下划线转换为斜杠
-                                        file_path_normalized = f"{parts[1]}/{parts[2].replace('_', '/')}"
-                                    else:
-                                        file_path_normalized = parts[1]
-                                    # 处理扩展名
-                                    if '_' in file_path_normalized:
-                                        path_parts = file_path_normalized.rsplit('_', 1)
-                                        if len(path_parts) == 2 and len(path_parts[1]) <= 5 and path_parts[1].isalnum():
-                                            file_path = f"{path_parts[0]}.{path_parts[1]}"
-                                        else:
-                                            file_path = file_path_normalized.replace("_", "/")
-                                    else:
-                                        file_path = file_path_normalized
+                                from modules.utils.idConverter import parse_session_id_to_file_path, normalize_project_file_id
+                                
+                                # 提取项目ID
+                                if '__' in session_id:
+                                    # 新格式：{projectId}__{path}
+                                    parts = session_id.split('__', 1)
+                                    project_id = parts[0]
+                                else:
+                                    # 旧格式：{projectId}_{path}
+                                    parts = session_id.split('_', 1)
+                                    project_id = parts[0] if len(parts) >= 1 else None
+                                
+                                if project_id:
+                                    # 使用新的解析方法，传入 base_dir 以便通过文件系统查找
+                                    base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
+                                    file_path = parse_session_id_to_file_path(session_id, project_id, base_dir)
                                     
-                                    files_to_delete.append({
-                                        "projectId": project_id,
-                                        "filePath": file_path
-                                    })
+                                    if file_path:
+                                        # 规范化文件路径，确保格式统一
+                                        normalized_file_path = normalize_project_file_id(file_path, project_id)
+                                        
+                                        files_to_delete.append({
+                                            "projectId": project_id,
+                                            "filePath": normalized_file_path
+                                        })
+                                        logger.info(f"[批量删除] 解析文件路径: sessionId={session_id}, filePath={normalized_file_path}")
+                                    else:
+                                        logger.warning(f"[批量删除] 无法解析文件路径: sessionId={session_id}")
                         
                         # 批量删除项目文件
                         for file_info in files_to_delete:
@@ -1386,15 +1339,18 @@ class SessionService:
                     file_id = mapping.get("fileId")
                 else:
                     # 尝试从 Session ID 解析
-                    # Session ID 格式：{projectId}_{filePath}
-                    # 例如：knowledge_constructing_codereview_test_md
-                    # parts[0] = 'knowledge' (项目ID)
-                    # parts[1] = 'constructing' (路径第一部分)
-                    # parts[2] = 'codereview_test_md' (路径剩余部分)
-                    parts = session_id.split("_", 2)
-                    if len(parts) >= 2:
-                        project_id = parts[0]  # 项目ID是第一部分
-                        file_id = parse_session_id_to_file_path(session_id, project_id)
+                    # Session ID 格式：{projectId}_{filePath} 或 {projectId}__{filePath}
+                    # 例如：knowledge_constructing_codereview_test_md 或 knowledge__constructing__codereview__test_md
+                    if '__' in session_id:
+                        parts = session_id.split('__', 1)
+                        project_id = parts[0]
+                    else:
+                        parts = session_id.split("_", 2)
+                        project_id = parts[0] if len(parts) >= 1 else None
+                    
+                    if project_id:
+                        base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
+                        file_id = parse_session_id_to_file_path(session_id, project_id, base_dir)
                     else:
                         project_id = None
                         file_id = None
