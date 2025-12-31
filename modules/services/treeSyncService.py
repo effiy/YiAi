@@ -408,6 +408,56 @@ class TreeSyncService:
             logger.error(f"从 static 目录删除文件失败: fileId={file_id}, 错误: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
     
+    async def delete_project_folder_from_static(self, folder_id: str) -> Dict[str, Any]:
+        """
+        从 static 目录递归删除文件夹及其所有子文件
+        
+        Args:
+            folder_id: 文件夹ID（路径）
+        
+        Returns:
+            删除结果，包含删除的文件数量
+        """
+        await self._ensure_initialized()
+        
+        try:
+            folder_path = self.file_storage.get_file_path(folder_id)
+            deleted_count = 0
+            
+            if os.path.exists(folder_path):
+                if os.path.isdir(folder_path):
+                    # 递归删除文件夹下的所有文件
+                    for root, dirs, files in os.walk(folder_path, topdown=False):
+                        # 先删除所有文件
+                        for file_name in files:
+                            file_path = os.path.join(root, file_name)
+                            try:
+                                os.remove(file_path)
+                                deleted_count += 1
+                                logger.debug(f"删除文件: {file_path}")
+                            except Exception as e:
+                                logger.warning(f"删除文件失败: {file_path}, 错误: {str(e)}")
+                        
+                        # 再删除空目录
+                        try:
+                            os.rmdir(root)
+                            logger.debug(f"删除空目录: {root}")
+                        except Exception as e:
+                            logger.debug(f"删除目录失败（可能非空）: {root}, 错误: {str(e)}")
+                    
+                    logger.info(f"从 static 目录递归删除文件夹成功: folderId={folder_id}, 删除文件数={deleted_count}")
+                    return {"success": True, "folder_id": folder_id, "deleted_count": deleted_count}
+                else:
+                    # 如果是文件而不是文件夹，使用文件删除方法
+                    return await self.delete_project_file_from_static(folder_id)
+            else:
+                logger.debug(f"文件夹不存在，跳过删除: folderId={folder_id}")
+                return {"success": True, "folder_id": folder_id, "skipped": True, "deleted_count": 0}
+        
+        except Exception as e:
+            logger.error(f"从 static 目录递归删除文件夹失败: folderId={folder_id}, 错误: {str(e)}", exc_info=True)
+            return {"success": False, "error": str(e), "deleted_count": deleted_count}
+    
     async def verify_project_tree_sync(self, project_id: str) -> Dict[str, Any]:
         """
         验证项目树同步状态
