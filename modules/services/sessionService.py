@@ -141,67 +141,6 @@ class SessionService:
                 logger.debug(f"解析的文件路径不存在: sessionId={session_id}, filePath={file_path}")
         
         return None
-            # 尝试：constructing/codereview/ + cr_claim_amount_2025_12*
-            #       constructing/ + codereview_cr_claim_amount_2025_12*
-            for dir_end_idx in range(1, len(path_segments)):
-                base_dir_segments = path_segments[:dir_end_idx]
-                file_name_parts = path_segments[dir_end_idx:]
-                
-                if not base_dir_segments or not file_name_parts:
-                    continue
-                
-                base_dir = f"{project_id}/{'/'.join(base_dir_segments)}"
-                base_dir_path = self.file_storage.get_file_path(base_dir)
-                
-                if not os.path.isdir(base_dir_path):
-                    continue
-                
-                # 构建文件名基础（使用下划线连接）
-                file_name_base = '_'.join(file_name_parts)
-                
-                # 在目录中查找匹配的文件
-                # 查找以 file_name_base 开头的 .md 文件
-                pattern = os.path.join(base_dir_path, f"{file_name_base}*.{file_ext}")
-                matches = glob.glob(pattern)
-                if matches:
-                    # 找到匹配的文件，转换为相对路径
-                    matched_file = matches[0]
-                    rel_path = os.path.relpath(matched_file, self.file_storage.base_dir)
-                    # 统一使用正斜杠
-                    file_path = rel_path.replace(os.sep, '/')
-                    logger.debug(f"通过模糊匹配找到文件: sessionId={session_id}, filePath={file_path}")
-                    return file_path
-                
-                # 也尝试将文件名中的下划线替换为连字符的变体
-                # 例如：cr_claim_amount_2025_12 -> cr_claim-amount_2025-12
-                # 尝试替换第一个下划线为连字符
-                if '_' in file_name_base:
-                    # 尝试多种连字符变体
-                    variants = []
-                    # 替换第一个下划线
-                    first_dash = file_name_base.replace('_', '-', 1)
-                    if first_dash != file_name_base:
-                        variants.append(first_dash)
-                    # 替换所有下划线
-                    all_dash = file_name_base.replace('_', '-')
-                    if all_dash != file_name_base and all_dash not in variants:
-                        variants.append(all_dash)
-                    
-                    for variant in variants:
-                        pattern = os.path.join(base_dir_path, f"{variant}*.{file_ext}")
-                        matches = glob.glob(pattern)
-                        if matches:
-                            matched_file = matches[0]
-                            rel_path = os.path.relpath(matched_file, self.file_storage.base_dir)
-                            file_path = rel_path.replace(os.sep, '/')
-                            logger.debug(f"通过模糊匹配（连字符变体）找到文件: sessionId={session_id}, filePath={file_path}")
-                            return file_path
-        
-        # 如果所有路径都不存在，返回默认解析的路径（使用原始逻辑，但传入 base_dir）
-        base_dir = self.file_storage.base_dir if hasattr(self.file_storage, 'base_dir') else None
-        default_path = parse_session_id_to_file_path(session_id, project_id, base_dir)
-        logger.debug(f"未找到存在的文件，使用默认路径: sessionId={session_id}, filePath={default_path}")
-        return default_path
     
     def generate_session_id(self, url: Optional[str] = None) -> str:
         """
