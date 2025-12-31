@@ -827,46 +827,104 @@ class SessionService:
                         # 更新新闻状态失败不影响删除会话的结果
                         logger.warning(f"更新新闻状态失败: {str(e)}")
                 
-                # 处理 aicr 项目文件删除
-                # 会话ID格式：{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
-                if is_aicr_session_id(session_id):
-                    try:
-                        # 首先尝试从映射表获取文件ID
-                        file_id = None
-                        mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
-                        if mapping:
-                            file_id = mapping.get("fileId")
-                            logger.debug(f"找到映射关系: sessionId={session_id}, fileId={file_id}")
-                        
-                        # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
-                        if not file_id:
+                # 处理静态文件删除
+                # 对于所有包含下划线的 session_id，都尝试删除对应的静态文件
+                # 会话ID格式可能是：{projectId}_{filePath}（filePath中的特殊字符被替换为下划线）
+                file_id = None
+                
+                # 首先尝试从映射表获取文件ID（最可靠的方式）
+                try:
+                    mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                    if mapping:
+                        file_id = mapping.get("fileId")
+                        logger.info(f"[删除会话] 从映射表找到文件ID: sessionId={session_id}, fileId={file_id}")
+                except Exception as e:
+                    logger.debug(f"[删除会话] 从映射表获取文件ID失败: sessionId={session_id}, 错误: {str(e)}")
+                
+                # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
+                if not file_id:
+                    # 对于包含下划线的 session_id，尝试解析文件路径
+                    if '_' in session_id:
+                        try:
                             file_id = self._try_parse_file_path_from_session_id(session_id)
                             if file_id:
-                                logger.debug(f"从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
-                        
-                        # 删除静态文件系统中的文件
-                        if file_id:
-                            try:
-                                if self.file_storage.file_exists(file_id):
-                                    deleted = self.file_storage.delete_file(file_id)
-                                    if deleted:
-                                        logger.info(f"已删除 aicr 静态文件: sessionId={session_id}, fileId={file_id}")
-                                    else:
-                                        logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}")
-                                else:
-                                    logger.debug(f"静态文件不存在，跳过删除: sessionId={session_id}, fileId={file_id}")
-                            except Exception as e:
-                                # 删除静态文件失败不影响删除会话的结果
-                                logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
+                                logger.info(f"[删除会话] 从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
+                        except Exception as e:
+                            logger.debug(f"[删除会话] 解析文件路径失败: sessionId={session_id}, 错误: {str(e)}")
+                
+                # 如果仍然没有找到 file_id，但 session_id 包含下划线，尝试直接使用 session_id 作为文件路径
+                if not file_id and '_' in session_id:
+                    # 尝试将 session_id 转换为可能的文件路径
+                    # 例如：knowledge_constructing_codereview_test_md -> knowledge/constructing/codereview_test.md
+                    try:
+                        parts = session_id.split('_')
+                        if len(parts) >= 2:
+                            # 处理扩展名（最后一部分可能是扩展名）
+                            if len(parts) >= 3 and len(parts[-1]) <= 5 and parts[-1].isalnum():
+                                # 最后一部分是扩展名
+                                project_id = parts[0]
+                                path_parts = parts[1:-1]
+                                ext = parts[-1]
+                                # 尝试不同的路径组合
+                                possible_paths = [
+                                    f"{project_id}/{'/'.join(path_parts)}.{ext}",  # 所有下划线转斜杠
+                                    f"{project_id}/{'_'.join(path_parts)}.{ext}",  # 保持下划线
+                                ]
+                                # 检查哪个路径存在
+                                for possible_path in possible_paths:
+                                    if self.file_storage.file_exists(possible_path):
+                                        file_id = possible_path
+                                        logger.info(f"[删除会话] 通过路径匹配找到文件: sessionId={session_id}, fileId={file_id}")
+                                        break
+                    except Exception as e:
+                        logger.debug(f"[删除会话] 尝试路径匹配失败: sessionId={session_id}, 错误: {str(e)}")
+                
+                # 删除静态文件系统中的文件
+                if file_id:
+                    try:
+                        logger.info(f"[删除会话] 开始删除静态文件: sessionId={session_id}, fileId={file_id}")
+                        if self.file_storage.file_exists(file_id):
+                            deleted = self.file_storage.delete_file(file_id)
+                            if deleted:
+                                logger.info(f"[删除会话] 成功删除静态文件: sessionId={session_id}, fileId={file_id}")
+                            else:
+                                logger.warning(f"[删除会话] 删除静态文件失败: sessionId={session_id}, fileId={file_id}")
+                        else:
+                            logger.debug(f"[删除会话] 静态文件不存在，跳过删除: sessionId={session_id}, fileId={file_id}")
+                    except Exception as e:
+                        # 删除静态文件失败不影响删除会话的结果
+                        logger.warning(f"[删除会话] 删除静态文件异常: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
+                else:
+                    logger.debug(f"[删除会话] 无法确定文件ID，跳过删除静态文件: sessionId={session_id}")
+                
+                # 处理 aicr 项目文件删除（仅对 AICR 格式的 session）
+                if is_aicr_session_id(session_id):
+                    try:
                         
                         # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
                         # 格式：{projectId}_{filePath}
+                        # 例如：knowledge_constructing_codereview_test_md
+                        # parts[0] = 'knowledge' (项目ID)
+                        # parts[1] = 'constructing' (路径第一部分)
+                        # parts[2] = 'codereview_test_md' (路径剩余部分)
                         parts = session_id.split("_", 2)  # 最多分割2次
-                        if len(parts) >= 3:
-                            project_id = parts[1]
-                            file_path_normalized = parts[2]
-                            # 将下划线还原为斜杠，得到原始文件路径
-                            file_path = file_path_normalized.replace("_", "/")
+                        if len(parts) >= 2:
+                            project_id = parts[0]  # 项目ID是第一部分
+                            if len(parts) >= 3:
+                                # 将路径部分合并，下划线转换为斜杠
+                                file_path_normalized = f"{parts[1]}/{parts[2].replace('_', '/')}"
+                            else:
+                                file_path_normalized = parts[1]
+                            # 处理扩展名（如果最后一部分是扩展名，如 _md）
+                            if '_' in file_path_normalized:
+                                path_parts = file_path_normalized.rsplit('_', 1)
+                                if len(path_parts) == 2 and len(path_parts[1]) <= 5 and path_parts[1].isalnum():
+                                    # 最后一部分是扩展名，转换为点号格式
+                                    file_path = f"{path_parts[0]}.{path_parts[1]}"
+                                else:
+                                    file_path = file_path_normalized.replace("_", "/")
+                            else:
+                                file_path = file_path_normalized
                             
                             # 删除对应的项目文件
                             # 从 projectFiles 集合中删除，通过 fileId 或 path 字段匹配
