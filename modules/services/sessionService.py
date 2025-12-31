@@ -120,12 +120,21 @@ class SessionService:
         from modules.utils.idConverter import parse_session_id_to_file_path
         
         # 从 Session ID 提取项目ID
+        # 格式：{projectId}_{pathPart1}_{pathPart2}...
+        # 例如：knowledge_constructing_codereview_test_md
+        # parts[0] = 'knowledge' (项目ID)
+        # parts[1] = 'constructing' (路径第一部分)
+        # parts[2] = 'codereview_test_md' (路径剩余部分)
         parts = session_id.split("_", 2)
-        if len(parts) < 3:
+        if len(parts) < 2:
             return None
         
-        project_id = parts[1]
-        path_part = parts[2] if len(parts) > 2 else ""
+        project_id = parts[0]  # 项目ID是第一部分
+        if len(parts) >= 3:
+            # 合并路径部分
+            path_part = f"{parts[1]}_{parts[2]}"
+        else:
+            path_part = parts[1] if len(parts) > 1 else ""
         
         # 处理扩展名（格式：path_md -> path.md）
         file_ext = ''
@@ -600,11 +609,16 @@ class SessionService:
                 else:
                     # 尝试从 Session ID 解析
                     # Session ID 格式：{projectId}_{filePath}
+                    # 例如：knowledge_constructing_codereview_test_md
+                    # parts[0] = 'knowledge' (项目ID)
+                    # parts[1] = 'constructing' (路径第一部分)
+                    # parts[2] = 'codereview_test_md' (路径剩余部分)
                     parts = session_id.split("_", 2)
-                    if len(parts) >= 3:
-                        project_id = parts[1]
+                    if len(parts) >= 2:
+                        project_id = parts[0]  # 项目ID是第一部分
                         file_id = parse_session_id_to_file_path(session_id, project_id)
                     else:
+                        project_id = None
                         file_id = None
                 
                 if project_id and file_id:
@@ -1141,47 +1155,96 @@ class SessionService:
             
             deleted_count = result if isinstance(result, int) else (result.deleted_count if hasattr(result, 'deleted_count') else 0)
             
-            # 处理关联数据：删除 aicr 项目文件
+            # 处理关联数据：删除静态文件和项目文件
             if deleted_count > 0 and sessions_to_delete:
-                aicr_sessions = [s for s in sessions_to_delete if is_aicr_session_id(s.get("key", ""))]
-                if aicr_sessions:
+                # 处理所有包含下划线的会话（可能是 AICR 或其他类型的会话）
+                sessions_with_underscore = [s for s in sessions_to_delete if '_' in s.get("key", "")]
+                if sessions_with_underscore:
                     try:
                         # 收集所有需要删除的文件路径
                         files_to_delete = []
-                        for session in aicr_sessions:
+                        for session in sessions_with_underscore:
                             session_id = session.get("key", "")
-                            if is_aicr_session_id(session_id):
-                                # 首先尝试从映射表获取文件ID
-                                file_id = None
+                            
+                            # 首先尝试从映射表获取文件ID
+                            file_id = None
+                            try:
+                                mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
+                                if mapping:
+                                    file_id = mapping.get("fileId")
+                                    logger.debug(f"[批量删除] 从映射表找到文件ID: sessionId={session_id}, fileId={file_id}")
+                            except Exception as e:
+                                logger.debug(f"[批量删除] 获取映射关系失败: sessionId={session_id}, 错误: {str(e)}")
+                            
+                            # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
+                            if not file_id:
                                 try:
-                                    mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
-                                    if mapping:
-                                        file_id = mapping.get("fileId")
-                                except Exception as e:
-                                    logger.debug(f"获取映射关系失败: sessionId={session_id}, 错误: {str(e)}")
-                                
-                                # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
-                                if not file_id:
                                     file_id = self._try_parse_file_path_from_session_id(session_id)
-                                
-                                # 删除静态文件系统中的文件
-                                if file_id:
-                                    try:
-                                        if self.file_storage.file_exists(file_id):
-                                            deleted = self.file_storage.delete_file(file_id)
-                                            if deleted:
-                                                logger.info(f"批量删除中已删除 aicr 静态文件: sessionId={session_id}, fileId={file_id}")
-                                            else:
-                                                logger.warning(f"批量删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}")
-                                    except Exception as e:
-                                        logger.warning(f"批量删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
-                                
-                                # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
+                                    if file_id:
+                                        logger.debug(f"[批量删除] 从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
+                                except Exception as e:
+                                    logger.debug(f"[批量删除] 解析文件路径失败: sessionId={session_id}, 错误: {str(e)}")
+                            
+                            # 如果仍然没有找到 file_id，但 session_id 包含下划线，尝试直接使用 session_id 作为文件路径
+                            if not file_id and '_' in session_id:
+                                try:
+                                    parts = session_id.split('_')
+                                    if len(parts) >= 2:
+                                        # 处理扩展名（最后一部分可能是扩展名）
+                                        if len(parts) >= 3 and len(parts[-1]) <= 5 and parts[-1].isalnum():
+                                            # 最后一部分是扩展名
+                                            project_id = parts[0]
+                                            path_parts = parts[1:-1]
+                                            ext = parts[-1]
+                                            # 尝试不同的路径组合
+                                            possible_paths = [
+                                                f"{project_id}/{'/'.join(path_parts)}.{ext}",  # 所有下划线转斜杠
+                                                f"{project_id}/{'_'.join(path_parts)}.{ext}",  # 保持下划线
+                                            ]
+                                            # 检查哪个路径存在
+                                            for possible_path in possible_paths:
+                                                if self.file_storage.file_exists(possible_path):
+                                                    file_id = possible_path
+                                                    logger.info(f"[批量删除] 通过路径匹配找到文件: sessionId={session_id}, fileId={file_id}")
+                                                    break
+                                except Exception as e:
+                                    logger.debug(f"[批量删除] 尝试路径匹配失败: sessionId={session_id}, 错误: {str(e)}")
+                            
+                            # 删除静态文件系统中的文件
+                            if file_id:
+                                try:
+                                    logger.info(f"[批量删除] 开始删除静态文件: sessionId={session_id}, fileId={file_id}")
+                                    if self.file_storage.file_exists(file_id):
+                                        deleted = self.file_storage.delete_file(file_id)
+                                        if deleted:
+                                            logger.info(f"[批量删除] 成功删除静态文件: sessionId={session_id}, fileId={file_id}")
+                                        else:
+                                            logger.warning(f"[批量删除] 删除静态文件失败: sessionId={session_id}, fileId={file_id}")
+                                    else:
+                                        logger.debug(f"[批量删除] 静态文件不存在，跳过删除: sessionId={session_id}, fileId={file_id}")
+                                except Exception as e:
+                                    logger.warning(f"[批量删除] 删除静态文件异常: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
+                            
+                            # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles，仅对 AICR 格式的 session）
+                            if is_aicr_session_id(session_id):
                                 parts = session_id.split("_", 2)
-                                if len(parts) >= 3:
-                                    project_id = parts[1]
-                                    file_path_normalized = parts[2]
-                                    file_path = file_path_normalized.replace("_", "/")
+                                if len(parts) >= 2:
+                                    project_id = parts[0]  # 项目ID是第一部分
+                                    if len(parts) >= 3:
+                                        # 将路径部分合并，下划线转换为斜杠
+                                        file_path_normalized = f"{parts[1]}/{parts[2].replace('_', '/')}"
+                                    else:
+                                        file_path_normalized = parts[1]
+                                    # 处理扩展名
+                                    if '_' in file_path_normalized:
+                                        path_parts = file_path_normalized.rsplit('_', 1)
+                                        if len(path_parts) == 2 and len(path_parts[1]) <= 5 and path_parts[1].isalnum():
+                                            file_path = f"{path_parts[0]}.{path_parts[1]}"
+                                        else:
+                                            file_path = file_path_normalized.replace("_", "/")
+                                    else:
+                                        file_path = file_path_normalized
+                                    
                                     files_to_delete.append({
                                         "projectId": project_id,
                                         "filePath": file_path
@@ -1323,11 +1386,17 @@ class SessionService:
                     file_id = mapping.get("fileId")
                 else:
                     # 尝试从 Session ID 解析
+                    # Session ID 格式：{projectId}_{filePath}
+                    # 例如：knowledge_constructing_codereview_test_md
+                    # parts[0] = 'knowledge' (项目ID)
+                    # parts[1] = 'constructing' (路径第一部分)
+                    # parts[2] = 'codereview_test_md' (路径剩余部分)
                     parts = session_id.split("_", 2)
-                    if len(parts) >= 3:
-                        project_id = parts[1]
+                    if len(parts) >= 2:
+                        project_id = parts[0]  # 项目ID是第一部分
                         file_id = parse_session_id_to_file_path(session_id, project_id)
                     else:
+                        project_id = None
                         file_id = None
                 
                 if project_id and file_id:
