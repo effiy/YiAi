@@ -836,80 +836,37 @@ class SessionService:
                         mapping = await self.sync_service.mapping_service.get_mapping_by_session_id(session_id)
                         if mapping:
                             file_id = mapping.get("fileId")
-                            logger.debug(f"[删除Session] 找到映射关系: sessionId={session_id}, fileId={file_id}")
-                        
-                        # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
-                        # 格式：{projectId}_{filePath}
-                        # 注意：projectId 是第一部分，剩余部分是文件路径
-                        file_path = None
-                        project_id = None
-                        parts = session_id.split("_", 1)  # 只分割一次，得到 [projectId, filePath]
-                        if len(parts) >= 2:
-                            project_id = parts[0]  # 第一部分是项目ID
-                            file_path_normalized = parts[1]  # 剩余部分是文件路径
-                            
-                            # 处理扩展名（格式：path_md -> path.md）
-                            file_ext = ''
-                            if '_' in file_path_normalized:
-                                # 检查最后一部分是否是扩展名（通常是 1-5 个字符）
-                                path_parts = file_path_normalized.rsplit('_', 1)
-                                if len(path_parts) == 2 and len(path_parts[1]) <= 5 and path_parts[1].isalnum():
-                                    file_path_normalized = path_parts[0]
-                                    file_ext = path_parts[1]
-                            
-                            # 将下划线还原为斜杠，得到原始文件路径
-                            file_path = file_path_normalized.replace("_", "/")
-                            
-                            # 添加扩展名
-                            if file_ext:
-                                file_path = f"{file_path}.{file_ext}"
-                            elif not file_path.endswith('.md'):
-                                # 如果没有扩展名，默认添加 .md
-                                file_path += '.md'
-                            
-                            # 确保文件路径以项目ID开头
-                            if not file_path.startswith(f'{project_id}/'):
-                                file_path = f'{project_id}/{file_path}'
-                            
-                            logger.info(f"[删除Session] 解析文件路径: sessionId={session_id}, projectId={project_id}, filePath={file_path}")
+                            logger.debug(f"找到映射关系: sessionId={session_id}, fileId={file_id}")
                         
                         # 如果映射表不存在，尝试从 Session ID 解析文件路径（备用方案）
                         if not file_id:
                             file_id = self._try_parse_file_path_from_session_id(session_id)
                             if file_id:
-                                logger.debug(f"[删除Session] 从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
-                            elif file_path:
-                                # 如果解析失败，使用从 session_id 提取的文件路径
-                                file_id = file_path
-                                logger.debug(f"[删除Session] 使用解析的文件路径作为 fileId: fileId={file_id}")
+                                logger.debug(f"从 Session ID 解析文件路径: sessionId={session_id}, fileId={file_id}")
                         
                         # 删除静态文件系统中的文件
-                        # 尝试多个可能的文件路径
-                        file_paths_to_try = []
                         if file_id:
-                            file_paths_to_try.append(file_id)
-                        if file_path and file_path != file_id:
-                            file_paths_to_try.append(file_path)
-                        
-                        deleted_static_file = False
-                        for path_to_try in file_paths_to_try:
                             try:
-                                logger.info(f"[删除Session] 尝试删除静态文件: sessionId={session_id}, filePath={path_to_try}")
-                                if self.file_storage.file_exists(path_to_try):
-                                    deleted = self.file_storage.delete_file(path_to_try)
+                                if self.file_storage.file_exists(file_id):
+                                    deleted = self.file_storage.delete_file(file_id)
                                     if deleted:
-                                        logger.info(f"[删除Session] 已删除 aicr 静态文件: sessionId={session_id}, filePath={path_to_try}")
-                                        deleted_static_file = True
-                                        break  # 成功删除后不再尝试其他路径
+                                        logger.info(f"已删除 aicr 静态文件: sessionId={session_id}, fileId={file_id}")
                                     else:
-                                        logger.warning(f"[删除Session] 删除 aicr 静态文件失败: sessionId={session_id}, filePath={path_to_try}")
+                                        logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}")
                                 else:
-                                    logger.debug(f"[删除Session] 静态文件不存在: sessionId={session_id}, filePath={path_to_try}")
+                                    logger.debug(f"静态文件不存在，跳过删除: sessionId={session_id}, fileId={file_id}")
                             except Exception as e:
-                                logger.warning(f"[删除Session] 删除静态文件异常: sessionId={session_id}, filePath={path_to_try}, 错误: {str(e)}")
+                                # 删除静态文件失败不影响删除会话的结果
+                                logger.warning(f"删除 aicr 静态文件失败: sessionId={session_id}, fileId={file_id}, 错误: {str(e)}")
                         
-                        if not deleted_static_file and file_paths_to_try:
-                            logger.warning(f"[删除Session] 未能删除任何静态文件: sessionId={session_id}, 尝试的路径: {file_paths_to_try}")
+                        # 提取项目ID和文件路径（用于删除 MongoDB 中的 projectFiles）
+                        # 格式：{projectId}_{filePath}
+                        parts = session_id.split("_", 2)  # 最多分割2次
+                        if len(parts) >= 3:
+                            project_id = parts[1]
+                            file_path_normalized = parts[2]
+                            # 将下划线还原为斜杠，得到原始文件路径
+                            file_path = file_path_normalized.replace("_", "/")
                             
                             # 删除对应的项目文件
                             # 从 projectFiles 集合中删除，通过 fileId 或 path 字段匹配
