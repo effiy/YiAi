@@ -440,20 +440,26 @@ class TreeSyncService:
             
             # 如果所有路径都尝试过了还没找到，尝试通过文件名扫描匹配
             if project_id:
-                logger.debug(f"路径匹配失败，尝试通过文件名扫描匹配: fileId={file_id}, projectId={project_id}")
+                logger.info(f"[删除静态文件] 路径匹配失败，尝试通过文件名扫描匹配: fileId={file_id}, projectId={project_id}")
                 matched_path = await self._find_file_by_name_in_project(file_id, project_id)
                 if matched_path:
                     try:
                         if self.file_storage.file_exists(matched_path):
                             success = self.file_storage.delete_file(matched_path)
                             if success:
-                                logger.info(f"通过文件名扫描找到并删除文件: fileId={matched_path} (原始: {file_id})")
+                                logger.info(f"[删除静态文件] ✓ 通过文件名扫描找到并删除: fileId={matched_path} (原始: {file_id})")
                                 return {"success": True, "file_id": matched_path, "original_file_id": file_id, "found_by_scan": True}
+                            else:
+                                logger.warning(f"[删除静态文件] ✗ 扫描到的文件删除失败: {matched_path}")
+                        else:
+                            logger.warning(f"[删除静态文件] ✗ 扫描到的文件路径不存在: {matched_path}")
                     except Exception as e:
-                        logger.warning(f"删除扫描到的文件失败: {matched_path}, 错误: {str(e)}")
+                        logger.warning(f"[删除静态文件] ✗ 删除扫描到的文件异常: {matched_path}, 错误: {str(e)}")
+                else:
+                    logger.warning(f"[删除静态文件] ✗ 文件名扫描未找到匹配文件: fileId={file_id}, projectId={project_id}")
             
             # 所有方法都尝试过了，文件不存在
-            logger.debug(f"文件不存在，跳过删除: fileId={file_id}, 尝试的路径: {unique_paths}")
+            logger.warning(f"[删除静态文件] ✗ 所有方法都失败，文件可能不存在: fileId={file_id}, projectId={project_id}, 尝试的路径: {unique_paths}")
             return {"success": True, "file_id": file_id, "skipped": True}
         
         except Exception as e:
@@ -499,7 +505,7 @@ class TreeSyncService:
     
     async def _find_file_by_name_in_project(self, file_id: str, project_id: str) -> Optional[str]:
         """
-        通过扫描项目目录，根据文件名匹配找到文件路径
+        通过扫描项目目录，根据文件名和路径匹配找到文件路径
         
         Args:
             file_id: 文件ID（可能是完整路径或只是文件名）
@@ -512,15 +518,24 @@ class TreeSyncService:
             # 获取文件名（路径的最后一部分）
             file_name = os.path.basename(file_id.replace('\\', '/'))
             if not file_name:
+                logger.warning(f"[文件扫描] 无法提取文件名: fileId={file_id}")
                 return None
             
             # 获取项目目录路径
             project_dir = self.file_storage.get_file_path(project_id)
             if not os.path.exists(project_dir) or not os.path.isdir(project_dir):
-                logger.debug(f"项目目录不存在: {project_dir}")
+                logger.warning(f"[文件扫描] 项目目录不存在: {project_dir}")
                 return None
             
-            logger.debug(f"扫描项目目录查找文件: projectId={project_id}, fileName={file_name}, projectDir={project_dir}")
+            # 规范化 file_id，去除 projectId 前缀，获取相对路径部分
+            clean_file_id = file_id.strip().lstrip('/').replace('\\', '/')
+            file_id_parts = [p for p in clean_file_id.split('/') if p]
+            # 去除开头的 projectId
+            while file_id_parts and len(file_id_parts) > 0 and file_id_parts[0].lower() == project_id.lower():
+                file_id_parts = file_id_parts[1:]
+            relative_path_parts = file_id_parts[:-1] if len(file_id_parts) > 1 else []  # 目录部分
+            
+            logger.info(f"[文件扫描] 开始扫描: projectId={project_id}, fileName={file_name}, 期望目录部分={relative_path_parts}, projectDir={project_dir}")
             
             # 递归扫描项目目录下的所有文件
             matched_files = []
@@ -534,42 +549,55 @@ class TreeSyncService:
                         # 统一使用正斜杠
                         relative_path = relative_path.replace('\\', '/')
                         matched_files.append(relative_path)
-                        logger.debug(f"找到匹配文件: {relative_path}")
+                        logger.debug(f"[文件扫描] 找到匹配文件: {relative_path}")
             
             if matched_files:
+                logger.info(f"[文件扫描] 找到 {len(matched_files)} 个匹配文件: {matched_files}")
+                
                 # 如果有多个匹配，优先选择路径最接近 file_id 的
                 if len(matched_files) == 1:
+                    logger.info(f"[文件扫描] 唯一匹配: {matched_files[0]}")
                     return matched_files[0]
                 else:
                     # 如果有多个匹配，尝试找到路径最接近的
-                    file_id_parts = file_id.replace('\\', '/').strip('/').split('/')
                     best_match = None
                     best_score = -1
                     
                     for matched_path in matched_files:
                         matched_parts = matched_path.replace('\\', '/').strip('/').split('/')
-                        # 计算匹配度：相同路径部分的数量
+                        # 去除开头的 projectId
+                        while matched_parts and len(matched_parts) > 0 and matched_parts[0].lower() == project_id.lower():
+                            matched_parts = matched_parts[1:]
+                        
+                        # 计算匹配度：从后往前比较路径部分
                         score = 0
-                        min_len = min(len(file_id_parts), len(matched_parts))
+                        file_id_len = len(file_id_parts)
+                        matched_len = len(matched_parts)
+                        min_len = min(file_id_len, matched_len)
+                        
+                        # 从文件名开始往前比较
                         for i in range(min_len):
-                            if i < len(file_id_parts) and i < len(matched_parts):
-                                if file_id_parts[-1-i].lower() == matched_parts[-1-i].lower():
+                            idx_file = file_id_len - 1 - i
+                            idx_matched = matched_len - 1 - i
+                            if idx_file >= 0 and idx_matched >= 0:
+                                if file_id_parts[idx_file].lower() == matched_parts[idx_matched].lower():
                                     score += 1
                                 else:
                                     break
                         
+                        logger.debug(f"[文件扫描] 路径匹配度: {matched_path} -> score={score}")
                         if score > best_score:
                             best_score = score
                             best_match = matched_path
                     
-                    logger.info(f"找到 {len(matched_files)} 个匹配文件，选择最佳匹配: {best_match}")
+                    logger.info(f"[文件扫描] 选择最佳匹配 (score={best_score}): {best_match}")
                     return best_match if best_match else matched_files[0]
             
-            logger.debug(f"未找到匹配文件: fileName={file_name}, projectId={project_id}")
+            logger.warning(f"[文件扫描] 未找到匹配文件: fileName={file_name}, projectId={project_id}, 期望路径部分={relative_path_parts}")
             return None
             
         except Exception as e:
-            logger.warning(f"扫描项目目录查找文件失败: fileId={file_id}, projectId={project_id}, 错误: {str(e)}")
+            logger.error(f"[文件扫描] 扫描项目目录查找文件失败: fileId={file_id}, projectId={project_id}, 错误: {str(e)}", exc_info=True)
             return None
     
     async def delete_project_folder_from_static(self, folder_id: str) -> Dict[str, Any]:

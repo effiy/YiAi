@@ -822,6 +822,27 @@ async def delete(request: Request):
                                         logger.info(f"[批量删除] 成功删除静态文件: fileId={deleted_file_id} (原始: {file_id})")
                                 else:
                                     logger.error(f"[批量删除] 删除静态文件失败: fileId={file_id}, 错误: {result.get('error')}")
+                            
+                            # 删除对应的会话（如果是文件且找到了 projectId）
+                            if project_id and not is_folder:
+                                try:
+                                    from modules.utils.idConverter import normalize_file_path_to_session_id
+                                    # 生成 sessionId
+                                    session_id = normalize_file_path_to_session_id(file_id, project_id)
+                                    logger.info(f"[批量删除] 准备删除会话: sessionId={session_id}, fileId={file_id}, projectId={project_id}")
+                                    
+                                    # 调用会话删除服务
+                                    from modules.services.sessionService import SessionService
+                                    session_service = SessionService()
+                                    await session_service.initialize()
+                                    success = await session_service.delete_session(session_id)
+                                    
+                                    if success:
+                                        logger.info(f"[批量删除] ✓ 成功删除会话: sessionId={session_id}, fileId={file_id}")
+                                    else:
+                                        logger.warning(f"[批量删除] ✗ 会话删除失败或不存在: sessionId={session_id}, fileId={file_id}")
+                                except Exception as e:
+                                    logger.warning(f"[批量删除] ✗ 删除会话异常（已忽略）: fileId={file_id}, projectId={project_id}, 错误: {str(e)}")
                         except Exception as e:
                             logger.error(f"[批量删除] 删除静态文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
                     else:
@@ -934,6 +955,29 @@ async def delete(request: Request):
                     except Exception as e:
                         logger.error(f"[删除] 删除静态文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
                         # 即使删除静态文件异常，也继续删除 MongoDB 记录
+                    
+                    # 删除对应的会话（如果是文件且找到了 projectId）
+                    if project_id and not is_folder:
+                        try:
+                            from modules.utils.idConverter import normalize_file_path_to_session_id
+                            # 生成 sessionId（使用与前端一致的逻辑）
+                            # 使用原始 file_id 生成 sessionId，确保与创建时一致
+                            session_id = normalize_file_path_to_session_id(file_id, project_id)
+                            logger.info(f"[删除] 准备删除会话: sessionId={session_id}, fileId={file_id}, projectId={project_id}")
+                            
+                            # 调用会话删除服务
+                            from modules.services.sessionService import SessionService
+                            session_service = SessionService()
+                            await session_service.initialize()
+                            success = await session_service.delete_session(session_id)
+                            
+                            if success:
+                                logger.info(f"[删除] ✓ 成功删除会话: sessionId={session_id}, fileId={file_id}")
+                            else:
+                                logger.warning(f"[删除] ✗ 会话删除失败或不存在: sessionId={session_id}, fileId={file_id}")
+                        except Exception as e:
+                            logger.warning(f"[删除] ✗ 删除会话异常（已忽略）: fileId={file_id}, projectId={project_id}, 错误: {str(e)}")
+                            # 即使删除会话失败，也继续删除 MongoDB 记录
                 else:
                     logger.warning(f"[删除] 无法获取 fileId，无法删除静态文件: key={key}, 文档: {file_doc if file_doc else '未找到'}")
                 
@@ -1058,6 +1102,27 @@ async def delete(request: Request):
                             else:
                                 logger.error(f"[删除] 删除静态文件失败: fileId={target_file_id}, 错误: {result.get('error')}")
                                 # 即使删除静态文件失败，也继续删除 MongoDB 记录
+                        
+                        # 删除对应的会话（如果是文件且找到了 projectId）
+                        if project_id and not is_folder:
+                            try:
+                                from modules.utils.idConverter import normalize_file_path_to_session_id
+                                # 生成 sessionId
+                                session_id = normalize_file_path_to_session_id(target_file_id, project_id)
+                                logger.info(f"[删除] 准备删除会话: sessionId={session_id}, fileId={target_file_id}, projectId={project_id}")
+                                
+                                # 调用会话删除服务
+                                from modules.services.sessionService import SessionService
+                                session_service = SessionService()
+                                await session_service.initialize()
+                                success = await session_service.delete_session(session_id)
+                                
+                                if success:
+                                    logger.info(f"[删除] ✓ 成功删除会话: sessionId={session_id}, fileId={target_file_id}")
+                                else:
+                                    logger.warning(f"[删除] ✗ 会话删除失败或不存在: sessionId={session_id}, fileId={target_file_id}")
+                            except Exception as e:
+                                logger.warning(f"[删除] ✗ 删除会话异常（已忽略）: fileId={target_file_id}, projectId={project_id}, 错误: {str(e)}")
                     except Exception as e:
                         logger.error(f"[删除] 删除静态文件异常: fileId={target_file_id}, 错误: {str(e)}", exc_info=True)
                         # 即使删除静态文件异常，也继续删除 MongoDB 记录
