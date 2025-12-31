@@ -379,12 +379,13 @@ class TreeSyncService:
             logger.error(f"同步文件到 static 目录失败: fileId={file_id}, 错误: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
     
-    async def delete_project_file_from_static(self, file_id: str) -> Dict[str, Any]:
+    async def delete_project_file_from_static(self, file_id: str, project_id: Optional[str] = None) -> Dict[str, Any]:
         """
         从 static 目录删除文件
         
         Args:
-            file_id: 文件ID
+            file_id: 文件ID（可能是规范化后的，也可能是原始的）
+            project_id: 项目ID（可选，用于尝试多种路径格式）
         
         Returns:
             删除结果
@@ -392,17 +393,46 @@ class TreeSyncService:
         await self._ensure_initialized()
         
         try:
-            if self.file_storage.file_exists(file_id):
-                success = self.file_storage.delete_file(file_id)
-                if success:
-                    logger.info(f"从 static 目录删除文件成功: fileId={file_id}")
-                    return {"success": True, "file_id": file_id}
-                else:
-                    logger.warning(f"从 static 目录删除文件失败: fileId={file_id}")
-                    return {"success": False, "error": "删除文件失败"}
-            else:
-                logger.debug(f"文件不存在，跳过删除: fileId={file_id}")
-                return {"success": True, "file_id": file_id, "skipped": True}
+            # 尝试删除的路径列表（按优先级排序）
+            paths_to_try = [file_id]
+            
+            # 如果提供了 project_id，尝试多种路径格式
+            if project_id:
+                from modules.utils.idConverter import normalize_project_file_id
+                # 1. 规范化后的路径（确保以 projectId 开头）
+                normalized = normalize_project_file_id(file_id, project_id)
+                if normalized != file_id:
+                    paths_to_try.insert(0, normalized)
+                
+                # 2. 如果 file_id 已经包含 projectId，尝试去除 projectId 前缀
+                parts = file_id.replace('\\', '/').strip().lstrip('/').split('/')
+                if parts and len(parts) > 1 and parts[0].lower() == project_id.lower():
+                    # 去除第一个 projectId 部分
+                    without_prefix = '/'.join(parts[1:])
+                    if without_prefix and without_prefix != file_id:
+                        paths_to_try.append(without_prefix)
+                
+                # 3. 如果 file_id 不包含 projectId，尝试添加 projectId 前缀
+                if not parts or parts[0].lower() != project_id.lower():
+                    with_prefix = f"{project_id}/{file_id.lstrip('/')}"
+                    if with_prefix != file_id:
+                        paths_to_try.append(with_prefix)
+            
+            # 尝试每个路径
+            for path in paths_to_try:
+                if self.file_storage.file_exists(path):
+                    success = self.file_storage.delete_file(path)
+                    if success:
+                        logger.info(f"从 static 目录删除文件成功: fileId={path} (原始: {file_id})")
+                        return {"success": True, "file_id": path, "original_file_id": file_id}
+                    else:
+                        logger.warning(f"从 static 目录删除文件失败: fileId={path}")
+                        # 继续尝试下一个路径
+                        continue
+            
+            # 所有路径都尝试过了，文件不存在
+            logger.debug(f"文件不存在，跳过删除: fileId={file_id}, 尝试的路径: {paths_to_try}")
+            return {"success": True, "file_id": file_id, "skipped": True}
         
         except Exception as e:
             logger.error(f"从 static 目录删除文件失败: fileId={file_id}, 错误: {str(e)}", exc_info=True)

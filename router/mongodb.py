@@ -816,12 +816,14 @@ async def delete(request: Request):
                                     logger.error(f"[批量删除] 删除静态文件夹失败: fileId={file_id}, 错误: {result.get('error')}")
                             else:
                                 logger.info(f"[批量删除] 删除静态文件: fileId={file_id}, key={file_key}")
-                                result = await tree_sync_service.delete_project_file_from_static(file_id)
+                                # 传递 project_id 以便尝试多种路径格式
+                                result = await tree_sync_service.delete_project_file_from_static(file_id, project_id)
                                 if result.get('success'):
                                     if result.get('skipped'):
                                         logger.info(f"[批量删除] 静态文件不存在（已跳过）: fileId={file_id}")
                                     else:
-                                        logger.info(f"[批量删除] 成功删除静态文件: fileId={file_id}")
+                                        deleted_file_id = result.get('file_id', file_id)
+                                        logger.info(f"[批量删除] 成功删除静态文件: fileId={deleted_file_id} (原始: {file_id})")
                                 else:
                                     logger.error(f"[批量删除] 删除静态文件失败: fileId={file_id}, 错误: {result.get('error')}")
                         except Exception as e:
@@ -931,12 +933,14 @@ async def delete(request: Request):
                                 # 即使删除静态文件夹失败，也继续删除 MongoDB 记录
                         else:
                             logger.info(f"[删除] 开始删除静态文件: fileId={file_id}, path={file_path}")
-                            result = await tree_sync_service.delete_project_file_from_static(file_id)
+                            # 传递 project_id 以便尝试多种路径格式
+                            result = await tree_sync_service.delete_project_file_from_static(file_id, project_id)
                             if result.get('success'):
                                 if result.get('skipped'):
                                     logger.info(f"[删除] 静态文件不存在（已跳过）: fileId={file_id}, path={file_path}")
                                 else:
-                                    logger.info(f"[删除] 成功删除静态文件: fileId={file_id}, path={file_path}")
+                                    deleted_file_id = result.get('file_id', file_id)
+                                    logger.info(f"[删除] 成功删除静态文件: fileId={deleted_file_id} (原始: {file_id}), path={file_path}")
                             else:
                                 logger.error(f"[删除] 删除静态文件失败: fileId={file_id}, path={file_path}, 错误: {result.get('error')}")
                                 # 即使删除静态文件失败，也继续删除 MongoDB 记录
@@ -1056,12 +1060,14 @@ async def delete(request: Request):
                                 # 即使删除静态文件夹失败，也继续删除 MongoDB 记录
                         else:
                             logger.info(f"[删除] 开始删除静态文件: fileId={target_file_id}")
-                            result = await tree_sync_service.delete_project_file_from_static(target_file_id)
+                            # 传递 project_id 以便尝试多种路径格式
+                            result = await tree_sync_service.delete_project_file_from_static(target_file_id, project_id)
                             if result.get('success'):
                                 if result.get('skipped'):
                                     logger.info(f"[删除] 静态文件不存在（已跳过）: fileId={target_file_id}")
                                 else:
-                                    logger.info(f"[删除] 成功删除静态文件: fileId={target_file_id}")
+                                    deleted_file_id = result.get('file_id', target_file_id)
+                                    logger.info(f"[删除] 成功删除静态文件: fileId={deleted_file_id} (原始: {target_file_id})")
                             else:
                                 logger.error(f"[删除] 删除静态文件失败: fileId={target_file_id}, 错误: {result.get('error')}")
                                 # 即使删除静态文件失败，也继续删除 MongoDB 记录
