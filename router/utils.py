@@ -17,14 +17,17 @@ def create_response(code: int, message: str, data: Any = None) -> dict:
     }
 
 
-def handle_error(e: Exception, status_code: int = 500) -> dict:
-    """统一的错误处理（返回字典）"""
+def handle_error(e: Exception, status_code: int = 500) -> JSONResponse:
+    """统一的错误处理（返回JSONResponse，确保状态码正确设置）"""
     error_msg = str(e)
     logger.error(f"发生错误: {error_msg}")
-    return create_response(
-        code=status_code,
-        message=error_msg,
-        data=None
+    # 判断是否为资源不存在的错误
+    if "未找到" in error_msg or "不存在" in error_msg:
+        status_code = 404
+    return create_error_response(
+        status_code=status_code,
+        detail=error_msg,
+        message=error_msg
     )
 
 

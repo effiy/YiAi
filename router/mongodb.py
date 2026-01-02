@@ -1290,8 +1290,14 @@ async def delete(request: Request):
             raise ValueError("删除操作必须提供有效的key、link、keys、links或fileId参数")
 
     except ValueError as e:
-        logger.warning(f"删除数据验证失败: {str(e)}")
-        return handle_error(e, 400)
+        error_msg = str(e)
+        # 判断是否为资源不存在的错误
+        if "未找到" in error_msg or "不存在" in error_msg:
+            logger.warning(f"删除数据失败（资源不存在）: {error_msg}")
+            return handle_error(e, 404)
+        else:
+            logger.warning(f"删除数据验证失败: {error_msg}")
+            return handle_error(e, 400)
     except Exception as e:
         logger.error(f"删除数据失败: {str(e)}", exc_info=True)
         return handle_error(e)
