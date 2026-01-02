@@ -120,6 +120,41 @@ async def update_file_in_project_tree(project_id: str, file_id: str, file_data: 
                         folder_node = child
                         break
                 
+                # 检查是否已存在同名文件（避免创建与文件同名的文件夹）
+                existing_file_node = None
+                for child in node['children']:
+                    if child.get('name') == folder_name and child.get('type') == 'file':
+                        existing_file_node = child
+                        break
+                
+                if existing_file_node:
+                    # 如果已存在同名文件，不能创建文件夹
+                    # 这种情况通常发生在：
+                    # 1. 文件路径解析错误（如：file.txt 被解析为 file/txt）
+                    # 2. 文件路径结构错误（如：file.txt 和 file/file.txt 同时存在）
+                    logger.warning(f"无法创建文件夹节点 '{folder_name}'，因为已存在同名文件节点: fileId={file_id}, projectId={project_id}, existingFileId={existing_file_node.get('id', '')}")
+                    # 如果剩余路径为空，说明这是文件路径的最后一个部分，应该更新文件节点而不是创建文件夹
+                    if not remaining_parts and is_file:
+                        # 这是文件路径的最后一部分，应该更新现有的文件节点
+                        logger.info(f"文件路径 '{file_id}' 与现有文件节点冲突，更新现有文件节点")
+                        existing_file_node.update({
+                            'id': file_id,
+                            'fileId': file_id,
+                            'path': file_id,
+                            'name': file_data.get('name', existing_file_node.get('name', file_id.split('/')[-1])),
+                            'type': 'file',
+                            'content': file_data.get('content', existing_file_node.get('content', '')),
+                            'contentHash': file_data.get('contentHash', existing_file_node.get('contentHash', '')),
+                            'updatedTime': file_data.get('updatedTime', get_current_time()),
+                            'order': file_data.get('order', existing_file_node.get('order', 0)),
+                            'key': file_data.get('key', existing_file_node.get('key', ''))
+                        })
+                        return existing_file_node
+                    else:
+                        # 路径还有剩余部分，但当前层级有同名文件，无法继续
+                        logger.error(f"无法在文件节点 '{folder_name}' 下创建子节点: fileId={file_id}, remainingParts={remaining_parts}")
+                        return node
+                
                 if not folder_node:
                     # 创建文件夹节点
                     folder_id = '/'.join([project_id] + file_path_parts[:len(file_path_parts) - len(remaining_parts)])
