@@ -354,18 +354,272 @@ async def query(request: Request):
         total = await collection.count_documents(filter_dict)
         total_pages = (total + page_size - 1) // page_size
 
-        # 对于 projectFiles 集合，从文件系统读取 content
+        # 对于 projectFiles 集合，如果提供了 projectId，从 projectTree 中提取文件列表
+        # 这样可以统一使用 projectTree 接口作为数据源，保持向后兼容
+        # 注意：projectTree 接口会整合 projectFiles 的数据，所以从 projectTree 提取可以获取完整信息
         if cname == 'projectFiles':
-            file_storage = await get_file_storage()
-            for item in data:
-                file_id = item.get('fileId') or item.get('id') or item.get('path')
-                if file_id and file_storage.file_exists(file_id):
-                    try:
-                        content = file_storage.read_file_content(file_id)
-                        item['content'] = content
-                    except Exception as e:
-                        logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
-                        item['content'] = ''  # 如果读取失败，设置为空字符串
+            project_id = filter_dict.get('projectId')
+            if project_id:
+                try:
+                    # 从 projectTree 中获取完整的树结构（包含文件内容）
+                    tree_collection = db.mongodb.db['projectTree']
+                    tree_filter = {'projectId': project_id}
+                    tree_cursor = tree_collection.find(tree_filter, {'_id': 0})
+                    tree_data_list = [doc async for doc in tree_cursor]
+                    
+                    if tree_data_list:
+                        # 查询 projectFiles 集合获取完整的文件元数据（用于补充树节点中可能缺失的字段）
+                        files_collection = db.mongodb.db['projectFiles']
+                        files_filter = {'projectId': project_id}
+                        files_cursor = files_collection.find(files_filter, {'_id': 0})
+                        files_data = [doc async for doc in files_cursor]
+                        
+                        # 构建文件元数据映射（fileId -> file_doc）
+                        files_metadata_map = {}
+                        for file_doc in files_data:
+                            file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
+                            if file_id:
+                                files_metadata_map[file_id] = file_doc
+                                # 规范化路径作为备用键
+                                normalized_id = file_id.replace('\\', '/').strip().lstrip('/')
+                                parts = [p for p in normalized_id.split('/') if p]
+                                if parts and len(parts) > 1 and parts[0].lower() == str(project_id).lower() and parts[1].lower() == str(project_id).lower():
+                                    parts = parts[1:]
+                                if parts and parts[0].lower() != str(project_id).lower():
+                                    normalized_id = f"{project_id}/{'/'.join(parts)}"
+                                else:
+                                    normalized_id = '/'.join(parts) if parts else file_id
+                                if normalized_id != file_id:
+                                    files_metadata_map[normalized_id] = file_doc
+                        
+                        # 从树结构中提取所有文件节点
+                        file_storage = await get_file_storage()
+                        extracted_files = []
+                        
+                        def extract_files_from_tree(node, parent_path=''):
+                            """递归地从树节点中提取文件信息"""
+                            if not node or not isinstance(node, dict):
+                                return
+                            
+                            node_id = node.get('id') or node.get('fileId') or node.get('path') or ''
+                            node_type = node.get('type', '')
+                            is_file = node_type == 'file' or (node_type != 'folder' and not node.get('children'))
+                            
+                            if is_file and node_id:
+                                # 从 projectFiles 集合获取完整的元数据（如果存在）
+                                file_metadata = files_metadata_map.get(node_id)
+                                if not file_metadata:
+                                    # 尝试规范化匹配
+                                    normalized_id = node_id.replace('\\', '/').strip().lstrip('/')
+                                    parts = [p for p in normalized_id.split('/') if p]
+                                    if parts and len(parts) > 1 and parts[0].lower() == str(project_id).lower() and parts[1].lower() == str(project_id).lower():
+                                        parts = parts[1:]
+                                    if parts and parts[0].lower() != str(project_id).lower():
+                                        normalized_id = f"{project_id}/{'/'.join(parts)}"
+                                    else:
+                                        normalized_id = '/'.join(parts) if parts else node_id
+                                    file_metadata = files_metadata_map.get(normalized_id)
+                                
+                                # 构建文件对象，优先使用 projectFiles 的元数据，树节点的数据作为补充
+                                file_obj = {
+                                    'key': file_metadata.get('key', '') if file_metadata else node.get('key', ''),
+                                    'fileId': node_id,
+                                    'id': node_id,
+                                    'path': node_id,
+                                    'name': file_metadata.get('name', '') if file_metadata else node.get('name', ''),
+                                    'projectId': project_id,
+                                    'content': node.get('content', ''),  # 优先使用树节点中的 content（可能已经整合）
+                                    'contentHash': file_metadata.get('contentHash', '') if file_metadata else node.get('contentHash', ''),
+                                    'createdTime': file_metadata.get('createdTime', '') if file_metadata else node.get('createdTime', ''),
+                                    'updatedTime': file_metadata.get('updatedTime', '') if file_metadata else node.get('updatedTime', ''),
+                                    'order': file_metadata.get('order', 0) if file_metadata else node.get('order', 0),
+                                    'type': node_type
+                                }
+                                
+                                # 如果树节点中没有 content，尝试从文件系统读取
+                                if not file_obj['content']:
+                                    if file_storage.file_exists(node_id):
+                                        try:
+                                            file_obj['content'] = file_storage.read_file_content(node_id)
+                                        except Exception as e:
+                                            logger.warning(f"从文件系统读取 content 失败: fileId={node_id}, 错误: {str(e)}")
+                                            file_obj['content'] = ''
+                                
+                                extracted_files.append(file_obj)
+                            
+                            # 递归处理子节点
+                            if node.get('children') and isinstance(node['children'], list):
+                                for child in node['children']:
+                                    extract_files_from_tree(child, node_id)
+                        
+                        # 从所有 projectTree 文档中提取文件
+                        for tree_doc in tree_data_list:
+                            tree_data = tree_doc.get('data')
+                            if tree_data:
+                                extract_files_from_tree(tree_data)
+                        
+                        # 应用 fileId 过滤（如果提供了）
+                        file_id_filter = filter_dict.get('fileId')
+                        if file_id_filter:
+                            extracted_files = [f for f in extracted_files 
+                                             if f.get('fileId') == file_id_filter 
+                                             or f.get('id') == file_id_filter 
+                                             or f.get('path') == file_id_filter]
+                        
+                        # 替换原始查询结果
+                        data = extracted_files
+                        total = len(extracted_files)
+                        total_pages = 1 if total > 0 else 0
+                        
+                        logger.info(f"从 projectTree 提取 projectFiles 数据: projectId={project_id}, 文件数={len(extracted_files)}")
+                    else:
+                        # 如果没有 projectTree 数据，回退到原有的 projectFiles 查询逻辑
+                        file_storage = await get_file_storage()
+                        for item in data:
+                            file_id = item.get('fileId') or item.get('id') or item.get('path')
+                            if file_id and file_storage.file_exists(file_id):
+                                try:
+                                    content = file_storage.read_file_content(file_id)
+                                    item['content'] = content
+                                except Exception as e:
+                                    logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
+                                    item['content'] = ''
+                except Exception as e:
+                    logger.warning(f"从 projectTree 提取 projectFiles 数据失败: projectId={project_id}, 错误: {str(e)}")
+                    # 回退到原有的 projectFiles 查询逻辑
+                    file_storage = await get_file_storage()
+                    for item in data:
+                        file_id = item.get('fileId') or item.get('id') or item.get('path')
+                        if file_id and file_storage.file_exists(file_id):
+                            try:
+                                content = file_storage.read_file_content(file_id)
+                                item['content'] = content
+                            except Exception as e:
+                                logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
+                                item['content'] = ''
+            else:
+                # 没有 projectId，使用原有的查询逻辑
+                file_storage = await get_file_storage()
+                for item in data:
+                    file_id = item.get('fileId') or item.get('id') or item.get('path')
+                    if file_id and file_storage.file_exists(file_id):
+                        try:
+                            content = file_storage.read_file_content(file_id)
+                            item['content'] = content
+                        except Exception as e:
+                            logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
+                            item['content'] = ''
+
+        # 对于 projectTree 集合，整合 projectFiles 数据（包含文件内容和所有字段）
+        # 这是主要的数据源，projectFiles 查询会从这里提取数据
+        if cname == 'projectTree':
+            project_id = filter_dict.get('projectId')
+            if project_id:
+                try:
+                    # 查询对应的 projectFiles 数据，获取完整的文件元数据
+                    files_collection = db.mongodb.db['projectFiles']
+                    files_filter = {'projectId': project_id}
+                    files_cursor = files_collection.find(files_filter, {'_id': 0})
+                    files_data = [doc async for doc in files_cursor]
+                    
+                    # 从文件系统读取文件内容并构建文件映射（包含所有字段）
+                    file_storage = await get_file_storage()
+                    files_map = {}
+                    for file_doc in files_data:
+                        file_id = file_doc.get('fileId') or file_doc.get('id') or file_doc.get('path')
+                        if file_id:
+                            # 读取文件内容
+                            content = ''
+                            if file_storage.file_exists(file_id):
+                                try:
+                                    content = file_storage.read_file_content(file_id)
+                                except Exception as e:
+                                    logger.warning(f"从文件系统读取 content 失败: fileId={file_id}, 错误: {str(e)}")
+                            
+                            # 构建完整的文件信息对象（包含所有 projectFiles 字段）
+                            file_info = {
+                                'content': content,
+                                'key': file_doc.get('key', ''),
+                                'contentHash': file_doc.get('contentHash', ''),
+                                'createdTime': file_doc.get('createdTime', ''),
+                                'updatedTime': file_doc.get('updatedTime', ''),
+                                'order': file_doc.get('order', 0),
+                                'name': file_doc.get('name', ''),
+                                'projectId': file_doc.get('projectId', project_id)
+                            }
+                            
+                            # 使用多种可能的键作为映射键（支持不同的文件ID格式）
+                            files_map[file_id] = file_info
+                            # 规范化路径（去除重复的 project_id 前缀）
+                            normalized_id = file_id.replace('\\', '/').strip().lstrip('/')
+                            parts = [p for p in normalized_id.split('/') if p]
+                            if parts and len(parts) > 1 and parts[0].lower() == str(project_id).lower() and parts[1].lower() == str(project_id).lower():
+                                parts = parts[1:]
+                            if parts and parts[0].lower() != str(project_id).lower():
+                                normalized_id = f"{project_id}/{'/'.join(parts)}"
+                            else:
+                                normalized_id = '/'.join(parts) if parts else file_id
+                            if normalized_id != file_id:
+                                files_map[normalized_id] = file_info
+                    
+                    # 递归函数：将文件内容和元数据附加到树节点
+                    def attach_file_info(node):
+                        """递归地将文件内容和元数据附加到树节点"""
+                        if not node or not isinstance(node, dict):
+                            return
+                        
+                        # 如果是文件节点，附加内容和元数据
+                        if node.get('type') == 'file' or (node.get('type') != 'folder' and not node.get('children')):
+                            node_id = node.get('id') or node.get('fileId') or node.get('path') or ''
+                            # 尝试多种匹配方式
+                            file_info = None
+                            if node_id:
+                                # 直接匹配
+                                file_info = files_map.get(node_id)
+                                # 如果没找到，尝试规范化匹配
+                                if file_info is None:
+                                    normalized_id = node_id.replace('\\', '/').strip().lstrip('/')
+                                    parts = [p for p in normalized_id.split('/') if p]
+                                    if parts and len(parts) > 1 and parts[0].lower() == str(project_id).lower() and parts[1].lower() == str(project_id).lower():
+                                        parts = parts[1:]
+                                    if parts and parts[0].lower() != str(project_id).lower():
+                                        normalized_id = f"{project_id}/{'/'.join(parts)}"
+                                    else:
+                                        normalized_id = '/'.join(parts) if parts else node_id
+                                    file_info = files_map.get(normalized_id)
+                            
+                            if file_info:
+                                # 附加文件内容和元数据
+                                node['content'] = file_info.get('content', '')
+                                # 如果树节点缺少某些字段，从 projectFiles 补充
+                                if not node.get('key') and file_info.get('key'):
+                                    node['key'] = file_info['key']
+                                if not node.get('contentHash') and file_info.get('contentHash'):
+                                    node['contentHash'] = file_info['contentHash']
+                                if not node.get('createdTime') and file_info.get('createdTime'):
+                                    node['createdTime'] = file_info['createdTime']
+                                if not node.get('updatedTime') and file_info.get('updatedTime'):
+                                    node['updatedTime'] = file_info['updatedTime']
+                                if not node.get('order') and file_info.get('order'):
+                                    node['order'] = file_info['order']
+                                if not node.get('name') and file_info.get('name'):
+                                    node['name'] = file_info['name']
+                        
+                        # 递归处理子节点
+                        if node.get('children') and isinstance(node['children'], list):
+                            for child in node['children']:
+                                attach_file_info(child)
+                    
+                    # 为每个 projectTree 文档附加文件内容和元数据
+                    for tree_doc in data:
+                        tree_data = tree_doc.get('data')
+                        if tree_data:
+                            attach_file_info(tree_data)
+                    
+                    logger.info(f"已为 projectTree 整合 projectFiles 数据: projectId={project_id}, 文件数={len(files_map)}")
+                except Exception as e:
+                    logger.warning(f"整合 projectFiles 数据到 projectTree 失败: projectId={project_id}, 错误: {str(e)}")
+                    # 即使整合失败，也继续返回树数据（只是没有文件内容）
 
         return RespOk(
             data={
