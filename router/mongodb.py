@@ -9,7 +9,7 @@ import uuid
 import logging
 import hashlib
 from bson import ObjectId
-from Resp import RespOk
+from resp import RespOk
 from pymongo import UpdateOne, ReturnDocument
 
 from database import db
@@ -68,23 +68,23 @@ async def update_file_in_project_tree(project_id: str, file_id: str, file_data: 
         tree_collection = db.mongodb.db['projectTree']
         tree_filter = {'projectId': project_id}
         tree_doc = await tree_collection.find_one(tree_filter)
-        
+
         if not tree_doc:
             logger.warning(f"未找到 projectTree: projectId={project_id}")
             return False
-        
+
         tree_data = tree_doc.get('data')
         if not tree_data:
             logger.warning(f"projectTree 数据为空: projectId={project_id}")
             return False
-        
+
         # 规范化文件ID
         normalized_file_id = file_id.replace('\\', '/').strip().lstrip('/')
         parts = [p for p in normalized_file_id.split('/') if p]
         if parts and parts[0].lower() == str(project_id).lower():
             parts = parts[1:]
         file_path_parts = parts if parts else []
-        
+
         def find_or_create_node(node, path_parts, is_file=False):
             """递归查找或创建节点"""
             if not path_parts:
@@ -109,24 +109,24 @@ async def update_file_in_project_tree(project_id: str, file_id: str, file_data: 
                 # 需要继续查找子节点
                 folder_name = path_parts[0]
                 remaining_parts = path_parts[1:]
-                
+
                 if not node.get('children'):
                     node['children'] = []
-                
+
                 # 查找或创建文件夹节点
                 folder_node = None
                 for child in node['children']:
                     if child.get('name') == folder_name and child.get('type') == 'folder':
                         folder_node = child
                         break
-                
+
                 # 检查是否已存在同名文件（避免创建与文件同名的文件夹）
                 existing_file_node = None
                 for child in node['children']:
                     if child.get('name') == folder_name and child.get('type') == 'file':
                         existing_file_node = child
                         break
-                
+
                 if existing_file_node:
                     # 如果已存在同名文件，不能创建文件夹
                     # 这种情况通常发生在：
@@ -154,7 +154,7 @@ async def update_file_in_project_tree(project_id: str, file_id: str, file_data: 
                         # 路径还有剩余部分，但当前层级有同名文件，无法继续
                         logger.error(f"无法在文件节点 '{folder_name}' 下创建子节点: fileId={file_id}, remainingParts={remaining_parts}")
                         return node
-                
+
                 if not folder_node:
                     # 创建文件夹节点
                     folder_id = '/'.join([project_id] + file_path_parts[:len(file_path_parts) - len(remaining_parts)])
@@ -165,18 +165,18 @@ async def update_file_in_project_tree(project_id: str, file_id: str, file_data: 
                         'children': []
                     }
                     node['children'].append(folder_node)
-                
+
                 return find_or_create_node(folder_node, remaining_parts, is_file=is_file and len(remaining_parts) == 0)
-        
+
         # 更新或创建文件节点
         find_or_create_node(tree_data, file_path_parts, is_file=True)
-        
+
         # 更新 projectTree 文档
         await tree_collection.update_one(
             tree_filter,
             {'$set': {'data': tree_data, 'updatedTime': get_current_time()}}
         )
-        
+
         logger.info(f"已更新 projectTree 中的文件节点: projectId={project_id}, fileId={file_id}")
         return True
     except Exception as e:
@@ -191,34 +191,34 @@ async def delete_file_from_project_tree(project_id: str, file_id: str) -> bool:
         tree_collection = db.mongodb.db['projectTree']
         tree_filter = {'projectId': project_id}
         tree_doc = await tree_collection.find_one(tree_filter)
-        
+
         if not tree_doc:
             logger.warning(f"未找到 projectTree: projectId={project_id}")
             return False
-        
+
         tree_data = tree_doc.get('data')
         if not tree_data:
             logger.warning(f"projectTree 数据为空: projectId={project_id}")
             return False
-        
+
         # 规范化文件ID
         normalized_file_id = file_id.replace('\\', '/').strip().lstrip('/')
         parts = [p for p in normalized_file_id.split('/') if p]
         if parts and parts[0].lower() == str(project_id).lower():
             parts = parts[1:]
         file_path_parts = parts if parts else []
-        
+
         def delete_node(node, path_parts):
             """递归删除节点"""
             if not path_parts:
                 # 不应该到达这里（文件节点应该在父节点的 children 中）
                 return False
-            
+
             if len(path_parts) == 1:
                 # 在子节点中查找并删除
                 if not node.get('children'):
                     return False
-                
+
                 file_name = path_parts[0]
                 for i, child in enumerate(node['children']):
                     child_id = child.get('id') or child.get('fileId') or child.get('path') or ''
@@ -230,18 +230,18 @@ async def delete_file_from_project_tree(project_id: str, file_id: str) -> bool:
                 # 继续查找
                 folder_name = path_parts[0]
                 remaining_parts = path_parts[1:]
-                
+
                 if not node.get('children'):
                     return False
-                
+
                 for child in node['children']:
                     if child.get('name') == folder_name and child.get('type') == 'folder':
                         return delete_node(child, remaining_parts)
-                
+
                 return False
-        
+
         deleted = delete_node(tree_data, file_path_parts)
-        
+
         if deleted:
             # 更新 projectTree 文档
             await tree_collection.update_one(
@@ -251,7 +251,7 @@ async def delete_file_from_project_tree(project_id: str, file_id: str) -> bool:
             logger.info(f"已从 projectTree 中删除文件节点: projectId={project_id}, fileId={file_id}")
         else:
             logger.warning(f"未在 projectTree 中找到文件节点: projectId={project_id}, fileId={file_id}")
-        
+
         return deleted
     except Exception as e:
         logger.error(f"从 projectTree 中删除文件节点失败: projectId={project_id}, fileId={file_id}, 错误: {str(e)}", exc_info=True)
@@ -293,7 +293,7 @@ def parse_published_date(date_str: str) -> Optional[datetime]:
     """解析 published 字段中的日期字符串，支持多种格式"""
     if not date_str:
         return None
-    
+
     # 尝试解析常见的日期格式
     date_formats = [
         '%a, %d %b %Y %H:%M:%S %z',  # Mon, 01 Dec 2025 13:25:44 +0800
@@ -304,13 +304,13 @@ def parse_published_date(date_str: str) -> Optional[datetime]:
         '%Y-%m-%dT%H:%M:%S',         # 2025-12-01T13:25:44
         '%Y-%m-%dT%H:%M:%S%z',       # 2025-12-01T13:25:44+0800
     ]
-    
+
     for fmt in date_formats:
         try:
             return datetime.strptime(date_str, fmt)
         except ValueError:
             continue
-    
+
     return None
 
 def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any]:
@@ -319,55 +319,55 @@ def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any
         # 解析开始和结束日期
         start_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-        
+
         # 月份名称映射
         month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        
+
         # 生成日期范围内的所有日期模式
         date_patterns = []
         iso_date_values = []  # 用于 isoDate 字段的精确匹配
         current_dt = start_dt
-        
+
         while current_dt <= end_dt:
             year = current_dt.year
             month = current_dt.month
             day = current_dt.day
             month_name = month_names[month - 1]
-            
+
             # 生成该日期的所有可能格式（用于 pubDate 字段的正则匹配）
             date_patterns.extend([
                 f'{year}-{month:02d}-{day:02d}',  # 2025-12-01
                 f'{day:02d} {month_name} {year}',  # 01 Dec 2025
                 f'{day} {month_name} {year}',     # 1 Dec 2025
             ])
-            
+
             # 用于 isoDate 字段的精确匹配值
             iso_date_values.append(f'{year}-{month:02d}-{day:02d}')
-            
+
             # 移动到下一天
             current_dt += timedelta(days=1)
-        
+
         # 去重
         date_patterns = list(set(date_patterns))
         iso_date_values = list(set(iso_date_values))
-        
+
         if not date_patterns:
             return {}
-        
+
         # 构建查询条件：同时匹配 pubDate、published 和 isoDate 字段
         # pubDate/published 字段使用正则表达式匹配（支持 'Sun, 29 Jun 2025 08:19:20 GMT' 等格式）
         # isoDate 字段使用精确匹配或范围匹配
         or_conditions = []
-        
+
         # 添加 pubDate 字段的正则匹配条件（兼容 pubDate 字段）
         for pattern in date_patterns:
             or_conditions.append({'pubDate': {'$regex': pattern, '$options': 'i'}})
-        
+
         # 添加 published 字段的正则匹配条件（兼容 published 字段，RSS 数据可能使用此字段）
         for pattern in date_patterns:
             or_conditions.append({'published': {'$regex': pattern, '$options': 'i'}})
-        
+
         # 添加 isoDate 字段的匹配条件（如果字段存在）
         if iso_date_values:
             # 使用 $in 进行精确匹配
@@ -375,7 +375,7 @@ def build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any
             # 也支持 isoDate 字段包含日期字符串的情况（使用正则）
             for iso_date in iso_date_values:
                 or_conditions.append({'isoDate': {'$regex': iso_date, '$options': 'i'}})
-        
+
         # 使用 $or 组合所有条件
         return {
             '$or': or_conditions
@@ -563,21 +563,21 @@ async def query(request: Request):
                     tree_filter = {'projectId': project_id}
                     tree_cursor = tree_collection.find(tree_filter, {'_id': 0})
                     tree_data_list = [doc async for doc in tree_cursor]
-                    
+
                     if tree_data_list:
                         # 从树结构中提取所有文件节点
                         file_storage = await get_file_storage()
                         extracted_files = []
-                        
+
                         def extract_files_from_tree(node, parent_path=''):
                             """递归地从树节点中提取文件信息"""
                             if not node or not isinstance(node, dict):
                                 return
-                            
+
                             node_id = node.get('id') or node.get('fileId') or node.get('path') or ''
                             node_type = node.get('type', '')
                             is_file = node_type == 'file' or (node_type != 'folder' and not node.get('children'))
-                            
+
                             if is_file and node_id:
                                 # 构建文件对象，完全从树节点中提取数据
                                 file_obj = {
@@ -594,7 +594,7 @@ async def query(request: Request):
                                     'order': node.get('order', 0),
                                     'type': node_type
                                 }
-                                
+
                                 # 如果树节点中没有 content，尝试从文件系统读取
                                 if not file_obj['content']:
                                     if file_storage.file_exists(node_id):
@@ -603,33 +603,33 @@ async def query(request: Request):
                                         except Exception as e:
                                             logger.warning(f"从文件系统读取 content 失败: fileId={node_id}, 错误: {str(e)}")
                                             file_obj['content'] = ''
-                                
+
                                 extracted_files.append(file_obj)
-                            
+
                             # 递归处理子节点
                             if node.get('children') and isinstance(node['children'], list):
                                 for child in node['children']:
                                     extract_files_from_tree(child, node_id)
-                        
+
                         # 从所有 projectTree 文档中提取文件
                         for tree_doc in tree_data_list:
                             tree_data = tree_doc.get('data')
                             if tree_data:
                                 extract_files_from_tree(tree_data)
-                        
+
                         # 应用 fileId 过滤（如果提供了）
                         file_id_filter = filter_dict.get('fileId')
                         if file_id_filter:
-                            extracted_files = [f for f in extracted_files 
-                                             if f.get('fileId') == file_id_filter 
-                                             or f.get('id') == file_id_filter 
+                            extracted_files = [f for f in extracted_files
+                                             if f.get('fileId') == file_id_filter
+                                             or f.get('id') == file_id_filter
                                              or f.get('path') == file_id_filter]
-                        
+
                         # 替换原始查询结果
                         data = extracted_files
                         total = len(extracted_files)
                         total_pages = 1 if total > 0 else 0
-                        
+
                         logger.info(f"从 projectTree 提取 projectFiles 数据: projectId={project_id}, 文件数={len(extracted_files)}")
                     else:
                         # 如果没有 projectTree 数据，返回空列表
@@ -657,17 +657,17 @@ async def query(request: Request):
             if project_id:
                 try:
                     file_storage = await get_file_storage()
-                    
+
                     # 递归函数：为文件节点补充内容（如果缺失）
                     def attach_file_content(node):
                         """递归地为文件节点补充内容（如果缺失）"""
                         if not node or not isinstance(node, dict):
                             return
-                        
+
                         # 如果是文件节点，检查并补充 content
                         if node.get('type') == 'file' or (node.get('type') != 'folder' and not node.get('children')):
                             node_id = node.get('id') or node.get('fileId') or node.get('path') or ''
-                            
+
                             # 如果树节点中没有 content，尝试从文件系统读取
                             if node_id and not node.get('content'):
                                 if file_storage.file_exists(node_id):
@@ -677,18 +677,18 @@ async def query(request: Request):
                                     except Exception as e:
                                         logger.warning(f"从文件系统读取 content 失败: fileId={node_id}, 错误: {str(e)}")
                                         node['content'] = ''
-                        
+
                         # 递归处理子节点
                         if node.get('children') and isinstance(node['children'], list):
                             for child in node['children']:
                                 attach_file_content(child)
-                    
+
                     # 为每个 projectTree 文档补充文件内容
                     for tree_doc in data:
                         tree_data = tree_doc.get('data')
                         if tree_data:
                             attach_file_content(tree_data)
-                    
+
                     logger.info(f"已为 projectTree 补充文件内容: projectId={project_id}")
                 except Exception as e:
                     logger.warning(f"为 projectTree 补充文件内容失败: projectId={project_id}, 错误: {str(e)}")
@@ -715,7 +715,7 @@ async def query(request: Request):
 async def get_detail(cname: str, id: str):
     """
     获取MongoDB集合中的单条数据详情
-    
+
     对于 projectFiles 集合，会从文件系统读取 content。
     """
     try:
@@ -751,7 +751,7 @@ async def get_detail(cname: str, id: str):
 async def create(request: Request, data: Dict[str, Any] = Body(...)):
     """
     创建MongoDB集合数据
-    
+
     对于 projectFiles 集合，会将 content 字段写入文件系统，并同步到 Session。
     """
     try:
@@ -791,17 +791,17 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
             file_id = data_copy.get('fileId') or data_copy.get('id') or data_copy.get('path')
             project_id = data_copy.get('projectId')
             content = data_copy.get('content', '')
-            
+
             if file_id and project_id:
                 # 生成基础字段
                 current_time = get_current_time()
                 file_key = str(uuid.uuid4())
-                
+
                 # 计算内容哈希值
                 content_hash = ''
                 if content:
                     content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()
-                
+
                 # 准备文件数据
                 file_data = {
                     'key': file_key,
@@ -817,12 +817,12 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
                     'order': data_copy.get('order', 0),
                     'type': 'file'
                 }
-                
+
                 # 更新 projectTree 中的文件节点
                 success = await update_file_in_project_tree(project_id, file_id, file_data)
                 if success:
                     logger.info(f"已更新 projectTree 中的文件节点: projectId={project_id}, fileId={file_id}")
-                    
+
                     # 同步到 Session
                     try:
                         sync_service = await get_sync_service()
@@ -837,7 +837,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
                             logger.warning(f"文件同步到 Session 失败: fileId={file_id}, 错误: {sync_result.get('error')}")
                     except Exception as e:
                         logger.warning(f"同步文件到 Session 失败: {str(e)}")
-                    
+
                     # 同步到 static 目录
                     try:
                         tree_sync_service = await get_tree_sync_service()
@@ -852,7 +852,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
                             logger.warning(f"文件同步到 static 目录失败: fileId={file_id}, 错误: {tree_sync_result.get('error')}")
                     except Exception as e:
                         logger.warning(f"同步文件到 static 目录失败: {str(e)}")
-                    
+
                     # 同步整个项目树到 static（确保一致性）
                     try:
                         tree_sync_service = await get_tree_sync_service()
@@ -861,7 +861,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
                         logger.warning(f"同步项目树到 static 失败: {str(e)}")
                 else:
                     logger.error(f"更新 projectTree 中的文件节点失败: projectId={project_id}, fileId={file_id}")
-                
+
                 # 返回结果（不插入到 projectFiles 集合）
                 return RespOk(data={'key': file_key})
             else:
@@ -891,7 +891,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
         try:
             result = await collection.insert_one(data_copy)
             logger.info(f"数据创建成功 - 集合: {cname}, ID: {result.inserted_id}")
-            
+
             # 对于 projectTree 集合，同步到 static 目录
             if cname == 'projectTree':
                 project_id = data_copy.get('projectId')
@@ -928,7 +928,7 @@ async def create(request: Request, data: Dict[str, Any] = Body(...)):
 async def update(request: Request, data: Dict[str, Any] = Body(...)):
     """
     更新MongoDB集合数据
-    
+
     对于 projectFiles 集合，会将 content 字段写入文件系统，并同步到 Session。
     """
     try:
@@ -944,7 +944,7 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
         # 验证key字段或link字段
         key = data.get('key')
         link = data.get('link')
-        
+
         # 确定查询条件和使用的标识字段
         if key:
             # 优先使用key字段
@@ -997,7 +997,7 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
             # 支持通过 key、fileId 或 projectId+fileId 查找
             file_id = data.get('fileId') or data.get('id') or data.get('path')
             project_id = data.get('projectId')
-            
+
             # 如果没有提供 fileId，尝试从 projectTree 中查找（通过 key）
             if not file_id and key:
                 # 需要从 projectTree 中查找对应的文件节点
@@ -1020,17 +1020,17 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                                         if result:
                                             return result
                                 return None
-                            
+
                             file_node = find_file_by_key(tree_data, key)
                             if file_node:
                                 file_id = file_node.get('id') or file_node.get('fileId') or file_node.get('path')
                                 project_id = project_id or file_node.get('projectId')
-            
+
             if not file_id or not project_id:
                 raise ValueError("projectFiles 更新需要提供 fileId 和 projectId，或通过 key 在 projectTree 中查找")
-            
+
             content = data.get('content', '')
-            
+
             # 准备更新数据
             current_time = get_current_time()
             file_data = {
@@ -1042,20 +1042,20 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                 'content': content,
                 'updatedTime': current_time
             }
-            
+
             # 如果提供了 key，保留它
             if key:
                 file_data['key'] = key
-            
+
             # 如果提供了 content，计算哈希值
             if content:
                 file_data['contentHash'] = hashlib.md5(content.encode('utf-8')).hexdigest()
-            
+
             # 更新 projectTree 中的文件节点
             success = await update_file_in_project_tree(project_id, file_id, file_data)
             if not success:
                 raise ValueError(f"更新 projectTree 中的文件节点失败: projectId={project_id}, fileId={file_id}")
-            
+
             # 同步到 Session
             try:
                 sync_service = await get_sync_service()
@@ -1070,7 +1070,7 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                     logger.warning(f"文件同步到 Session 失败: fileId={file_id}, 错误: {sync_result.get('error')}")
             except Exception as e:
                 logger.warning(f"同步文件到 Session 失败: {str(e)}")
-            
+
             # 同步到 static 目录
             if content:
                 try:
@@ -1086,14 +1086,14 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
                         logger.warning(f"文件同步到 static 目录失败: fileId={file_id}, 错误: {tree_sync_result.get('error')}")
                 except Exception as e:
                     logger.warning(f"同步文件到 static 目录失败: {str(e)}")
-            
+
             # 同步整个项目树到 static（确保一致性）
             try:
                 tree_sync_service = await get_tree_sync_service()
                 await tree_sync_service.sync_project_tree_to_static(project_id)
             except Exception as e:
                 logger.warning(f"同步项目树到 static 失败: {str(e)}")
-            
+
             # 返回成功结果
             return RespOk(data={'key': file_data.get('key', key or '')})
 
@@ -1122,7 +1122,7 @@ async def update(request: Request, data: Dict[str, Any] = Body(...)):
 
         if not result:
             raise ValueError(f"未找到{identifier_type}为 {identifier} 的数据")
-        
+
         # 对于 projectTree 集合，同步到 static 目录
         if cname == 'projectTree':
             # 从更新后的文档中获取 projectId（因为更新请求可能不包含 projectId 字段）
@@ -1178,17 +1178,17 @@ async def delete(request: Request):
                 tree_collection = db.mongodb.db['projectTree']
                 tree_sync_service = None
                 files_to_delete = []  # 存储要删除的文件信息
-                
+
                 # 遍历所有项目树，查找匹配的文件节点
                 async for tree_doc in tree_collection.find({}):
                     project_id = tree_doc.get('projectId')
                     if not project_id:
                         continue
-                    
+
                     tree_data = tree_doc.get('data')
                     if not tree_data:
                         continue
-                    
+
                     def find_files_by_keys(node, target_keys, found_files):
                         """递归查找文件节点"""
                         if not node or not isinstance(node, dict):
@@ -1205,20 +1205,20 @@ async def delete(request: Request):
                         if node.get('children'):
                             for child in node['children']:
                                 find_files_by_keys(child, target_keys, found_files)
-                    
+
                     find_files_by_keys(tree_data, set(keys_list), files_to_delete)
-                
+
                 logger.info(f"[批量删除] 从 projectTree 中找到 {len(files_to_delete)} 个文件节点")
-                
+
                 # 删除所有静态文件和从 projectTree 中删除节点
                 for file_info in files_to_delete:
                     file_id = file_info.get('fileId')
                     project_id = file_info.get('projectId')
                     file_key = file_info.get('key')
-                    
+
                     if project_id:
                         project_ids.add(project_id)
-                    
+
                     if file_id and project_id:
                         # 从 projectTree 中删除文件节点
                         try:
@@ -1226,7 +1226,7 @@ async def delete(request: Request):
                             logger.info(f"[批量删除] 已从 projectTree 中删除文件节点: fileId={file_id}, projectId={project_id}")
                         except Exception as e:
                             logger.warning(f"[批量删除] 从 projectTree 中删除文件节点失败: fileId={file_id}, 错误: {str(e)}")
-                    
+
                     if file_id:
                         try:
                             if tree_sync_service is None:
@@ -1234,7 +1234,7 @@ async def delete(request: Request):
                             # 检查是文件还是文件夹
                             file_path = tree_sync_service.file_storage.get_file_path(file_id)
                             is_folder = os.path.exists(file_path) and os.path.isdir(file_path)
-                            
+
                             if is_folder:
                                 logger.info(f"[批量删除] 检测到文件夹，递归删除静态文件夹: fileId={file_id}, key={file_key}")
                                 result = await tree_sync_service.delete_project_folder_from_static(file_id)
@@ -1258,7 +1258,7 @@ async def delete(request: Request):
                                         logger.info(f"[批量删除] 成功删除静态文件: fileId={deleted_file_id} (原始: {file_id})")
                                 else:
                                     logger.error(f"[批量删除] 删除静态文件失败: fileId={file_id}, 错误: {result.get('error')}")
-                            
+
                             # 删除对应的会话（如果是文件且找到了 projectId）
                             if project_id and not is_folder:
                                 try:
@@ -1271,7 +1271,7 @@ async def delete(request: Request):
                                         parts = clean_file_id.rsplit('.', 1)
                                         path_without_ext = parts[0]
                                         file_ext = parts[1] if len(parts) > 1 else ''
-                                    
+
                                     # 去除 projectId 前缀
                                     if path_without_ext.startswith(f'{project_id}/'):
                                         path_without_ext = path_without_ext[len(project_id) + 1:]
@@ -1279,30 +1279,30 @@ async def delete(request: Request):
                                         next_char = path_without_ext[len(project_id)]
                                         if next_char in ['/', '_']:
                                             path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
-                                    
+
                                     # 规范化路径（前端格式：斜杠替换为单下划线）
                                     normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
                                     normalized_path = re.sub(r'/+/', '_', normalized_path)
                                     normalized_path = re.sub(r'^_+|_+$', '', normalized_path)
                                     normalized_path = re.sub(r'_+', '_', normalized_path)
-                                    
+
                                     if file_ext:
                                         normalized_path = f'{normalized_path}_{file_ext}'
-                                    
+
                                     frontend_session_id = f'{project_id}_{normalized_path}'
-                                    
+
                                     # 生成后端格式的 sessionId
                                     from modules.utils.idConverter import normalize_file_path_to_session_id
                                     backend_session_id = normalize_file_path_to_session_id(file_id, project_id)
-                                    
+
                                     logger.info(f"[批量删除] 准备删除会话: fileId={file_id}, projectId={project_id}")
                                     logger.debug(f"[批量删除] 前端格式 sessionId: {frontend_session_id}, 后端格式: {backend_session_id}")
-                                    
+
                                     # 调用会话删除服务（优先尝试前端格式）
                                     from modules.services.sessionService import SessionService
                                     session_service = SessionService()
                                     await session_service.initialize()
-                                    
+
                                     success = await session_service.delete_session(frontend_session_id)
                                     if success:
                                         logger.info(f"[批量删除] ✓ 成功删除会话（前端格式）: sessionId={frontend_session_id}")
@@ -1320,7 +1320,7 @@ async def delete(request: Request):
                             logger.error(f"[批量删除] 删除静态文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
                     else:
                         logger.warning(f"[批量删除] 无法获取 fileId，跳过删除静态文件: key={file_key}")
-                
+
                 # 所有文件删除后，同步一次项目树（如果有项目ID）
                 if project_ids and tree_sync_service:
                     logger.info(f"[批量删除] 开始同步 {len(project_ids)} 个项目树")
@@ -1331,7 +1331,7 @@ async def delete(request: Request):
                             logger.info(f"[批量删除] 同步项目树成功: projectId={project_id}")
                         except Exception as e:
                             logger.warning(f"[批量删除] 同步项目树失败: projectId={project_id}, 错误: {str(e)}")
-            
+
             # 对于 projectTree 集合，删除前获取项目ID以便同步删除 static 目录
             if cname == 'projectTree':
                 trees_to_delete = await collection.find_many({'key': {'$in': keys_list}})
@@ -1355,7 +1355,7 @@ async def delete(request: Request):
             else:
                 # projectFiles 已从 projectTree 中删除
                 return RespOk(data={"deleted_count": len(files_to_delete)})
-        
+
         elif links_str:
             links_list = [l.strip() for l in links_str.split(',') if l.strip()]
             if not links_list:
@@ -1372,17 +1372,17 @@ async def delete(request: Request):
                 tree_collection = db.mongodb.db['projectTree']
                 file_id = None
                 project_id = None
-                
+
                 # 遍历所有项目树，查找匹配的文件节点
                 async for tree_doc in tree_collection.find({}):
                     project_id_candidate = tree_doc.get('projectId')
                     if not project_id_candidate:
                         continue
-                    
+
                     tree_data = tree_doc.get('data')
                     if not tree_data:
                         continue
-                    
+
                     def find_file_by_key(node, target_key, found_info):
                         """递归查找文件节点"""
                         if not node or not isinstance(node, dict):
@@ -1400,13 +1400,13 @@ async def delete(request: Request):
                                 if find_file_by_key(child, target_key, found_info):
                                     return True
                         return False
-                    
+
                     found_info = {}
                     if find_file_by_key(tree_data, key, found_info):
                         file_id = found_info.get('fileId')
                         project_id = found_info.get('projectId')
                         break
-                
+
                 if file_id and project_id:
                     logger.info(f"[删除] 从 projectTree 中找到文件节点: key={key}, fileId={file_id}, projectId={project_id}")
                 else:
@@ -1418,7 +1418,7 @@ async def delete(request: Request):
                         file_id = file_id_param
                         project_id = project_id_param
                         logger.info(f"[删除] 使用参数中的 fileId 和 projectId: fileId={file_id}, projectId={project_id}")
-                
+
                 # 从 projectTree 中删除文件节点（如果找到了 fileId 和 projectId）
                 if file_id and project_id:
                     try:
@@ -1429,7 +1429,7 @@ async def delete(request: Request):
                             logger.warning(f"[删除] 从 projectTree 中删除文件节点失败: fileId={file_id}, projectId={project_id}")
                     except Exception as e:
                         logger.warning(f"[删除] 从 projectTree 中删除文件节点异常: fileId={file_id}, 错误: {str(e)}")
-                
+
                 # 删除静态文件（如果找到了 fileId）
                 if file_id:
                     logger.info(f"[删除] 准备删除静态文件: fileId={file_id}")
@@ -1439,7 +1439,7 @@ async def delete(request: Request):
                         file_path = tree_sync_service.file_storage.get_file_path(file_id)
                         logger.debug(f"[删除] 静态文件路径: {file_path}")
                         is_folder = os.path.exists(file_path) and os.path.isdir(file_path)
-                        
+
                         if is_folder:
                             logger.info(f"[删除] 检测到文件夹，开始递归删除静态文件夹: fileId={file_id}, path={file_path}")
                             result = await tree_sync_service.delete_project_folder_from_static(file_id)
@@ -1468,14 +1468,14 @@ async def delete(request: Request):
                     except Exception as e:
                         logger.error(f"[删除] 删除静态文件异常: fileId={file_id}, 错误: {str(e)}", exc_info=True)
                         # 即使删除静态文件异常，也继续删除 MongoDB 记录
-                    
+
                     # 删除对应的会话（如果是文件且找到了 projectId）
                     if project_id and not is_folder:
                         try:
                             # 生成两种格式的 sessionId（前端格式和后端格式）
                             # 前端格式：{projectId}_{normalizedPath}（单下划线分隔）
                             # 后端格式：{projectId}__{normalizedPath}（双下划线分隔目录）
-                            
+
                             # 1. 生成前端格式的 sessionId（与前端 sessionSyncService.generateSessionId 一致）
                             import re
                             clean_file_id = file_id.strip().lstrip('/').replace('\\', '/')
@@ -1485,7 +1485,7 @@ async def delete(request: Request):
                                 parts = clean_file_id.rsplit('.', 1)
                                 path_without_ext = parts[0]
                                 file_ext = parts[1] if len(parts) > 1 else ''
-                            
+
                             # 去除 projectId 前缀
                             if path_without_ext.startswith(f'{project_id}/'):
                                 path_without_ext = path_without_ext[len(project_id) + 1:]
@@ -1493,31 +1493,31 @@ async def delete(request: Request):
                                 next_char = path_without_ext[len(project_id)]
                                 if next_char in ['/', '_']:
                                     path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
-                            
+
                             # 规范化路径（前端格式：斜杠替换为单下划线）
                             normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
                             normalized_path = re.sub(r'/+/', '_', normalized_path)
                             normalized_path = re.sub(r'^_+|_+$', '', normalized_path)
                             normalized_path = re.sub(r'_+', '_', normalized_path)
-                            
+
                             if file_ext:
                                 normalized_path = f'{normalized_path}_{file_ext}'
-                            
+
                             frontend_session_id = f'{project_id}_{normalized_path}'
-                            
+
                             # 2. 生成后端格式的 sessionId
                             from modules.utils.idConverter import normalize_file_path_to_session_id
                             backend_session_id = normalize_file_path_to_session_id(file_id, project_id)
-                            
+
                             logger.info(f"[删除] 准备删除会话: fileId={file_id}, projectId={project_id}")
                             logger.debug(f"[删除] 前端格式 sessionId: {frontend_session_id}")
                             logger.debug(f"[删除] 后端格式 sessionId: {backend_session_id}")
-                            
+
                             # 调用会话删除服务（优先尝试前端格式，因为前端会调用这个格式）
                             from modules.services.sessionService import SessionService
                             session_service = SessionService()
                             await session_service.initialize()
-                            
+
                             # 尝试删除前端格式的会话
                             success = await session_service.delete_session(frontend_session_id)
                             if success:
@@ -1538,7 +1538,7 @@ async def delete(request: Request):
                             # 即使删除会话失败，也继续删除 MongoDB 记录
                 else:
                     logger.warning(f"[删除] 无法获取 fileId，无法删除静态文件: key={key}")
-                
+
                 # 同步整个项目树（如果找到了 projectId）
                 if project_id:
                     try:
@@ -1548,7 +1548,7 @@ async def delete(request: Request):
                         logger.info(f"[删除] 同步项目树成功: projectId={project_id}")
                     except Exception as e:
                         logger.warning(f"[删除] 同步项目树失败: projectId={project_id}, 错误: {str(e)}")
-            
+
             # 对于 projectTree 集合，删除前获取项目ID以便同步删除 static 目录
             if cname == 'projectTree':
                 tree_doc = await collection.find_one({'key': key})
@@ -1564,33 +1564,33 @@ async def delete(request: Request):
                                 logger.info(f"已删除项目 static 目录: projectId={project_id}")
                         except Exception as e:
                             logger.warning(f"删除项目 static 目录失败: projectId={project_id}, 错误: {str(e)}")
-            
+
             # 对于 projectFiles，已经从 projectTree 中删除，不需要删除集合
             if cname == 'projectFiles':
                 if file_id and project_id:
                     return RespOk(data={"deleted_count": 1})
                 else:
                     raise ValueError(f"未找到key为 {key} 的文件节点")
-            
+
             # 优先使用key字段
             result = await collection.delete_one({'key': key})
             if result.deleted_count == 0:
                 raise ValueError(f"未找到key为 {key} 的数据")
-            
+
             return RespOk(data={"deleted_count": result.deleted_count})
-        
+
         elif link:
             # 兼容使用link字段替换key字段
             result = await collection.delete_one({'link': link})
             if result.deleted_count == 0:
                 raise ValueError(f"未找到link为 {link} 的数据")
             return RespOk(data={"deleted_count": result.deleted_count})
-        
+
         elif query_params.get('fileId'):
             # 支持通过 fileId 删除（主要用于 projectFiles 集合）
             file_id = query_params.get('fileId')
             project_id = query_params.get('projectId')
-            
+
             if cname == 'projectFiles':
                 # 从 projectTree 中查找文件节点
                 if not project_id:
@@ -1600,11 +1600,11 @@ async def delete(request: Request):
                         project_id_candidate = tree_doc.get('projectId')
                         if not project_id_candidate:
                             continue
-                        
+
                         tree_data = tree_doc.get('data')
                         if not tree_data:
                             continue
-                        
+
                         def find_file_by_id(node, target_file_id, found_info):
                             """递归查找文件节点"""
                             if not node or not isinstance(node, dict):
@@ -1620,18 +1620,18 @@ async def delete(request: Request):
                                     if find_file_by_id(child, target_file_id, found_info):
                                         return True
                             return False
-                        
+
                         found_info = {}
                         if find_file_by_id(tree_data, file_id, found_info):
                             project_id = found_info.get('projectId')
                             file_id = found_info.get('fileId', file_id)
                             break
-                
+
                 if not project_id:
                     raise ValueError(f"无法找到文件对应的 projectId: fileId={file_id}")
-                
+
                 logger.info(f"[删除] 通过 fileId 找到文件: fileId={file_id}, projectId={project_id}")
-                
+
                 # 从 projectTree 中删除文件节点
                 try:
                     success = await delete_file_from_project_tree(project_id, file_id)
@@ -1641,9 +1641,9 @@ async def delete(request: Request):
                         logger.warning(f"[删除] 从 projectTree 中删除文件节点失败: fileId={file_id}, projectId={project_id}")
                 except Exception as e:
                     logger.warning(f"[删除] 从 projectTree 中删除文件节点异常: fileId={file_id}, 错误: {str(e)}")
-                
+
                 target_file_id = file_id
-                
+
                 # 删除静态文件
                 if target_file_id:
                     try:
@@ -1651,7 +1651,7 @@ async def delete(request: Request):
                         # 检查是文件还是文件夹
                         file_path = tree_sync_service.file_storage.get_file_path(target_file_id)
                         is_folder = os.path.exists(file_path) and os.path.isdir(file_path)
-                        
+
                         if is_folder:
                             logger.info(f"[删除] 检测到文件夹，开始递归删除静态文件夹: fileId={target_file_id}")
                             result = await tree_sync_service.delete_project_folder_from_static(target_file_id)
@@ -1677,7 +1677,7 @@ async def delete(request: Request):
                             else:
                                 logger.error(f"[删除] 删除静态文件失败: fileId={target_file_id}, 错误: {result.get('error')}")
                                 # 即使删除静态文件失败，也继续删除 MongoDB 记录
-                        
+
                         # 删除对应的会话（如果是文件且找到了 projectId）
                         if project_id and not is_folder:
                             try:
@@ -1690,7 +1690,7 @@ async def delete(request: Request):
                                     parts = clean_file_id.rsplit('.', 1)
                                     path_without_ext = parts[0]
                                     file_ext = parts[1] if len(parts) > 1 else ''
-                                
+
                                 # 去除 projectId 前缀
                                 if path_without_ext.startswith(f'{project_id}/'):
                                     path_without_ext = path_without_ext[len(project_id) + 1:]
@@ -1698,30 +1698,30 @@ async def delete(request: Request):
                                     next_char = path_without_ext[len(project_id)]
                                     if next_char in ['/', '_']:
                                         path_without_ext = path_without_ext[len(project_id):].lstrip('/_')
-                                
+
                                 # 规范化路径（前端格式：斜杠替换为单下划线）
                                 normalized_path = re.sub(r'[^a-zA-Z0-9/]', '_', path_without_ext)
                                 normalized_path = re.sub(r'/+/', '_', normalized_path)
                                 normalized_path = re.sub(r'^_+|_+$', '', normalized_path)
                                 normalized_path = re.sub(r'_+', '_', normalized_path)
-                                
+
                                 if file_ext:
                                     normalized_path = f'{normalized_path}_{file_ext}'
-                                
+
                                 frontend_session_id = f'{project_id}_{normalized_path}'
-                                
+
                                 # 生成后端格式的 sessionId
                                 from modules.utils.idConverter import normalize_file_path_to_session_id
                                 backend_session_id = normalize_file_path_to_session_id(target_file_id, project_id)
-                                
+
                                 logger.info(f"[删除] 准备删除会话: fileId={target_file_id}, projectId={project_id}")
                                 logger.debug(f"[删除] 前端格式 sessionId: {frontend_session_id}, 后端格式: {backend_session_id}")
-                                
+
                                 # 调用会话删除服务（优先尝试前端格式）
                                 from modules.services.sessionService import SessionService
                                 session_service = SessionService()
                                 await session_service.initialize()
-                                
+
                                 success = await session_service.delete_session(frontend_session_id)
                                 if success:
                                     logger.info(f"[删除] ✓ 成功删除会话（前端格式）: sessionId={frontend_session_id}")
@@ -1738,7 +1738,7 @@ async def delete(request: Request):
                     except Exception as e:
                         logger.error(f"[删除] 删除静态文件异常: fileId={target_file_id}, 错误: {str(e)}", exc_info=True)
                         # 即使删除静态文件异常，也继续删除 MongoDB 记录
-                
+
                 # 同步整个项目树
                 if project_id:
                     try:
@@ -1748,7 +1748,7 @@ async def delete(request: Request):
                         logger.info(f"[删除] 同步项目树成功: projectId={project_id}")
                     except Exception as e:
                         logger.warning(f"[删除] 同步项目树失败: projectId={project_id}, 错误: {str(e)}")
-                    
+
                     # projectFiles 已从 projectTree 中删除，不需要删除集合
                     return RespOk(data={"deleted_count": 1})
                 else:

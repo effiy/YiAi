@@ -6,38 +6,15 @@ from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
-
 def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
     """为响应添加 CORS 头（允许所有来源）"""
     # 默认允许所有来源，与 server.py 中的 CORS 配置保持一致
-    # 检查环境变量，如果明确设置为 "false" 则使用白名单模式
-    allow_any_env = os.getenv("CORS_ALLOW_ANY_ORIGIN", "true").lower()
-    allow_any_origin = allow_any_env != "false"
-    
-    if allow_any_origin:
-        # 允许所有来源
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Expose-Headers"] = "*"
-        response.headers["Access-Control-Max-Age"] = "3600"
-    else:
-        # 白名单模式（向后兼容）
-        origin = request.headers.get("origin")
-        if origin:
-            cors_origins_env = os.getenv("CORS_ORIGINS", "*")
-            allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
-            allow_any = len(allowed_origins) == 1 and allowed_origins[0] == "*"
-            
-            if allow_any or origin in allowed_origins:
-                response.headers["Access-Control-Allow-Origin"] = "*" if allow_any else origin
-                response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-                response.headers["Access-Control-Allow-Headers"] = "*"
-                response.headers["Access-Control-Expose-Headers"] = "*"
-                if not allow_any:
-                    response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Max-Age"] = "3600"
-    
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+    response.headers["Access-Control-Max-Age"] = "3600"
+
     return response
 
 
@@ -50,12 +27,12 @@ async def header_verification_middleware(request: Request, call_next):
         # 记录请求信息
         content_type = request.headers.get("content-type", "")
         logger.info(f"收到请求: {request.method} {request.url}, Content-Type: {content_type}")
-        
+
         # 跳过 OPTIONS 预检请求，让 CORS 中间件处理
         if request.method == "OPTIONS":
             response = await call_next(request)
             return response
-        
+
         # 检查中间件是否启用
         enable_middleware = os.getenv("ENABLE_AUTH_MIDDLEWARE", "true").lower() == "true"
         if not enable_middleware:
@@ -64,7 +41,7 @@ async def header_verification_middleware(request: Request, call_next):
 
         # 获取环境变量中的配置
         required_token = os.getenv("API_X_TOKEN", "")
-        
+
         # 如果环境变量未设置，跳过验证
         if not required_token:
             logger.info("未配置API验证，跳过请求头验证")
@@ -89,7 +66,7 @@ async def header_verification_middleware(request: Request, call_next):
         response = await call_next(request)
         logger.info(f"请求处理完成: {request.method} {request.url}")
         return response
-        
+
     except Exception as e:
         logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
         error_response = JSONResponse(

@@ -1,7 +1,7 @@
 import logging, json, os
-from fastapi import APIRouter, Query, HTTPException
-from pydantic import BaseModel, Field
 from typing import Dict, Any, Union
+from pydantic import BaseModel, Field
+from fastapi import APIRouter, Query, HTTPException
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class ExecuteRequest(BaseModel):
     module_name: str = "modules.crawler.crawler"
     method_name: str = "main"
     params: Union[Dict[str, Any], str] = Field(default_factory=lambda: {"url": "https://www.qbitai.com/"})
-    
+
     class Config:
         # 允许任意类型的字段值
         arbitrary_types_allowed = True

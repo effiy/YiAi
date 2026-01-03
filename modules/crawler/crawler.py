@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from crawl4ai import AsyncWebCrawler
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
-from Resp import RespOk
+from resp import RespOk
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ async def fetch_page_content(params: Dict[str, any]) -> str:
 async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
     url = params.get("url")
     min_title_length = params.get("min_title_length", 24)
-    
+
     logger.info(f"开始爬取URL: {url}, 最小标题长度: {min_title_length}")
 
     try:
@@ -66,11 +66,11 @@ async def main(params: Dict[str, any]) -> List[Dict[str, str]]:
         # 提取链接
         extractor = LinkExtractor(min_title_length)
         long_titles = extractor.extract_links(content)
-        
+
         # 打印结果
         for i, link in enumerate(long_titles):
             logger.info(f"链接 {i+1}: {link['title']} - {link['url']}")
-        
+
         return RespOk(data=long_titles)
 
     except Exception as e:
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     params = {"url": args.url, "min_title_length": args.min_title_length}
-    
+
     print(f"开始爬取 URL: {args.url}, 最小标题长度: {args.min_title_length}")
     results = asyncio.run(main(params))
     print(f"爬取完成，共获取到 {len(results)} 个符合条件的链接")

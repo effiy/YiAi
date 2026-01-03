@@ -1,25 +1,25 @@
-"""FastAPI 应用启动文件"""
-import logging
 import os
+import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
-from config import Config
-from constants import DEFAULT_HOST, DEFAULT_PORT, UVICORN_RELOAD
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 from database import db
+from config import Config
 from middleware.auth import header_verification_middleware
+from constants import DEFAULT_HOST, DEFAULT_PORT, UVICORN_RELOAD
 
 # 导入所有路由
 from router import base
-from router import session
 from router import prompt
-from router import oss
-from router import apiRequest
-from router import mongodb
-from router import dataSync
-from router import rss
+# from router import oss
+# from router import rss
+# from router import session
+# from router import mongodb
+# from router import dataSync
+# from router import apiRequest
 
 # 配置日志
 logging.basicConfig(
@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 # 创建配置实例
 config = Config()
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
@@ -39,9 +38,9 @@ async def lifespan(app: FastAPI):
     logger.info("正在启动应用...")
     try:
         # 初始化数据库
-        await db.initialize()
-        logger.info("数据库初始化成功")
-        
+        # await db.initialize()
+        # logger.info("数据库初始化成功")
+
         # 如果启用了 RSS 定时任务，启动调度器
         if config.is_rss_scheduler_enabled():
             try:
@@ -50,14 +49,14 @@ async def lifespan(app: FastAPI):
                 logger.info("RSS 定时任务已启动")
             except Exception as e:
                 logger.warning(f"启动 RSS 定时任务失败: {str(e)}")
-        
+
         logger.info("应用启动完成")
     except Exception as e:
         logger.error(f"应用启动失败: {str(e)}", exc_info=True)
         raise
-    
+
     yield
-    
+
     # 关闭时执行
     logger.info("正在关闭应用...")
     try:
@@ -69,7 +68,7 @@ async def lifespan(app: FastAPI):
                 logger.info("RSS 定时任务已停止")
             except Exception as e:
                 logger.warning(f"停止 RSS 定时任务失败: {str(e)}")
-        
+
         # 关闭数据库连接
         await db.close()
         logger.info("应用关闭完成")
@@ -106,13 +105,14 @@ else:
 
 # 注册所有路由
 app.include_router(base.router)
-app.include_router(session.router)
 app.include_router(prompt.router)
-app.include_router(oss.router)
-app.include_router(apiRequest.router)
-app.include_router(mongodb.router)
-app.include_router(dataSync.router)
-app.include_router(rss.router)
+
+# app.include_router(session.router)
+# app.include_router(oss.router)
+# app.include_router(apiRequest.router)
+# app.include_router(mongodb.router)
+# app.include_router(dataSync.router)
+# app.include_router(rss.router)
 
 # 根路径
 @app.get("/")
@@ -128,22 +128,21 @@ async def root():
 async def health_check():
     """健康检查"""
     return JSONResponse(content={
-        "status": "healthy",
-        "database": "connected" if db._initialized else "disconnected"
+        "status": "healthy"
     })
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     # 从环境变量获取配置
     host = os.getenv("HOST", DEFAULT_HOST)
     port = int(os.getenv("PORT", DEFAULT_PORT))
     reload = UVICORN_RELOAD
-    
+
     logger.info(f"正在启动服务器: http://{host}:{port}")
     logger.info(f"自动重载: {'启用' if reload else '禁用'}")
-    
+
     uvicorn.run(
         "server:app",
         host=host,

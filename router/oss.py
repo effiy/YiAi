@@ -7,7 +7,7 @@ from typing import Optional, Any, List
 from functools import lru_cache, wraps
 
 from database import db
-from Resp import RespOk
+from resp import RespOk
 from router.utils import create_response, handle_error
 
 # 设置日志
@@ -73,11 +73,11 @@ def validate_file(file: UploadFile) -> None:
     """验证文件大小和类型"""
     if not file.filename:
         raise HTTPException(status_code=400, detail="文件名不能为空")
-    
+
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"不支持的文件类型: {file_ext}，支持的类型: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
@@ -88,7 +88,7 @@ async def delete(osspath: str):
     try:
         if not osspath:
             raise HTTPException(status_code=400, detail="文件路径不能为空")
-        
+
         bucket = get_bucket()
         bucket.delete_object(osspath)
         return RespOk()
@@ -113,7 +113,7 @@ async def upload_file(
         content = await file.read()
         if len(content) > MAX_FILE_SIZE:
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail=f"文件大小超过限制: {MAX_FILE_SIZE/1024/1024}MB"
             )
 
@@ -149,27 +149,27 @@ async def delete_file(
     try:
         if not object_name:
             raise HTTPException(status_code=400, detail="文件名不能为空")
-        
+
         exists = bucket.object_exists(object_name)
         if not exists:
             raise HTTPException(status_code=404, detail="文件不存在")
 
         bucket.delete_object(object_name)
-        
+
         # 同时删除文件的标签信息
         try:
             await db.mongodb.initialize()
             await db.mongodb.delete_one("oss_file_tags", {"object_name": object_name})
         except Exception as tag_error:
             logger.warning(f"删除文件标签失败: {str(tag_error)}")
-        
+
         # 同时删除文件的信息（标题、描述等）
         try:
             await db.mongodb.initialize()
             await db.mongodb.delete_one("oss_file_info", {"object_name": object_name})
         except Exception as info_error:
             logger.warning(f"删除文件信息失败: {str(info_error)}")
-        
+
         logger.info(f"文件删除成功: {object_name}")
 
         return create_response(
@@ -193,15 +193,15 @@ async def set_file_tags(
     try:
         if not object_name:
             raise HTTPException(status_code=400, detail="文件对象名不能为空")
-        
+
         # 验证标签格式（去重、去空）
         tags = [tag.strip() for tag in tags if tag.strip()]
         tags = list(set(tags))  # 去重
-        
+
         # 使用 upsert 操作
         await db.mongodb.initialize()
         collection = db.mongodb.db["oss_file_tags"]
-        
+
         await collection.update_one(
             {"object_name": object_name},
             {
@@ -213,7 +213,7 @@ async def set_file_tags(
             },
             upsert=True
         )
-        
+
         logger.info(f"文件标签设置成功: {object_name}, 标签: {tags}")
         return create_response(
             code=200,
@@ -233,12 +233,12 @@ async def get_file_tags(object_name: str) -> JSONResponse:
     try:
         if not object_name:
             raise HTTPException(status_code=400, detail="文件对象名不能为空")
-        
+
         await db.mongodb.initialize()
         tag_doc = await db.mongodb.find_one("oss_file_tags", {"object_name": object_name})
-        
+
         tags = tag_doc.get("tags", []) if tag_doc else []
-        
+
         return create_response(
             code=200,
             message="获取成功",
@@ -257,10 +257,10 @@ async def delete_file_tags(object_name: str) -> JSONResponse:
     try:
         if not object_name:
             raise HTTPException(status_code=400, detail="文件对象名不能为空")
-        
+
         await db.mongodb.initialize()
         deleted_count = await db.mongodb.delete_one("oss_file_tags", {"object_name": object_name})
-        
+
         logger.info(f"文件标签删除成功: {object_name}")
         return create_response(
             code=200,
@@ -280,18 +280,18 @@ async def get_all_tags() -> JSONResponse:
     try:
         await db.mongodb.initialize()
         tag_docs = await db.mongodb.find_many("oss_file_tags", {})
-        
+
         # 收集所有标签并统计使用次数
         tag_count = {}
         for doc in tag_docs:
             for tag in doc.get("tags", []):
                 tag_count[tag] = tag_count.get(tag, 0) + 1
-        
+
         # 按使用次数排序
         sorted_tags = sorted(tag_count.items(), key=lambda x: x[1], reverse=True)
-        
+
         tags_list = [{"name": tag, "count": count} for tag, count in sorted_tags]
-        
+
         return create_response(
             code=200,
             message="获取成功",
@@ -322,7 +322,7 @@ async def list_files(
                     last_modified_str = last_modified_dt.strftime("%Y-%m-%d %H:%M:%S")
                 except (ValueError, TypeError, OSError):
                     last_modified_str = str(obj.last_modified)
-            
+
             # 获取文件的标签
             file_tags = []
             try:
@@ -332,7 +332,7 @@ async def list_files(
                     file_tags = tag_doc.get("tags", [])
             except Exception as tag_error:
                 logger.warning(f"获取文件标签失败: {str(tag_error)}")
-            
+
             # 获取文件的信息（标题、描述）
             file_title = ""
             file_description = ""
@@ -344,7 +344,7 @@ async def list_files(
                     file_description = info_doc.get("description", "")
             except Exception as info_error:
                 logger.warning(f"获取文件信息失败: {str(info_error)}")
-            
+
             file_data = {
                 "name": obj.key,
                 "size": obj.size,
@@ -356,13 +356,13 @@ async def list_files(
                 "title": file_title,
                 "description": file_description
             }
-            
+
             # 如果指定了标签筛选，则只返回包含该标签的文件
             if tags:
                 filter_tags = [t.strip() for t in tags.split(",") if t.strip()]
                 if not any(tag in file_tags for tag in filter_tags):
                     continue
-            
+
             files.append(file_data)
 
         logger.info(f"成功获取文件列表，共{len(files)}个文件")
@@ -384,22 +384,22 @@ async def update_file_info(
     try:
         if not object_name:
             raise HTTPException(status_code=400, detail="文件对象名不能为空")
-        
+
         # 准备更新数据
         update_data = {
             "object_name": object_name,
             "updatedTime": datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
         }
-        
+
         if title is not None:
             update_data["title"] = title.strip() if title else ""
         if description is not None:
             update_data["description"] = description.strip() if description else ""
-        
+
         # 使用 upsert 操作
         await db.mongodb.initialize()
         collection = db.mongodb.db["oss_file_info"]
-        
+
         await collection.update_one(
             {"object_name": object_name},
             {
@@ -410,7 +410,7 @@ async def update_file_info(
             },
             upsert=True
         )
-        
+
         logger.info(f"文件信息更新成功: {object_name}, title: {title}, description: {description}")
         return create_response(
             code=200,
@@ -434,10 +434,10 @@ async def get_file_info(object_name: str) -> JSONResponse:
     try:
         if not object_name:
             raise HTTPException(status_code=400, detail="文件对象名不能为空")
-        
+
         await db.mongodb.initialize()
         info_doc = await db.mongodb.find_one("oss_file_info", {"object_name": object_name})
-        
+
         if info_doc:
             return create_response(
                 code=200,
