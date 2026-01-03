@@ -20,6 +20,7 @@ from router import session
 from router import mongodb
 from router import dataSync
 from router import apiRequest
+from router import static
 
 # 配置日志
 logging.basicConfig(
@@ -113,6 +114,7 @@ app.include_router(apiRequest.router)
 app.include_router(mongodb.router)
 app.include_router(dataSync.router)
 app.include_router(rss.router)
+app.include_router(static.router)
 
 # 根路径
 @app.get("/")
