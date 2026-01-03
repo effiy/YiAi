@@ -14,12 +14,12 @@ from constants import DEFAULT_HOST, DEFAULT_PORT, UVICORN_RELOAD
 # 导入所有路由
 from router import base
 from router import prompt
-# from router import oss
-# from router import rss
-# from router import session
-# from router import mongodb
-# from router import dataSync
-# from router import apiRequest
+from router import oss
+from router import rss
+from router import session
+from router import mongodb
+from router import dataSync
+from router import apiRequest
 
 # 配置日志
 logging.basicConfig(
@@ -38,8 +38,8 @@ async def lifespan(app: FastAPI):
     logger.info("正在启动应用...")
     try:
         # 初始化数据库
-        # await db.initialize()
-        # logger.info("数据库初始化成功")
+        await db.initialize()
+        logger.info("数据库初始化成功")
 
         # 如果启用了 RSS 定时任务，启动调度器
         if config.is_rss_scheduler_enabled():
@@ -107,12 +107,12 @@ else:
 app.include_router(base.router)
 app.include_router(prompt.router)
 
-# app.include_router(session.router)
-# app.include_router(oss.router)
-# app.include_router(apiRequest.router)
-# app.include_router(mongodb.router)
-# app.include_router(dataSync.router)
-# app.include_router(rss.router)
+app.include_router(session.router)
+app.include_router(oss.router)
+app.include_router(apiRequest.router)
+app.include_router(mongodb.router)
+app.include_router(dataSync.router)
+app.include_router(rss.router)
 
 # 根路径
 @app.get("/")

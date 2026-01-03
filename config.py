@@ -11,7 +11,7 @@ class Config:
 
     # 默认配置常量
     DEFAULT_CORS_ORIGINS = "*"
-    DEFAULT_RSS_SCHEDULER_ENABLED = "false"
+    DEFAULT_RSS_SCHEDULER_ENABLED = "true"
     DEFAULT_AUTH_MIDDLEWARE_ENABLED = "false"
 
     def __new__(cls):
