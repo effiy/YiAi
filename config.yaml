@@ -1,0 +1,198 @@
+# 应用配置（语义化模块化），支持环境变量覆盖
+# 说明：
+# - 所有键可被 env_configs 中映射的环境变量覆盖，环境变量优先于 YAML
+# - 按模块分组，便于定位与维护
+#
+# 服务器设置
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+  cors_origins: 
+    - "*"
+  cors_allow_any: true
+  uvicorn:
+    limit_concurrency: 1000
+    limit_max_requests: 10000
+    timeout_keep_alive: 5
+
+# 分页设置
+pagination:
+  default_size: 2000
+  max_size: 8000
+  min_size: 1
+
+# 用户设置
+user:
+  default_id: "default_user"  # 默认用户ID，用于缺省场景
+
+# 静态文件设置
+static:
+  base_dir: "./static"
+  max_zip_size_mb: 100
+
+# 数据库设置（MongoDB）
+database:
+  mongodb:
+    url: "mongodb://localhost:27017"
+    database: "ruiyi"
+    pool_size: 10
+    max_pool_size: 50
+    collections:
+      sessions: "sessions"
+      rss: "rss"
+      seeds: "seeds"
+      chat_records: "chat_records"
+      pet_data_sync: "pet_data_sync"
+      oss_file_tags: "oss_file_tags"
+      oss_file_info: "oss_file_info"
+
+# OSS 存储（基础配置）
+# 提示：下面有完整的 OSS 配置（含 allowed_extensions），该段为兼容保留
+oss:
+  access_key: ""
+  secret_key: ""
+  endpoint: ""
+  bucket: ""
+  domain: ""
+  max_file_size_mb: 50
+
+# RSS 定时器
+rss:
+  scheduler_enabled: true
+  scheduler_interval: 3600
+
+# 爬虫配置
+crawler:
+  min_title_length: 24
+  retry:
+    attempts: 3
+    wait_multiplier: 1
+    wait_min_seconds: 4
+    wait_max_seconds: 10
+  parse:
+    markdown_link_pattern: "\\[(.*?)\\]\\((.*?)\\)"
+    ignore_image_links: true
+  url:
+    require_https: false
+
+# Puppeteer 远程浏览器与视口
+puppeteer:
+  browser_url: "http://localhost:9222"
+  viewport:
+    width: 1920
+    height: 1080
+    device_scale_factor: 2
+
+# OSS 存储（完整配置，建议使用）
+oss:
+  access_key: ""
+  secret_key: ""
+  endpoint: ""
+  bucket: ""
+  domain: ""
+  max_file_size_mb: 50
+  allowed_extensions:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".gif"
+    - ".pdf"
+    - ".doc"
+    - ".docx"
+    - ".epub"
+    - ".md"
+# 日志设置
+logging:
+  level: "info"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  datefmt: "%Y-%m-%d %H:%M:%S"
+  propagate_uvicorn: false
+
+# 启动流程控制
+startup:
+  init_database: true
+  init_rss_system: true
+
+# 中间件设置
+middleware:
+  auth:
+    enabled: false
+    token: ""
+
+# 动态模块执行白名单（支持 "*"）
+module:
+  allowlist: 
+    - "*"
+
+# Ollama 服务
+ollama:
+  url: "http://localhost:11434"
+  auth: ""
+
+# 环境变量映射规则
+# 键为 YAML 路径；值为对应的环境变量名
+env_configs:
+  server.host: "HOST"
+  server.port: "PORT"
+  server.reload: "UVICORN_RELOAD"
+  server.cors_origins: "CORS_ORIGINS"
+  server.cors_allow_any: "CORS_ALLOW_ANY_ORIGIN"
+  server.uvicorn.limit_concurrency: "UVICORN_LIMIT_CONCURRENCY"
+  server.uvicorn.limit_max_requests: "UVICORN_LIMIT_MAX_REQUESTS"
+  server.uvicorn.timeout_keep_alive: "UVICORN_TIMEOUT_KEEP_ALIVE"
+  
+  pagination.default_size: "DEFAULT_PAGE_SIZE"
+  pagination.max_size: "MAX_PAGE_SIZE"
+  pagination.min_size: "MIN_PAGE_SIZE"
+  
+  user.default_id: "DEFAULT_USER_ID"
+  
+  static.base_dir: "STATIC_BASE_DIR"
+  static.max_zip_size_mb: "STATIC_MAX_ZIP_SIZE_MB"
+  
+  database.mongodb.url: "MONGODB_URL"
+  database.mongodb.database: "MONGODB_DATABASE"
+  database.mongodb.pool_size: "MONGODB_POOL_SIZE"
+  database.mongodb.max_pool_size: "MONGODB_MAX_POOL_SIZE"
+  database.mongodb.collections.sessions: "COLLECTION_SESSIONS"
+  database.mongodb.collections.rss: "COLLECTION_RSS"
+  database.mongodb.collections.seeds: "COLLECTION_SEEDS"
+  database.mongodb.collections.chat_records: "COLLECTION_CHAT_RECORDS"
+  database.mongodb.collections.pet_data_sync: "COLLECTION_PET_DATA_SYNC"
+  database.mongodb.collections.oss_file_tags: "COLLECTION_OSS_FILE_TAGS"
+  database.mongodb.collections.oss_file_info: "COLLECTION_OSS_FILE_INFO"
+
+  oss.access_key: "OSS_ACCESS_KEY_ID"
+  oss.secret_key: "OSS_ACCESS_KEY_SECRET"
+  oss.endpoint: "OSS_ENDPOINT"
+  oss.bucket: "OSS_BUCKET_NAME"
+  oss.domain: "OSS_DOMAIN"
+  oss.max_file_size_mb: "OSS_MAX_FILE_SIZE"
+  crawler.min_title_length: "CRAWLER_MIN_TITLE_LENGTH"
+  crawler.retry.attempts: "CRAWLER_RETRY_ATTEMPTS"
+  crawler.retry.wait_multiplier: "CRAWLER_RETRY_WAIT_MULTIPLIER"
+  crawler.retry.wait_min_seconds: "CRAWLER_RETRY_WAIT_MIN_SECONDS"
+  crawler.retry.wait_max_seconds: "CRAWLER_RETRY_WAIT_MAX_SECONDS"
+  crawler.parse.markdown_link_pattern: "CRAWLER_MARKDOWN_LINK_PATTERN"
+  crawler.parse.ignore_image_links: "CRAWLER_IGNORE_IMAGE_LINKS"
+  crawler.url.require_https: "CRAWLER_REQUIRE_HTTPS"
+  puppeteer.browser_url: "PUPPETEER_BROWSER_URL"
+  puppeteer.viewport.width: "PUPPETEER_VIEWPORT_WIDTH"
+  puppeteer.viewport.height: "PUPPETEER_VIEWPORT_HEIGHT"
+  puppeteer.viewport.device_scale_factor: "PUPPETEER_DEVICE_SCALE_FACTOR"
+  oss.allowed_extensions: "OSS_ALLOWED_EXTENSIONS"
+  rss.scheduler_enabled: "ENABLE_RSS_SCHEDULER"
+  rss.scheduler_interval: "RSS_SCHEDULER_INTERVAL"
+  middleware.auth.enabled: "ENABLE_AUTH_MIDDLEWARE"
+  middleware.auth.token: "API_X_TOKEN"
+  module.allowlist: "MODULE_EXEC_ALLOWLIST"
+  ollama.url: "OLLAMA_URL"
+  ollama.auth: "OLLAMA_AUTH"
+  startup.init_database: "INIT_DATABASE"
+  startup.init_rss_system: "INIT_RSS_SYSTEM"
+  logging.level: "LOG_LEVEL"
+  logging.format: "LOG_FORMAT"
+  logging.datefmt: "LOG_DATEFMT"
+  logging.propagate_uvicorn: "LOG_PROPAGATE_UVICORN"
+
