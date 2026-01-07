@@ -157,3 +157,25 @@ async def delete_document(params: Dict[str, Any]) -> Dict[str, Any]:
     await mongodb_service.delete_document(cname, doc_id)
     return {'success': True}
 
+async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    更新或插入文档
+    
+    Args:
+        params: 参数字典
+            - cname (str): 集合名称 (必填)
+            - filter (dict): 查询条件 (必填)
+            - update (dict): 更新数据 (必填)
+            
+    Returns:
+        Dict[str, Any]: 操作结果
+    """
+    cname = params.get('cname')
+    filter_dict = params.get('filter')
+    update_data = params.get('update')
+    
+    if not cname or not filter_dict or not update_data:
+        raise ValueError("cname, filter, and update are required")
+        
+    return await mongodb_service.upsert_document(cname, filter_dict, update_data)
+

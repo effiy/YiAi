@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 导入指定目录到会话并上传静态文件
-用法: python3 scripts/import_dir_to_sessions.py /path/to/source/dir
+用法: python3 scripts/import_dir_to_sessions.py /path/to/source/dir [--api-url https://api.effiy.cn]
 """
 import os
 import sys
@@ -9,6 +9,7 @@ import shutil
 import asyncio
 import logging
 import argparse
+import aiohttp
 from datetime import datetime
 from pathlib import Path
 
@@ -22,7 +23,58 @@ from core.config import settings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-async def import_directory(source_dir: str, target_base_dir: str = "static", base_url: str = "http://localhost:8000"):
+async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_path: Path, target_dir: str) -> str:
+    """通过 API 上传文件"""
+    url = f"{api_url.rstrip('/')}/upload"
+    data = aiohttp.FormData()
+    data.add_field('file', open(file_path, 'rb'), filename=file_path.name)
+    data.add_field('target_dir', str(target_dir))
+    
+    async with session.post(url, data=data) as resp:
+        if resp.status != 200:
+            text = await resp.text()
+            raise Exception(f"Upload failed: {resp.status} {text}")
+        result = await resp.json()
+        if result.get('code') != 0:
+             raise Exception(f"Upload error: {result}")
+        return result['data']['url']
+
+async def upsert_session_api(session: aiohttp.ClientSession, api_url: str, cname: str, filter_doc: dict, update_doc: dict):
+    """通过 API 更新会话"""
+    url = f"{api_url.rstrip('/')}/"
+    
+    # 转换 datetime 对象为字符串，因为 JSON 不支持 datetime
+    def convert_dates(obj):
+        if isinstance(obj, dict):
+            return {k: convert_dates(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_dates(i) for i in obj]
+        elif isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        return obj
+
+    params = {
+        "cname": cname,
+        "filter": convert_dates(filter_doc),
+        "update": convert_dates(update_doc)
+    }
+    
+    payload = {
+        "module_name": "services.database.data_service",
+        "method_name": "upsert_document",
+        "parameters": params
+    }
+    
+    async with session.post(url, json=payload) as resp:
+        if resp.status != 200:
+            text = await resp.text()
+            raise Exception(f"Upsert failed: {resp.status} {text}")
+        result = await resp.json()
+        if result.get('code') != 0:
+             raise Exception(f"Upsert error: {result}")
+        return result['data']
+
+async def import_directory(source_dir: str, target_base_dir: str = "static", api_url: str = None):
     """
     遍历源目录，上传文件并更新数据库会话
     """
@@ -32,10 +84,16 @@ async def import_directory(source_dir: str, target_base_dir: str = "static", bas
         return
 
     logger.info(f"开始扫描目录: {source_path}")
+    logger.info(f"模式: {'API 远程上传' if api_url else '本地直接操作'}")
     
-    # 确保数据库连接
-    await db.initialize()
-    collection = db.db[settings.collection_sessions]
+    # 只有在本地模式下才初始化数据库
+    if not api_url:
+        await db.initialize()
+        collection = db.db[settings.collection_sessions]
+    
+    http_session = None
+    if api_url:
+        http_session = aiohttp.ClientSession()
 
     count_processed = 0
     count_updated = 0
@@ -59,81 +117,100 @@ async def import_directory(source_dir: str, target_base_dir: str = "static", bas
                 
                 # 处理文件名过长问题
                 target_filename = filename
-                if len(filename.encode('utf-8')) > 200: # 检查字节长度，预留一些空间
+                if len(filename.encode('utf-8')) > 200: 
                     name, ext = os.path.splitext(filename)
-                    # 简单截断，保留后缀
-                    # 假设每个字符最多3字节，保守截断到60个字符 + 后缀?
-                    # 或者更精确一点，截断到 150 字符
                     target_filename = name[:100] + ext
                     logger.warning(f"文件名过长，已截断: {filename} -> {target_filename}")
 
-                # 1. 计算 Tags (基于目录结构)
-                # 例如 rel_path = "category/sub/file.txt" -> tags = ["category", "sub"]
+                # 1. 计算 Tags
                 tags = list(rel_path.parent.parts)
                 
-                # 2. 处理静态文件
-                # 保持相同的目录结构
+                # 2. 处理文件上传/复制
                 target_rel_path = rel_path.parent / target_filename
-                target_file_path = Path(target_base_dir) / target_rel_path
-                target_file_path.parent.mkdir(parents=True, exist_ok=True)
                 
-                # 复制文件 (覆盖模式)
-                shutil.copy2(file_source_path, target_file_path)
-                
-                # 3. 数据库操作
-                # 相对 URL 路径 (用于前端访问)
-                # 确保 base_url 不以 / 结尾
-                base_url = base_url.rstrip('/')
-                # 确保 path 使用 / 分隔符 (Windows 兼容)
-                rel_path_str = str(target_rel_path).replace(os.sep, '/')
-                url_path = f"{base_url}/{target_base_dir}/{rel_path_str}"
-                
-                # 构建查询条件：目录(tags) 和 文件名相同
+                # 3. 数据库操作准备
                 filter_doc = {
                     "tags": tags,
                     "filename": target_filename
                 }
                 
-                # 更新内容
                 update_doc = {
                     "$set": {
                         "tags": tags,
                         "filename": target_filename,
-                        "file_path": str(url_path),  # 存储 web 可访问路径
                         "updated_at": datetime.now()
                     },
                     "$setOnInsert": {
                         "created_at": datetime.now(),
-                        "title": filename,  # 标题保留原文件名
+                        "title": filename,
                     }
                 }
 
-                result = await collection.update_one(filter_doc, update_doc, upsert=True)
+                if api_url:
+                    # API 模式
+                    # 上传文件
+                    # 计算目标目录 (相对于 static)
+                    file_target_dir = Path(target_base_dir) / rel_path.parent
+                    url_path = await upload_file_api(http_session, api_url, file_source_path, file_target_dir)
+                    
+                    update_doc["$set"]["file_path"] = url_path
+                    
+                    # 更新数据库
+                    result = await upsert_session_api(http_session, api_url, settings.collection_sessions, filter_doc, update_doc)
+                    
+                    # API 返回的 upserted_id 是字符串或 None
+                    if result.get('upserted_id'):
+                        count_created += 1
+                        logger.info(f"[API 新建] {rel_path}")
+                    else:
+                        count_updated += 1
+                        logger.info(f"[API 更新] {rel_path}")
+                        
+                else:
+                    # 本地模式
+                    target_file_path = Path(target_base_dir) / target_rel_path
+                    target_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    
+                    # 复制文件
+                    shutil.copy2(file_source_path, target_file_path)
+                    
+                    # 计算 URL
+                    rel_path_str = str(target_rel_path).replace(os.sep, '/')
+                    url_path = f"/{target_base_dir}/{rel_path_str}"
+                    
+                    update_doc["$set"]["file_path"] = url_path
+                    
+                    result = await collection.update_one(filter_doc, update_doc, upsert=True)
+                    
+                    if result.upserted_id:
+                        count_created += 1
+                        logger.info(f"[新建] {rel_path}")
+                    else:
+                        count_updated += 1
+                        logger.info(f"[更新] {rel_path}")
                 
                 count_processed += 1
-                if result.upserted_id:
-                    count_created += 1
-                    logger.info(f"[新建] {rel_path}")
-                else:
-                    count_updated += 1
-                    logger.info(f"[更新] {rel_path}")
 
     except Exception as e:
         logger.error(f"导入过程中出错: {e}", exc_info=True)
     finally:
+        if http_session:
+            await http_session.close()
+        if not api_url:
+            await db.close()
+        
         logger.info("-" * 30)
         logger.info(f"处理完成. 总计: {count_processed}, 新建: {count_created}, 更新: {count_updated}")
-        await db.close()
 
 def main():
     parser = argparse.ArgumentParser(description="将指定目录下的内容导入到静态文件目录并创建会话")
     parser.add_argument("source_dir", help="源目录路径")
     parser.add_argument("--target", default="static", help="目标静态文件目录 (默认: static)")
-    parser.add_argument("--base-url", default="http://localhost:8000", help="文件访问的基础 URL (默认: http://localhost:8000)")
+    parser.add_argument("--api-url", help="API 基础 URL (例如 https://api.effiy.cn)，如果提供则使用 API 上传")
     
     args = parser.parse_args()
     
-    asyncio.run(import_directory(args.source_dir, args.target, args.base_url))
+    asyncio.run(import_directory(args.source_dir, args.target, args.api_url))
 
 if __name__ == "__main__":
     main()

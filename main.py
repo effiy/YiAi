@@ -12,10 +12,11 @@ from contextlib import asynccontextmanager
 sys.dont_write_bytecode = True
 sys.path.append(os.getcwd())
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import shutil
 
 from core.database import db
 from core.config import Config, settings
@@ -143,6 +144,34 @@ def create_app(
         API 调试页面
         """
         return FileResponse("static/index.html")
+
+    @app.post("/upload")
+    async def upload_file(
+        file: UploadFile = File(...),
+        target_dir: str = Form("static")
+    ):
+        """
+        文件上传接口
+        """
+        # 确保目录存在 (相对于当前工作目录)
+        save_dir = os.path.join(os.getcwd(), target_dir)
+        os.makedirs(save_dir, exist_ok=True)
+        
+        filename = file.filename
+        file_path = os.path.join(save_dir, filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # 返回相对路径
+        rel_path = f"/{target_dir}/{filename}"
+        # 统一路径分隔符
+        rel_path = rel_path.replace(os.sep, '/')
+        # 确保不以 // 开头 (如果 target_dir 为空或 / 开头)
+        if rel_path.startswith('//'):
+            rel_path = rel_path[1:]
+            
+        return success(data={"url": rel_path})
 
     @app.get("/")
     async def execute_module_get(

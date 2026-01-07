@@ -498,3 +498,38 @@ class MongoDBService:
             
         return True
 
+    async def upsert_document(self, cname: str, filter_dict: Dict[str, Any], update_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        更新或插入文档
+        
+        Args:
+            cname: 集合名称
+            filter_dict: 查询条件
+            update_data: 更新数据 (MongoDB update syntax like $set, $setOnInsert)
+            
+        Returns:
+            Dict[str, Any]: 操作结果
+        """
+        await self.ensure_initialized()
+        collection = self.db_client.db[cname]
+        
+        # 确保 update_data 包含 updatedTime
+        if '$set' not in update_data:
+            update_data['$set'] = {}
+        update_data['$set']['updatedTime'] = self.get_current_time()
+        
+        # 确保插入时包含 createdTime 和 key
+        if '$setOnInsert' not in update_data:
+            update_data['$setOnInsert'] = {}
+        update_data['$setOnInsert']['createdTime'] = self.get_current_time()
+        if 'key' not in update_data['$setOnInsert']:
+            update_data['$setOnInsert']['key'] = str(uuid.uuid4())
+        
+        result = await collection.update_one(filter_dict, update_data, upsert=True)
+        
+        return {
+            "matched_count": result.matched_count,
+            "modified_count": result.modified_count,
+            "upserted_id": str(result.upserted_id) if result.upserted_id else None
+        }
+
