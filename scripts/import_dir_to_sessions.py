@@ -10,6 +10,7 @@ import asyncio
 import logging
 import argparse
 import aiohttp
+import base64
 from datetime import datetime
 from pathlib import Path
 
@@ -23,14 +24,57 @@ from core.config import settings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# 单个文件大小限制 100MB
+MAX_FILE_SIZE = 100 * 1024 * 1024
+
+# 图片扩展名列表
+IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.ico', '.svg', '.tiff'}
+
 async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_path: Path, target_dir: str) -> str:
-    """通过 API 上传文件"""
-    url = f"{api_url.rstrip('/')}/upload"
-    data = aiohttp.FormData()
-    data.add_field('file', open(file_path, 'rb'), filename=file_path.name)
-    data.add_field('target_dir', str(target_dir))
+    """通过 API 上传文件 (JSON 方式)"""
     
-    async with session.post(url, data=data) as resp:
+    # 检查文件大小
+    file_size = file_path.stat().st_size
+    if file_size > MAX_FILE_SIZE:
+        raise ValueError(f"文件大小超过限制 (100MB): {file_path} ({file_size} bytes)")
+
+    filename = file_path.name
+    ext = file_path.suffix.lower()
+    is_image = ext in IMAGE_EXTENSIONS
+    
+    content = ""
+    is_base64 = False
+
+    try:
+        if is_image:
+            # 图片强制使用 Base64
+            with open(file_path, "rb") as f:
+                content = base64.b64encode(f.read()).decode('utf-8')
+            is_base64 = True
+        else:
+            # 尝试作为文本读取
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                is_base64 = False
+            except UnicodeDecodeError:
+                # 如果不是文本，则使用 Base64
+                with open(file_path, "rb") as f:
+                    content = base64.b64encode(f.read()).decode('utf-8')
+                is_base64 = True
+    except Exception as e:
+        raise ValueError(f"读取文件失败: {file_path}, Error: {e}")
+
+    url = f"{api_url.rstrip('/')}/upload"
+    
+    payload = {
+        "filename": filename,
+        "content": content,
+        "is_base64": is_base64,
+        "target_dir": str(target_dir)
+    }
+    
+    async with session.post(url, json=payload) as resp:
         if resp.status != 200:
             text = await resp.text()
             raise Exception(f"Upload failed: {resp.status} {text}")
@@ -151,20 +195,25 @@ async def import_directory(source_dir: str, target_base_dir: str = "static", api
                     # 上传文件
                     # 计算目标目录 (相对于 static)
                     file_target_dir = Path(target_base_dir) / rel_path.parent
-                    url_path = await upload_file_api(http_session, api_url, file_source_path, file_target_dir)
-                    
-                    update_doc["$set"]["file_path"] = url_path
-                    
-                    # 更新数据库
-                    result = await upsert_session_api(http_session, api_url, settings.collection_sessions, filter_doc, update_doc)
-                    
-                    # API 返回的 upserted_id 是字符串或 None
-                    if result.get('upserted_id'):
-                        count_created += 1
-                        logger.info(f"[API 新建] {rel_path}")
-                    else:
-                        count_updated += 1
-                        logger.info(f"[API 更新] {rel_path}")
+                    try:
+                        url_path = await upload_file_api(http_session, api_url, file_source_path, file_target_dir)
+                        
+                        update_doc["$set"]["file_path"] = url_path
+                        
+                        # 更新数据库
+                        result = await upsert_session_api(http_session, api_url, settings.collection_sessions, filter_doc, update_doc)
+                        
+                        # API 返回的 upserted_id 是字符串或 None
+                        if result.get('upserted_id'):
+                            count_created += 1
+                            logger.info(f"[API 新建] {rel_path}")
+                        else:
+                            count_updated += 1
+                            logger.info(f"[API 更新] {rel_path}")
+                    except ValueError as ve:
+                        logger.error(f"[跳过] 文件上传失败 {rel_path}: {ve}")
+                    except Exception as e:
+                         logger.error(f"[错误] 处理 {rel_path} 时出错: {e}")
                         
                 else:
                     # 本地模式

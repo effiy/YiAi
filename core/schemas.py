@@ -27,6 +27,15 @@ class ExecuteRequest(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+class FileUploadRequest(BaseModel):
+    """
+    文件上传请求模型 (JSON 方式)
+    """
+    filename: str = Field(..., description="文件名")
+    content: str = Field(..., description="文件内容 (文本或 Base64 字符串)")
+    is_base64: bool = Field(default=False, description="内容是否为 Base64 编码")
+    target_dir: str = Field(default="static", description="目标存储目录")
+
 # --- RSS Schemas ---
 class ParseRssRequest(BaseModel):
     """

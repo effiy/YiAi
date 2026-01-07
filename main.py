@@ -6,22 +6,23 @@ import logging
 import uvicorn
 import os
 import sys
+import shutil
+import base64
 from contextlib import asynccontextmanager
 
 # 设置字节码生成和路径
 sys.dont_write_bytecode = True
 sys.path.append(os.getcwd())
 
-from fastapi import FastAPI, Query, UploadFile, File, Form
+from fastapi import FastAPI, Query, UploadFile, File, Form, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import shutil
 
 from core.database import db
 from core.config import Config, settings
 from core.middleware import header_verification_middleware
-from core.schemas import ExecuteRequest
+from core.schemas import ExecuteRequest, FileUploadRequest
 from core.logger import setup_logging
 from core.exception_handler import register_exception_handlers
 from core.response import success
@@ -147,21 +148,32 @@ def create_app(
 
     @app.post("/upload")
     async def upload_file(
-        file: UploadFile = File(...),
-        target_dir: str = Form("static")
+        request: FileUploadRequest
     ):
         """
-        文件上传接口
+        文件上传接口 (JSON 方式)
         """
+        target_dir = request.target_dir
         # 确保目录存在 (相对于当前工作目录)
         save_dir = os.path.join(os.getcwd(), target_dir)
         os.makedirs(save_dir, exist_ok=True)
         
-        filename = file.filename
+        filename = request.filename
         file_path = os.path.join(save_dir, filename)
         
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        try:
+            if request.is_base64:
+                # Base64 解码并写入二进制文件
+                content_bytes = base64.b64decode(request.content)
+                with open(file_path, "wb") as f:
+                    f.write(content_bytes)
+            else:
+                # 直接写入文本文件
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(request.content)
+        except Exception as e:
+            logger.error(f"文件保存失败: {str(e)}", exc_info=True)
+            raise ValueError(f"文件保存失败: {str(e)}")
             
         # 返回相对路径
         rel_path = f"/{target_dir}/{filename}"
