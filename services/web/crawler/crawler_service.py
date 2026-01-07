@@ -5,7 +5,6 @@ import asyncio
 import re
 import argparse
 from typing import List, Dict
-# from crawl4ai import AsyncWebCrawler # 延迟导入
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
 from core.config import settings

@@ -21,6 +21,9 @@ from core.database import db
 from core.config import Config, settings
 from core.middleware import header_verification_middleware
 from core.schemas import ExecuteRequest
+from core.logger import setup_logging
+from core.exception_handler import register_exception_handlers
+from core.response import success
 
 # 导入服务模块
 from services.rss.rss_scheduler import init_rss_system, shutdown_rss_system
@@ -96,12 +99,8 @@ def create_app(
     """
     config = config or Config()
 
-    # 配置日志（按当前配置）
-    logging.basicConfig(
-        level=config.get_logging_level_value(),
-        format=config.logging_format,
-        datefmt=config.logging_datefmt
-    )
+    # 配置日志
+    setup_logging()
 
     auth_enabled = enable_auth if enable_auth is not None else config.is_auth_middleware_enabled()
     db_init_enabled = init_db if init_db is not None else True
@@ -113,6 +112,9 @@ def create_app(
         version="1.0.0",
         lifespan=_build_lifespan(config, db_init_enabled, rss_init_enabled)
     )
+
+    # 注册全局异常处理器
+    register_exception_handlers(app)
 
     origins = config.get_cors_origins()
     app.add_middleware(
@@ -150,42 +152,19 @@ def create_app(
     ):
         """
         GET 方式执行指定模块方法
-        
-        Args:
-            module_name: 目标模块路径
-            method_name: 目标函数名称
-            parameters: JSON 格式的参数字符串
-            
-        Returns:
-            Any: 目标函数的执行结果
-            
-        Example:
-            GET /?module_name=services.web.crawler.crawler_service&method_name=crawl_and_extract&parameters={"url": "https://example.com"}
         """
-        return await execute_module(module_name, method_name, parameters)
+        result = await execute_module(module_name, method_name, parameters)
+        return success(data=result)
 
     @app.post("/")
     async def execute_module_post(request: ExecuteRequest):
         """
         POST 方式执行指定模块方法
-        
-        Args:
-            request: 执行请求体
-            
-        Returns:
-            Any: 目标函数的执行结果
-            
-        Example:
-            POST /
-            {
-                "module_name": "services.web.crawler.crawler_service",
-                "method_name": "crawl_and_extract",
-                "parameters": {"url": "https://example.com"}
-            }
         """
         logger.info(f"执行模块: {request.module_name}, 方法: {request.method_name}")
         logger.info(f"参数: {request.parameters}")
-        return await execute_module(request.module_name, request.method_name, request.parameters)
+        result = await execute_module(request.module_name, request.method_name, request.parameters)
+        return success(data=result)
 
     return app
 

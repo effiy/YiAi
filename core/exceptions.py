@@ -1,51 +1,19 @@
-"""统一异常处理和响应构建工具"""
-import logging
-from fastapi import Request, HTTPException
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from core.utils import create_error_response
+"""自定义异常定义"""
+from typing import Any, Optional
+from core.error_codes import ErrorCode
 
-logger = logging.getLogger(__name__)
-
-
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """处理请求验证错误"""
-    logger.error(f"请求验证错误: {exc}")
-    error_details = exc.errors()
-    error_messages = []
-    
-    for error in error_details:
-        field = ".".join(str(loc) for loc in error.get("loc", []))
-        msg = error.get("msg", "验证失败")
-        error_messages.append(f"{field}: {msg}")
-    
-    error_msg = "请求参数验证失败: " + "; ".join(error_messages)
-    
-    return create_error_response(
-        status_code=422,
-        detail=error_msg,
-        message=error_msg,
-        errors=error_details
-    )
-
-
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    """处理HTTP异常"""
-    logger.error(f"HTTP异常: {exc.detail}")
-    return create_error_response(
-        status_code=exc.status_code,
-        detail=exc.detail,
-        message=exc.detail
-    )
-
-
-async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """处理未捕获的异常"""
-    logger.error(f"未处理的异常: {str(exc)}", exc_info=True)
-    return create_error_response(
-        status_code=500,
-        detail="服务器内部错误",
-        message="服务器处理请求时发生未知错误"
-    )
-
-
+class BusinessException(Exception):
+    """
+    业务逻辑异常
+    主动抛出此异常时，会被全局异常处理器捕获并返回标准错误响应
+    """
+    def __init__(
+        self, 
+        error_code: ErrorCode, 
+        message: Optional[str] = None, 
+        data: Any = None
+    ):
+        self.error_code = error_code
+        self.message = message or error_code.message
+        self.data = data
+        super().__init__(self.message)

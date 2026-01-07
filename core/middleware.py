@@ -4,8 +4,9 @@ import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from core.config import settings
-from core.utils import create_error_response
-from core.error_codes import UNAUTHORIZED, SERVER_ERROR
+from core.response import fail
+from core.error_codes import ErrorCode
+
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +82,9 @@ async def header_verification_middleware(request: Request, call_next):
         # 验证请求头
         if x_token != required_token:
             logger.warning(f"无效的请求头: X-Token={x_token}")
-            error_response = create_error_response(
-                status_code=UNAUTHORIZED.http,
-                detail="Invalid or missing headers",
-                message=UNAUTHORIZED.message,
-                business_code=UNAUTHORIZED.business
+            error_response = fail(
+                error=ErrorCode.UNAUTHORIZED,
+                message="Invalid or missing headers"
             )
             # 添加 CORS 头
             return _add_cors_headers(error_response, request)
@@ -96,12 +95,9 @@ async def header_verification_middleware(request: Request, call_next):
 
     except Exception as e:
         logger.error(f"中间件处理异常: {str(e)}", exc_info=True)
-        error_response = create_error_response(
-            status_code=SERVER_ERROR.http,
-            detail="服务器内部错误",
-            message="中间件处理异常",
-            business_code=SERVER_ERROR.business
+        error_response = fail(
+            error=ErrorCode.SERVER_ERROR,
+            message="Internal Server Error"
         )
-        # 添加 CORS 头
         return _add_cors_headers(error_response, request)
 
