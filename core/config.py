@@ -358,7 +358,8 @@ class Config:
 
     @property
     def logging_level(self) -> str:
-        return self.get("logging.level", "LOG_LEVEL", "info", str)
+        level = self.get("logging.level", "LOG_LEVEL", "INFO", str)
+        return level.upper() if level else "INFO"
     
     @property
     def logging_format(self) -> str:

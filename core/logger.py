@@ -17,7 +17,8 @@ def setup_logging():
     
     # 获取根日志记录器
     root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
+    # 使用 get_logging_level_value 获取 int 类型的日志级别
+    root_logger.setLevel(settings.get_logging_level_value())
     
     # 清除现有的 handlers
     root_logger.handlers = []

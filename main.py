@@ -181,7 +181,7 @@ if __name__ == "__main__":
     print(f"自动重载: {'启用' if reload else '禁用'}")
 
     # 获取 uvicorn 配置参数
-    log_level = settings.logging_level
+    log_level = settings.logging_level.lower()
     limit_concurrency = settings.uvicorn_limit_concurrency
     limit_max_requests = settings.uvicorn_limit_max_requests
     timeout_keep_alive = settings.uvicorn_timeout_keep_alive
