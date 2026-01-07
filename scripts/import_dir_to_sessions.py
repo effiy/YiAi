@@ -22,7 +22,7 @@ from core.config import settings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-async def import_directory(source_dir: str, target_base_dir: str = "static/uploads"):
+async def import_directory(source_dir: str, target_base_dir: str = "static", base_url: str = "http://localhost:8000"):
     """
     遍历源目录，上传文件并更新数据库会话
     """
@@ -57,13 +57,24 @@ async def import_directory(source_dir: str, target_base_dir: str = "static/uploa
                 file_source_path = Path(root) / filename
                 rel_path = file_source_path.relative_to(source_path)
                 
+                # 处理文件名过长问题
+                target_filename = filename
+                if len(filename.encode('utf-8')) > 200: # 检查字节长度，预留一些空间
+                    name, ext = os.path.splitext(filename)
+                    # 简单截断，保留后缀
+                    # 假设每个字符最多3字节，保守截断到60个字符 + 后缀?
+                    # 或者更精确一点，截断到 150 字符
+                    target_filename = name[:100] + ext
+                    logger.warning(f"文件名过长，已截断: {filename} -> {target_filename}")
+
                 # 1. 计算 Tags (基于目录结构)
                 # 例如 rel_path = "category/sub/file.txt" -> tags = ["category", "sub"]
                 tags = list(rel_path.parent.parts)
                 
                 # 2. 处理静态文件
                 # 保持相同的目录结构
-                target_file_path = Path(target_base_dir) / rel_path
+                target_rel_path = rel_path.parent / target_filename
+                target_file_path = Path(target_base_dir) / target_rel_path
                 target_file_path.parent.mkdir(parents=True, exist_ok=True)
                 
                 # 复制文件 (覆盖模式)
@@ -71,25 +82,29 @@ async def import_directory(source_dir: str, target_base_dir: str = "static/uploa
                 
                 # 3. 数据库操作
                 # 相对 URL 路径 (用于前端访问)
-                url_path = f"/{target_base_dir}/{rel_path}"
+                # 确保 base_url 不以 / 结尾
+                base_url = base_url.rstrip('/')
+                # 确保 path 使用 / 分隔符 (Windows 兼容)
+                rel_path_str = str(target_rel_path).replace(os.sep, '/')
+                url_path = f"{base_url}/{target_base_dir}/{rel_path_str}"
                 
                 # 构建查询条件：目录(tags) 和 文件名相同
                 filter_doc = {
                     "tags": tags,
-                    "filename": filename
+                    "filename": target_filename
                 }
                 
                 # 更新内容
                 update_doc = {
                     "$set": {
                         "tags": tags,
-                        "filename": filename,
+                        "filename": target_filename,
                         "file_path": str(url_path),  # 存储 web 可访问路径
                         "updated_at": datetime.now()
                     },
                     "$setOnInsert": {
                         "created_at": datetime.now(),
-                        "title": filename,  # 默认标题
+                        "title": filename,  # 标题保留原文件名
                     }
                 }
 
@@ -113,11 +128,12 @@ async def import_directory(source_dir: str, target_base_dir: str = "static/uploa
 def main():
     parser = argparse.ArgumentParser(description="将指定目录下的内容导入到静态文件目录并创建会话")
     parser.add_argument("source_dir", help="源目录路径")
-    parser.add_argument("--target", default="static/uploads", help="目标静态文件目录 (默认: static/uploads)")
+    parser.add_argument("--target", default="static", help="目标静态文件目录 (默认: static)")
+    parser.add_argument("--base-url", default="http://localhost:8000", help="文件访问的基础 URL (默认: http://localhost:8000)")
     
     args = parser.parse_args()
     
-    asyncio.run(import_directory(args.source_dir, args.target))
+    asyncio.run(import_directory(args.source_dir, args.target, args.base_url))
 
 if __name__ == "__main__":
     main()
