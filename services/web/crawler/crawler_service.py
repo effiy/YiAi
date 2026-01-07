@@ -5,7 +5,7 @@ import asyncio
 import re
 import argparse
 from typing import List, Dict
-from crawl4ai import AsyncWebCrawler
+# from crawl4ai import AsyncWebCrawler # 延迟导入
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
 from core.config import settings
@@ -79,6 +79,8 @@ async def fetch_page_content(params: Dict[str, any]) -> str:
     """
     url = params.get("url")
     try:
+        # 延迟导入，避免启动时加载及其副作用
+        from crawl4ai import AsyncWebCrawler
         async with AsyncWebCrawler() as crawler:
             result = await crawler.arun(url=url)
             return result.markdown
