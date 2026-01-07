@@ -1,8 +1,8 @@
-from typing import List, Dict
+from typing import Dict, Any
 from pyppeteer import connect
 from core.config import settings
 
-async def open_page(params: Dict[str, any]) -> List[Dict[str, str]]:
+async def open_page(params: Dict[str, Any]) -> str:
     """
     Puppeteer 控制脚本入口
     
@@ -11,7 +11,7 @@ async def open_page(params: Dict[str, any]) -> List[Dict[str, str]]:
             - url (str): 目标页面 URL
             
     Returns:
-        List[Dict[str, str]]: 处理结果列表 (目前返回空字符串)
+        str: 处理结果 (目前返回空字符串)
 
     Example:
         GET /?module_name=services.web.puppeteer.browser_service&method_name=open_page&parameters={"url": "https://www.google.com"}
@@ -36,7 +36,3 @@ async def open_page(params: Dict[str, any]) -> List[Dict[str, str]]:
     await page.goto(url)
 
     return ''
-
-# 运行 asyncio 程序
-# asyncio.get_event_loop().run_until_complete(main())
-
