@@ -11,6 +11,8 @@ import logging
 import argparse
 import aiohttp
 import base64
+import mimetypes
+from typing import Dict, Any
 from datetime import datetime
 from pathlib import Path
 
@@ -30,8 +32,18 @@ MAX_FILE_SIZE = 100 * 1024 * 1024
 # 图片扩展名列表
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.ico', '.svg', '.tiff'}
 
-async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_path: Path, target_dir: str) -> str:
-    """通过 API 上传文件 (JSON 方式)"""
+def estimate_tokens(text: str) -> int:
+    """估算文本的 Token 数量 (简易版)"""
+    token_count = 0
+    for char in text:
+        if ord(char) > 127: # 非 ASCII 字符 (如中文) 计为 1
+            token_count += 1
+        else:
+            token_count += 0.25 # ASCII 字符 (如英文) 约 4 个字符为 1 token
+    return int(token_count)
+
+async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_path: Path, target_dir: str) -> Dict[str, Any]:
+    """通过 API 上传文件 (JSON 方式)，返回文件信息"""
     
     # 检查文件大小
     file_size = file_path.stat().st_size
@@ -41,9 +53,11 @@ async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_pat
     filename = file_path.name
     ext = file_path.suffix.lower()
     is_image = ext in IMAGE_EXTENSIONS
+    mime_type, _ = mimetypes.guess_type(file_path)
     
     content = ""
     is_base64 = False
+    tokens = 0
 
     try:
         if is_image:
@@ -57,6 +71,7 @@ async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_pat
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
                 is_base64 = False
+                tokens = estimate_tokens(content)
             except UnicodeDecodeError:
                 # 如果不是文本，则使用 Base64
                 with open(file_path, "rb") as f:
@@ -81,7 +96,14 @@ async def upload_file_api(session: aiohttp.ClientSession, api_url: str, file_pat
         result = await resp.json()
         if result.get('code') != 0:
              raise Exception(f"Upload error: {result}")
-        return result['data']['url']
+        
+        return {
+            "url": result['data']['url'],
+            "size": file_size,
+            "tokens": tokens,
+            "mime_type": mime_type,
+            "extension": ext
+        }
 
 async def upsert_session_api(session: aiohttp.ClientSession, api_url: str, cname: str, filter_doc: dict, update_doc: dict):
     """通过 API 更新会话"""
@@ -196,9 +218,13 @@ async def import_directory(source_dir: str, target_base_dir: str = "static", api
                     # 计算目标目录 (相对于 static)
                     file_target_dir = Path(target_base_dir) / rel_path.parent
                     try:
-                        url_path = await upload_file_api(http_session, api_url, file_source_path, file_target_dir)
+                        upload_result = await upload_file_api(http_session, api_url, file_source_path, file_target_dir)
                         
-                        update_doc["$set"]["file_path"] = url_path
+                        update_doc["$set"]["file_path"] = upload_result['url']
+                        update_doc["$set"]["size"] = upload_result['size']
+                        update_doc["$set"]["tokens"] = upload_result['tokens']
+                        update_doc["$set"]["mime_type"] = upload_result['mime_type']
+                        update_doc["$set"]["extension"] = upload_result['extension']
                         
                         # 更新数据库
                         result = await upsert_session_api(http_session, api_url, settings.collection_sessions, filter_doc, update_doc)
@@ -206,10 +232,10 @@ async def import_directory(source_dir: str, target_base_dir: str = "static", api
                         # API 返回的 upserted_id 是字符串或 None
                         if result.get('upserted_id'):
                             count_created += 1
-                            logger.info(f"[API 新建] {rel_path}")
+                            logger.info(f"[API 新建] {rel_path} (Size: {upload_result['size']}, Tokens: {upload_result['tokens']})")
                         else:
                             count_updated += 1
-                            logger.info(f"[API 更新] {rel_path}")
+                            logger.info(f"[API 更新] {rel_path} (Size: {upload_result['size']}, Tokens: {upload_result['tokens']})")
                     except ValueError as ve:
                         logger.error(f"[跳过] 文件上传失败 {rel_path}: {ve}")
                     except Exception as e:
@@ -223,20 +249,39 @@ async def import_directory(source_dir: str, target_base_dir: str = "static", api
                     # 复制文件
                     shutil.copy2(file_source_path, target_file_path)
                     
+                    # 本地计算元数据
+                    file_size = file_source_path.stat().st_size
+                    mime_type, _ = mimetypes.guess_type(file_source_path)
+                    ext = file_source_path.suffix.lower()
+                    tokens = 0
+                    
+                    # 尝试计算 Token (仅对非图片)
+                    if ext not in IMAGE_EXTENSIONS:
+                         try:
+                             with open(file_source_path, "r", encoding="utf-8") as f:
+                                 content = f.read()
+                                 tokens = estimate_tokens(content)
+                         except:
+                             pass # 忽略读取错误，可能是二进制文件
+
                     # 计算 URL
                     rel_path_str = str(target_rel_path).replace(os.sep, '/')
                     url_path = f"/{target_base_dir}/{rel_path_str}"
                     
                     update_doc["$set"]["file_path"] = url_path
+                    update_doc["$set"]["size"] = file_size
+                    update_doc["$set"]["tokens"] = tokens
+                    update_doc["$set"]["mime_type"] = mime_type
+                    update_doc["$set"]["extension"] = ext
                     
                     result = await collection.update_one(filter_doc, update_doc, upsert=True)
                     
                     if result.upserted_id:
                         count_created += 1
-                        logger.info(f"[新建] {rel_path}")
+                        logger.info(f"[新建] {rel_path} (Size: {file_size}, Tokens: {tokens})")
                     else:
                         count_updated += 1
-                        logger.info(f"[更新] {rel_path}")
+                        logger.info(f"[更新] {rel_path} (Size: {file_size}, Tokens: {tokens})")
                 
                 count_processed += 1
 
