@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import base64
 import logging
 from playwright.async_api import async_playwright, Browser, Page
