@@ -1,24 +1,22 @@
 import logging
 import re
 import uuid
-import hashlib
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from bson import ObjectId
-from pymongo import ReturnDocument
 
 from core.database import db
-from core.config import settings
+from core.settings import settings
 from core.utils import get_current_time, is_valid_date, is_number
 
 logger = logging.getLogger(__name__)
 
 # --- Private Helpers ---
 
-def _validate_cname(cname: Optional[str]) -> str:
-    if not cname:
-        raise ValueError("必须提供集合名称(cname)")
-    return cname
+def _validate_collection_name(collection_name: Optional[str]) -> str:
+    if not collection_name:
+        raise ValueError("必须提供集合名称(collection_name)")
+    return collection_name
 
 def _build_published_date_filter(start_date: str, end_date: str) -> Dict[str, Any]:
     try:
@@ -62,6 +60,73 @@ def _build_published_date_filter(start_date: str, end_date: str) -> Dict[str, An
     except ValueError:
         return {}
 
+def _handle_iso_date_filter(key: str, value: Any, filter_dict: Dict[str, Any]) -> bool:
+    """处理 isoDate 特殊过滤逻辑"""
+    if key != 'isoDate' or not isinstance(value, str):
+        return False
+
+    if ',' in value:
+        date_parts = [term.strip() for term in value.split(',') if term.strip()]
+        if len(date_parts) == 2:
+            start_date, end_date = date_parts
+            if is_valid_date(start_date) and is_valid_date(end_date):
+                published_filter = _build_published_date_filter(start_date, end_date)
+                if published_filter:
+                    filter_dict.update(published_filter)
+                return True
+    else:
+        if is_valid_date(value):
+            published_filter = _build_published_date_filter(value, value)
+            if published_filter:
+                filter_dict.update(published_filter)
+            return True
+    return False
+
+def _handle_range_or_list_filter(key: str, value: Any, filter_dict: Dict[str, Any]) -> bool:
+    """处理范围查询或列表查询"""
+    if not (hasattr(value, '__iter__') and not isinstance(value, (str, bytes, dict))):
+        return False
+        
+    value_list = list(value) if not isinstance(value, list) else value
+    if not value_list:
+        return True
+
+    if len(value_list) == 2:
+        start, end = value_list
+        if is_valid_date(start) and is_valid_date(end):
+            filter_dict[key] = {'$gte': start, '$lt': end}
+        elif is_number(start) and is_number(end):
+            filter_dict[key] = {'$gte': float(start), '$lt': float(end)}
+        elif is_number(start):
+            filter_dict[key] = {'$gte': float(start)}
+        elif is_number(end):
+            filter_dict[key] = {'$lt': float(end)}
+    else:
+        filter_dict[key] = {'$in': value_list}
+    return True
+
+def _handle_string_search_filter(key: str, value: Any, filter_dict: Dict[str, Any]) -> bool:
+    """处理字符串模糊查询"""
+    if not isinstance(value, str):
+        return False
+        
+    if ',' in value:
+        search_terms = [term.strip() for term in value.split(',') if term.strip()]
+        if search_terms:
+            if '$or' in filter_dict:
+                filter_dict['$or'].extend([
+                    {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
+                    for term in search_terms
+                ])
+            else:
+                filter_dict['$or'] = [
+                    {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
+                    for term in search_terms
+                ]
+    else:
+        filter_dict[key] = re.compile(f'.*{re.escape(value)}.*', re.IGNORECASE)
+    return True
+
 def _build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
     filter_dict = {}
 
@@ -69,59 +134,16 @@ def _build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
         if not value:
             continue
 
-        if key == 'isoDate' and isinstance(value, str):
-            if ',' in value:
-                date_parts = [term.strip() for term in value.split(',') if term.strip()]
-                if len(date_parts) == 2:
-                    start_date, end_date = date_parts
-                    if is_valid_date(start_date) and is_valid_date(end_date):
-                        published_filter = _build_published_date_filter(start_date, end_date)
-                        if published_filter:
-                            filter_dict.update(published_filter)
-                        continue
-            else:
-                if is_valid_date(value):
-                    published_filter = _build_published_date_filter(value, value)
-                    if published_filter:
-                        filter_dict.update(published_filter)
-                        continue
+        if _handle_iso_date_filter(key, value, filter_dict):
+            continue
 
-        if hasattr(value, '__iter__') and not isinstance(value, (str, bytes, dict)):
-            value_list = list(value) if not isinstance(value, list) else value
-            if not value_list:
-                continue
+        if _handle_range_or_list_filter(key, value, filter_dict):
+            continue
 
-            if len(value_list) == 2:
-                start, end = value_list
-                if is_valid_date(start) and is_valid_date(end):
-                    filter_dict[key] = {'$gte': start, '$lt': end}
-                elif is_number(start) and is_number(end):
-                    filter_dict[key] = {'$gte': float(start), '$lt': float(end)}
-                elif is_number(start):
-                    filter_dict[key] = {'$gte': float(start)}
-                elif is_number(end):
-                    filter_dict[key] = {'$lt': float(end)}
-            else:
-                filter_dict[key] = {'$in': value_list}
+        if _handle_string_search_filter(key, value, filter_dict):
+            continue
 
-        elif isinstance(value, str):
-            if ',' in value:
-                search_terms = [term.strip() for term in value.split(',') if term.strip()]
-                if search_terms:
-                    if '$or' in filter_dict:
-                        filter_dict['$or'].extend([
-                            {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
-                            for term in search_terms
-                        ])
-                    else:
-                        filter_dict['$or'] = [
-                            {key: re.compile(f'.*{re.escape(term)}.*', re.IGNORECASE)}
-                            for term in search_terms
-                        ]
-            else:
-                filter_dict[key] = re.compile(f'.*{re.escape(value)}.*', re.IGNORECASE)
-
-        elif isinstance(value, (int, float, bool)):
+        if isinstance(value, (int, float, bool)):
             filter_dict[key] = value
 
     return filter_dict
@@ -143,12 +165,14 @@ def _build_sort_list(sort_param: str, sort_order: int) -> List[tuple]:
 # --- Public Service Methods ---
 
 async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
-    cname = params.get('cname')
-    if not cname:
-        raise ValueError("Collection name (cname) is required")
+    # 支持 cname 和 collection_name
+    collection_name = params.get('collection_name') or params.get('cname')
+    if not collection_name:
+        raise ValueError("Collection name (collection_name/cname) is required")
     
     query_params = params.copy()
-    del query_params['cname']
+    query_params.pop('cname', None)
+    query_params.pop('collection_name', None)
     
     # 兼容旧参数
     try:
@@ -168,7 +192,7 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
         query_params.pop('page', None)
 
     await db.initialize()
-    cname = _validate_cname(cname)
+    collection_name = _validate_collection_name(collection_name)
     
     fields_param = query_params.pop('fields', None) or query_params.pop('select', None)
     exclude_fields_param = query_params.pop('excludeFields', None) or query_params.pop('exclude', None)
@@ -179,11 +203,11 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
     except ValueError:
         raise ValueError("分页参数必须是有效的整数")
 
-    sort_param = query_params.pop('orderBy', 'timestamp' if cname == 'apis' else 'order')
+    sort_param = query_params.pop('orderBy', 'timestamp' if collection_name == 'apis' else 'order')
     sort_order = -1 if query_params.pop('orderType', 'asc').lower() == 'desc' else 1
 
     filter_dict = _build_filter(query_params)
-    logger.info(f"Querying collection: {cname}, Filter: {filter_dict}")
+    logger.info(f"Querying collection: {collection_name}, Filter: {filter_dict}")
     sort_list = _build_sort_list(sort_param, sort_order)
     
     projection = {'_id': 0}
@@ -196,7 +220,7 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
         exclude_fields = [f.strip() for f in str(exclude_fields_param).split(',') if f.strip()]
         projection = {'_id': 0, **{f: 0 for f in exclude_fields}}
 
-    collection = db.db[cname]
+    collection = db.db[collection_name]
     
     cursor = collection.find(filter_dict, projection) \
         .sort(sort_list) \
@@ -216,14 +240,14 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 async def get_document_detail(params: Dict[str, Any]) -> Dict[str, Any]:
-    cname = params.get('cname')
+    collection_name = params.get('collection_name') or params.get('cname')
     doc_id = params.get('id')
     
-    if not cname or not doc_id:
-        raise ValueError("cname and id are required")
+    if not collection_name or not doc_id:
+        raise ValueError("collection_name/cname and id are required")
         
     await db.initialize()
-    collection = db.db[cname]
+    collection = db.db[collection_name]
     document = await collection.find_one({'key': doc_id}, {'_id': 0})
 
     if not document:
@@ -232,24 +256,25 @@ async def get_document_detail(params: Dict[str, Any]) -> Dict[str, Any]:
     return document
 
 async def create_document(params: Dict[str, Any]) -> Dict[str, Any]:
-    cname = params.get('cname')
+    collection_name = params.get('collection_name') or params.get('cname')
     data = params.get('data')
     
-    if not cname:
-        raise ValueError("Collection name (cname) is required")
+    if not collection_name:
+        raise ValueError("Collection name (collection_name/cname) is required")
         
     if data is None:
         data = params.copy()
-        del data['cname']
+        data.pop('cname', None)
+        data.pop('collection_name', None)
 
     await db.initialize()
-    cname = _validate_cname(cname)
+    collection_name = _validate_collection_name(collection_name)
     if not data:
         raise ValueError("创建数据不能为空")
 
-    collection = db.db[cname]
+    collection = db.db[collection_name]
 
-    if cname == 'rss':
+    if collection_name == 'rss':
         link = data.get('link')
         if link:
             existing_item = await collection.find_one({'link': link})
@@ -279,7 +304,7 @@ async def create_document(params: Dict[str, Any]) -> Dict[str, Any]:
         await collection.insert_one(data_copy)
     except Exception as e:
         if 'duplicate key' in str(e).lower() or 'E11000' in str(e):
-            if cname == 'rss':
+            if collection_name == 'rss':
                 raise ValueError(f"link 字段值 '{data_copy.get('link', '')}' 已存在，不能重复创建")
             else:
                 raise ValueError(f"数据创建失败: 唯一性约束冲突")
@@ -288,125 +313,59 @@ async def create_document(params: Dict[str, Any]) -> Dict[str, Any]:
     return {'key': data_copy['key']}
 
 async def update_document(params: Dict[str, Any]) -> Dict[str, Any]:
-    cname = params.get('cname')
+    collection_name = params.get('collection_name') or params.get('cname')
     data = params.get('data')
     
-    if not cname:
-        raise ValueError("Collection name (cname) is required")
+    if not collection_name:
+        raise ValueError("Collection name (collection_name/cname) is required")
     if data is None:
         data = params.copy()
-        del data['cname']
+        data.pop('cname', None)
+        data.pop('collection_name', None)
 
     await db.initialize()
-    cname = _validate_cname(cname)
+    collection_name = _validate_collection_name(collection_name)
     
-    key = data.get('key')
-    link = data.get('link')
-    content = data.get('content')
-
-    if key:
-        query_filter = {'key': key}
-        identifier = key
-        identifier_type = 'key'
-    elif link:
-        query_filter = {'link': link}
-        identifier = link
-        identifier_type = 'link'
-    else:
-        raise ValueError("更新数据时必须提供key字段或link字段")
-
-    excluded_fields = ['key'] if key else []
-    data_for_check = {k: v for k, v in data.items() if k not in excluded_fields}
-    if not data_for_check:
-        raise ValueError("更新数据不能为空")
-
-    collection = db.db[cname]
-
-    if cname == settings.collection_rss:
-        new_link = data.get('link')
-        if new_link:
-            existing_item = await collection.find_one({'link': new_link})
-            if existing_item:
-                existing_key = existing_item.get('key')
-                if key:
-                    if existing_key != key:
-                        raise ValueError(f"link 字段值 '{new_link}' 已被其他记录使用（key: {existing_key}）")
-                elif link:
-                    if new_link != link and existing_key:
-                        raise ValueError(f"link 字段值 '{new_link}' 已被其他记录使用（key: {existing_key}）")
+    doc_id = data.get('key')
+    if not doc_id:
+        raise ValueError("更新数据必须包含 key 字段")
         
-        if key:
-            data['key'] = key
+    collection = db.db[collection_name]
+    
+    # 检查是否存在
+    existing_doc = await collection.find_one({'key': doc_id})
+    if not existing_doc:
+        raise ValueError(f"未找到ID为 {doc_id} 的数据")
         
-        if content:
-            data['contentHash'] = hashlib.md5(content.encode('utf-8')).hexdigest()
-
-    update_data = {k: v for k, v in data.items() if k not in (['key'] if key else [])}
+    # 移除不可更新字段
+    update_data = data.copy()
+    update_data.pop('_id', None)
+    update_data.pop('key', None)
+    update_data.pop('createdTime', None)
+    
     update_data['updatedTime'] = get_current_time()
-
-    try:
-        result = await collection.find_one_and_update(
-            query_filter,
-            {"$set": update_data},
-            return_document=ReturnDocument.AFTER
-        )
-    except Exception as e:
-        if 'duplicate key' in str(e).lower() or 'E11000' in str(e):
-            if cname == settings.collection_rss:
-                new_link = data.get('link')
-                raise ValueError(f"link 字段值 '{new_link}' 已存在，不能重复")
-            else:
-                raise ValueError(f"数据更新失败: 唯一性约束冲突")
-        raise
-
-    if not result:
-        raise ValueError(f"未找到{identifier_type}为 {identifier} 的数据")
-
-    return {'key': result.get('key', identifier)}
+    
+    await collection.update_one(
+        {'key': doc_id},
+        {'$set': update_data}
+    )
+    
+    return {'key': doc_id, 'updated': True}
 
 async def delete_document(params: Dict[str, Any]) -> Dict[str, Any]:
-    cname = params.get('cname')
+    collection_name = params.get('collection_name') or params.get('cname')
     doc_id = params.get('id')
     
-    if not cname or not doc_id:
-        raise ValueError("cname and id are required")
+    if not collection_name or not doc_id:
+        raise ValueError("collection_name/cname and id are required")
         
     await db.initialize()
-    cname = _validate_cname(cname)
+    collection_name = _validate_collection_name(collection_name)
+    collection = db.db[collection_name]
     
-    collection = db.db[cname]
     result = await collection.delete_one({'key': doc_id})
     
     if result.deleted_count == 0:
-        raise ValueError(f"未找到ID为 {doc_id} 的数据，删除失败")
+        raise ValueError(f"未找到ID为 {doc_id} 的数据或删除失败")
         
-    return {'success': True}
-
-async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
-    cname = params.get('cname')
-    filter_dict = params.get('filter')
-    update_data = params.get('update')
-    
-    if not cname or not filter_dict or not update_data:
-        raise ValueError("cname, filter, and update are required")
-        
-    await db.initialize()
-    collection = db.db[cname]
-    
-    if '$set' not in update_data:
-        update_data['$set'] = {}
-    update_data['$set']['updatedTime'] = get_current_time()
-    
-    if '$setOnInsert' not in update_data:
-        update_data['$setOnInsert'] = {}
-    update_data['$setOnInsert']['createdTime'] = get_current_time()
-    if 'key' not in update_data['$setOnInsert']:
-        update_data['$setOnInsert']['key'] = str(uuid.uuid4())
-    
-    result = await collection.update_one(filter_dict, update_data, upsert=True)
-    
-    return {
-        "matched_count": result.matched_count,
-        "modified_count": result.modified_count,
-        "upserted_id": str(result.upserted_id) if result.upserted_id else None
-    }
+    return {'key': doc_id, 'deleted': True}

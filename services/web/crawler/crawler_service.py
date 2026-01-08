@@ -7,7 +7,7 @@ import argparse
 from typing import List, Dict
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
-from core.config import settings
+from core.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class LinkExtractor:
                 is_image = (m.start() > 0 and markdown_content[m.start()-1] == '!')
                 
                 # 如果是图片链接且配置为忽略，则跳过
-                if is_image and settings.crawler_ignore_image_links():
+                if is_image and settings.crawler_ignore_image_links:
                     continue
                     
                 links.append((title, url))
@@ -50,7 +50,7 @@ class LinkExtractor:
             link for link in link_objects
             if len(link['title']) > self.min_title_length
         ]
-        if settings.crawler_require_https():
+        if settings.crawler_require_https:
             filtered = [link for link in filtered if str(link['url']).startswith('https://')]
         return filtered
 @retry(
@@ -127,6 +127,43 @@ async def crawl_and_extract(params: Dict[str, any]) -> List[Dict[str, str]]:
     except Exception as e:
         logger.error(f"爬取过程中发生错误: {str(e)}")
         return []
+
+async def extract_metadata(params: Dict[str, any]) -> Dict[str, str]:
+    """
+    提取页面元数据（标题、描述等）
+    
+    Args:
+        params: 参数字典
+            - url (str): 目标页面 URL
+            
+    Returns:
+        Dict[str, str]: 元数据字典
+    """
+    url = params.get("url")
+    logger.info(f"开始提取元数据 URL: {url}")
+
+    try:
+        content = await fetch_page_content({"url": url})
+        if not content:
+            return {}
+
+        # 简单提取 Markdown 中的一级标题作为标题
+        title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+        title = title_match.group(1) if title_match else "Unknown Title"
+        
+        # 截取前 200 个字符作为摘要
+        # 移除 markdown 标记以获得更纯净的文本
+        clean_text = re.sub(r'[#*`\[\]]', '', content)
+        description = clean_text[:200].strip() + "..." if len(clean_text) > 200 else clean_text
+
+        return {
+            "title": title,
+            "description": description,
+            "source_url": url
+        }
+    except Exception as e:
+        logger.error(f"提取元数据失败: {str(e)}")
+        return {}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='网页标题翻译工具')

@@ -18,7 +18,7 @@ from datetime import datetime
 sys.path.append(os.getcwd())
 
 from core.database import db
-from core.config import settings
+from core.settings import settings
 
 async def list_feeds():
     await db.initialize()

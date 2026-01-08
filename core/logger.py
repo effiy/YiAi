@@ -2,7 +2,7 @@ import logging
 import sys
 import os
 from logging.handlers import RotatingFileHandler
-from core.config import settings
+from core.settings import settings
 
 def setup_logging():
     """
@@ -18,7 +18,8 @@ def setup_logging():
     # 获取根日志记录器
     root_logger = logging.getLogger()
     # 使用 get_logging_level_value 获取 int 类型的日志级别
-    root_logger.setLevel(settings.get_logging_level_value())
+    level = getattr(logging, log_level.upper(), logging.INFO)
+    root_logger.setLevel(level)
     
     # 清除现有的 handlers
     root_logger.handlers = []

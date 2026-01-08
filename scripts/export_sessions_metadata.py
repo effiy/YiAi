@@ -15,7 +15,7 @@ from datetime import datetime
 sys.path.append(os.getcwd())
 
 from core.database import db
-from core.config import settings
+from core.settings import settings
 
 # JSON Encoder for datetime
 class DateTimeEncoder(json.JSONEncoder):

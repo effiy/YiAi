@@ -1,0 +1,755 @@
+2026-01-08 10:19:29 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:19:29 - main - INFO - 认证中间件已禁用
+2026-01-08 10:20:09 - __main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:20:09 - __main__ - INFO - 认证中间件已禁用
+2026-01-08 10:20:09 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:20:09 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 10:20:09 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:20:09 - main - INFO - 认证中间件已禁用
+2026-01-08 10:20:09 - main - INFO - 正在启动应用...
+2026-01-08 10:20:09 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 10:20:09 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 10:20:09 - main - INFO - 数据库初始化成功
+2026-01-08 10:20:09 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 10:20:09 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 10:20:09 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 10:20:09 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 10:20:09 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 10:20:09 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 10:20:09 - main - INFO - 应用启动完成
+2026-01-08 10:20:09 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:26:40 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:26:41 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:29:47 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:29:48 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:30:15 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:30:15 - main - INFO - 正在关闭应用...
+2026-01-08 10:30:15 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 10:30:15 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 10:30:15 - core.database - INFO - MongoDB connection closed
+2026-01-08 10:30:15 - main - INFO - 应用关闭完成
+2026-01-08 10:30:15 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 10:30:16 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:30:17 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:30:17 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 10:30:17 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:30:17 - main - INFO - 认证中间件已禁用
+2026-01-08 10:30:17 - main - INFO - 正在启动应用...
+2026-01-08 10:30:17 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 10:30:17 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:30:17 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 10:30:17 - main - INFO - 数据库初始化成功
+2026-01-08 10:30:17 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 10:30:17 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 10:30:17 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 10:30:17 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 10:30:17 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 10:30:17 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 10:30:17 - main - INFO - 应用启动完成
+2026-01-08 10:31:02 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:31:02 - main - INFO - 正在关闭应用...
+2026-01-08 10:31:02 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 10:31:02 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 10:31:02 - core.database - INFO - MongoDB connection closed
+2026-01-08 10:31:02 - main - INFO - 应用关闭完成
+2026-01-08 10:31:02 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 10:31:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:31:03 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:31:03 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 10:31:03 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:31:03 - main - INFO - 认证中间件已禁用
+2026-01-08 10:31:03 - main - INFO - 正在启动应用...
+2026-01-08 10:31:03 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 10:31:03 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 10:31:03 - main - INFO - 数据库初始化成功
+2026-01-08 10:31:03 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 10:31:03 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 10:31:03 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 10:31:03 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 10:31:03 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 10:31:03 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 10:31:03 - main - INFO - 应用启动完成
+2026-01-08 10:31:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:31:12 - watchfiles.main - INFO - 4 changes detected
+2026-01-08 10:31:12 - watchfiles.main - INFO - 4 changes detected
+2026-01-08 10:31:47 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:31:47 - main - INFO - 正在关闭应用...
+2026-01-08 10:31:47 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 10:31:47 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 10:31:47 - core.database - INFO - MongoDB connection closed
+2026-01-08 10:31:47 - main - INFO - 应用关闭完成
+2026-01-08 10:31:47 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 10:31:48 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:31:48 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:31:48 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 10:31:48 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:31:48 - main - INFO - 认证中间件已禁用
+2026-01-08 10:31:48 - main - INFO - 正在启动应用...
+2026-01-08 10:31:48 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 10:31:48 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 10:31:48 - main - INFO - 数据库初始化成功
+2026-01-08 10:31:48 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 10:31:48 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 10:31:48 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 10:31:48 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 10:31:48 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 10:31:48 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 10:31:48 - main - INFO - 应用启动完成
+2026-01-08 10:31:48 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:31:57 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 10:32:11 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:32:11 - main - INFO - 正在关闭应用...
+2026-01-08 10:32:11 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 10:32:11 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 10:32:11 - core.database - INFO - MongoDB connection closed
+2026-01-08 10:32:11 - main - INFO - 应用关闭完成
+2026-01-08 10:32:11 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 10:32:12 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:32:12 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:32:12 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 10:32:13 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:32:13 - main - INFO - 认证中间件已禁用
+2026-01-08 10:32:13 - main - INFO - 正在启动应用...
+2026-01-08 10:32:13 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 10:32:13 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 10:32:13 - main - INFO - 数据库初始化成功
+2026-01-08 10:32:13 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 10:32:13 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 10:32:13 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 10:32:13 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 10:32:13 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 10:32:13 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 10:32:13 - main - INFO - 应用启动完成
+2026-01-08 10:32:13 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:33:53 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:33:55 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:37:56 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:37:56 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:38:10 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:38:10 - main - INFO - 正在关闭应用...
+2026-01-08 10:38:10 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 10:38:10 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 10:38:10 - core.database - INFO - MongoDB connection closed
+2026-01-08 10:38:10 - main - INFO - 应用关闭完成
+2026-01-08 10:38:10 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 10:38:10 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:38:11 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:38:11 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 10:38:11 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 10:38:11 - main - INFO - 认证中间件已禁用
+2026-01-08 10:38:11 - main - INFO - 正在启动应用...
+2026-01-08 10:38:11 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 10:38:11 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:38:11 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 10:38:11 - main - INFO - 数据库初始化成功
+2026-01-08 10:38:11 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 10:38:11 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 10:38:11 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 10:38:11 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 10:38:11 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 10:38:11 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 10:38:11 - main - INFO - 应用启动完成
+2026-01-08 10:39:51 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:42:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:42:04 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:44:01 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:44:01 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:44:01 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:44:08 - services.web.crawler.crawler_service - INFO - 开始爬取URL: https://www.qbitai.com/, 最小标题长度: 24
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 共提取到 133 个链接
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 过滤后剩余 82 个有效链接
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 1: 让欧美老外彻底“真香”，这家中国割草机器人品牌正在定义一个行业新标准 - https://www.qbitai.com/2026/01/367347.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 2: NVIDIA 发布全新物理 AI 模型，全球合作伙伴展示新一代机器人 - https://www.qbitai.com/2026/01/367308.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 3: Mobileye砸63亿杀入具身智能！百辆Robotaxi今年Q3进美国 - https://www.qbitai.com/2026/01/367284.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 4: 重塑虚实边界：智元机器人发布首个大语言模型驱动的开源仿真平台Genie Sim 3.0 - https://www.qbitai.com/2026/01/367261.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 5: 老外对屏狂拍！海信全新一代RGB-Mini LED电视亮相轰动CES2026 - https://www.qbitai.com/2026/01/367313.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 6: 8块钱跑通一次强化学习全流程，潞晨云重塑微调赛道：1名算法工程师=1支Infra团队 - https://www.qbitai.com/2026/01/367229.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 7: 三赴CES，睿尔曼以三大底层能力构建全球化具身智能新基建 - https://www.qbitai.com/2026/01/367216.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 8: OceanBase蝉联中国分布式数据库本地部署市场第一，领跑国产数据库 - https://www.qbitai.com/2026/01/367171.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 9: 全自主、更好用！北京人形 “干活机器人” 惊艳亮相 CES2026 - https://www.qbitai.com/2026/01/367091.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 10: 英特尔CES奇袭老黄大本营！英伟达显卡刚涨价，最强酷睿量产出货 - https://www.qbitai.com/2026/01/366636.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 11: 海信CES发布全新一代RGB-Mini LED，全球首创玲珑4芯真彩背光 - https://www.qbitai.com/2026/01/366621.html
+2026-01-08 10:44:42 - services.web.crawler.crawler_service - INFO - 链接 12: B站开启AI创作大赛，首次开放《三体》改编权，奖金总计超300万 - https://www.qbitai.com/2026/01/366573.html
+2026-01-08 10:45:04 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:45:05 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:45:10 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: create_document
+2026-01-08 10:45:10 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'module_name': 'services.web.crawler.crawler_service', 'method_name': 'crawl_and_extract', 'request_method': 'GET', 'params': {'url': 'https://www.qbitai.com/'}, 'response': {'code': 0, 'message': 'success', 'data': [{'title': '让欧美老外彻底“真香”，这家中国割草机器人品牌正在定义一个行业新标准', 'url': 'https://www.qbitai.com/2026/01/367347.html'}, {'title': 'NVIDIA 发布全新物理 AI 模型，全球合作伙伴展示新一代机器人', 'url': 'https://www.qbitai.com/2026/01/367308.html'}, {'title': 'Mobileye砸63亿杀入具身智能！百辆Robotaxi今年Q3进美国', 'url': 'https://www.qbitai.com/2026/01/367284.html'}, {'title': '重塑虚实边界：智元机器人发布首个大语言模型驱动的开源仿真平台Genie Sim 3.0', 'url': 'https://www.qbitai.com/2026/01/367261.html'}, {'title': '老外对屏狂拍！海信全新一代RGB-Mini LED电视亮相轰动CES2026', 'url': 'https://www.qbitai.com/2026/01/367313.html'}, {'title': '8块钱跑通一次强化学习全流程，潞晨云重塑微调赛道：1名算法工程师=1支Infra团队', 'url': 'https://www.qbitai.com/2026/01/367229.html'}, {'title': '三赴CES，睿尔曼以三大底层能力构建全球化具身智能新基建', 'url': 'https://www.qbitai.com/2026/01/367216.html'}, {'title': 'OceanBase蝉联中国分布式数据库本地部署市场第一，领跑国产数据库', 'url': 'https://www.qbitai.com/2026/01/367171.html'}, {'title': '全自主、更好用！北京人形 “干活机器人” 惊艳亮相 CES2026', 'url': 'https://www.qbitai.com/2026/01/367091.html'}, {'title': '英特尔CES奇袭老黄大本营！英伟达显卡刚涨价，最强酷睿量产出货', 'url': 'https://www.qbitai.com/2026/01/366636.html'}, {'title': '海信CES发布全新一代RGB-Mini LED，全球首创玲珑4芯真彩背光', 'url': 'https://www.qbitai.com/2026/01/366621.html'}, {'title': 'B站开启AI创作大赛，首次开放《三体》改编权，奖金总计超300万', 'url': 'https://www.qbitai.com/2026/01/366573.html'}]}}
+2026-01-08 10:45:10 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:45:10 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:45:10 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:45:24 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:45:24 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:45:24 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:45:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:45:25 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:45:25 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:45:30 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:45:30 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:45:30 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:47:35 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:48:40 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:48:41 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:50:20 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:50:20 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:50:20 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:50:50 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 10:50:54 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: create_document
+2026-01-08 10:50:54 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'module_name': 'services.database.data_service', 'method_name': 'query_documents', 'request_method': 'GET', 'params': {'cname': 'sessions', 'limit': 10}, 'response': {'code': 0, 'message': 'success', 'data': {'list': [], 'total': 0, 'pageNum': 1, 'pageSize': 10, 'totalPages': 0}}}
+2026-01-08 10:50:54 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: query_documents
+2026-01-08 10:50:54 - api.routes.execution - INFO - 参数: {'cname': 'apis', 'pageSize': 100}
+2026-01-08 10:50:54 - services.database.data_service - INFO - Querying collection: apis, Filter: {}
+2026-01-08 10:51:55 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:51:56 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:54:56 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:54:57 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:58:08 - watchfiles.main - INFO - 1 change detected
+2026-01-08 10:58:09 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 10:58:17 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:01:09 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:01:10 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:01:42 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:02:37 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:02:37 - main - INFO - 正在关闭应用...
+2026-01-08 11:02:37 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:02:37 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:02:37 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:02:37 - main - INFO - 应用关闭完成
+2026-01-08 11:02:37 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:02:37 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:02:42 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:02:51 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 11:03:04 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:03:12 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:03:13 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:03:13 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:03:13 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:03:13 - main - INFO - 认证中间件已禁用
+2026-01-08 11:03:13 - main - INFO - 正在启动应用...
+2026-01-08 11:03:13 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:03:13 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:03:13 - main - INFO - 数据库初始化成功
+2026-01-08 11:03:13 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:03:13 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:03:13 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:03:13 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:03:13 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:03:13 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:03:13 - main - INFO - 应用启动完成
+2026-01-08 11:03:13 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:03:18 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 11:19:00 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:19:01 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:19:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:19:03 - main - INFO - 正在关闭应用...
+2026-01-08 11:19:03 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:19:03 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:19:03 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:19:03 - main - INFO - 应用关闭完成
+2026-01-08 11:19:03 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:19:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:19:04 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:19:04 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:19:04 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:19:04 - main - INFO - 认证中间件已禁用
+2026-01-08 11:19:04 - main - INFO - 正在启动应用...
+2026-01-08 11:19:04 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:19:04 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:19:04 - main - INFO - 数据库初始化成功
+2026-01-08 11:19:04 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:19:04 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:19:04 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:19:04 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:19:04 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:19:04 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:19:04 - main - INFO - 应用启动完成
+2026-01-08 11:19:04 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:21:38 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:21:38 - main - INFO - 正在关闭应用...
+2026-01-08 11:21:38 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:21:38 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:21:38 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:21:38 - main - INFO - 应用关闭完成
+2026-01-08 11:21:38 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:21:38 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:21:39 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:21:39 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:21:39 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:21:39 - main - INFO - 认证中间件已禁用
+2026-01-08 11:21:39 - main - INFO - 正在启动应用...
+2026-01-08 11:21:39 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:21:39 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:21:39 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:21:39 - main - INFO - 数据库初始化成功
+2026-01-08 11:21:39 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:21:39 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:21:39 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:21:39 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:21:39 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:21:39 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:21:39 - main - INFO - 应用启动完成
+2026-01-08 11:21:55 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:21:55 - main - INFO - 正在关闭应用...
+2026-01-08 11:21:55 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:21:55 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:21:55 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:21:55 - main - INFO - 应用关闭完成
+2026-01-08 11:21:55 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:21:56 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:21:56 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:21:56 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:21:56 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:21:56 - main - INFO - 认证中间件已禁用
+2026-01-08 11:21:56 - main - INFO - 正在启动应用...
+2026-01-08 11:21:56 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:21:56 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:21:56 - main - INFO - 数据库初始化成功
+2026-01-08 11:21:56 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:21:56 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:21:56 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:21:56 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:21:56 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:21:56 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:21:56 - main - INFO - 应用启动完成
+2026-01-08 11:21:56 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:01 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:02 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:22:09 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:09 - main - INFO - 正在关闭应用...
+2026-01-08 11:22:09 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:22:09 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:22:09 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:22:09 - main - INFO - 应用关闭完成
+2026-01-08 11:22:09 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:22:09 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:10 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:22:10 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:22:10 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:22:10 - main - INFO - 认证中间件已禁用
+2026-01-08 11:22:10 - main - INFO - 正在启动应用...
+2026-01-08 11:22:10 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:22:10 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:22:10 - main - INFO - 数据库初始化成功
+2026-01-08 11:22:10 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:22:10 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:22:10 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:22:10 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:22:10 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:22:10 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:22:10 - main - INFO - 应用启动完成
+2026-01-08 11:22:10 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:21 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:21 - main - INFO - 正在关闭应用...
+2026-01-08 11:22:21 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:22:21 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:22:21 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:22:21 - main - INFO - 应用关闭完成
+2026-01-08 11:22:21 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:22:22 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:22:22 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:22:22 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:22:22 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:22:22 - main - INFO - 认证中间件已禁用
+2026-01-08 11:22:22 - main - INFO - 正在启动应用...
+2026-01-08 11:22:22 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:22:22 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:22:22 - main - INFO - 数据库初始化成功
+2026-01-08 11:22:22 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:22:22 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:22:22 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:22:22 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:22:22 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:22:22 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:22:22 - main - INFO - 应用启动完成
+2026-01-08 11:22:22 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:25:43 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:25:44 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 11:25:44 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 11:26:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:26:04 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 11:26:05 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 11:27:12 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:25 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:25 - main - INFO - 正在关闭应用...
+2026-01-08 11:27:25 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:27:25 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:27:25 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:27:25 - main - INFO - 应用关闭完成
+2026-01-08 11:27:25 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:27:26 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:26 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:27:26 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:27:26 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:27:26 - main - INFO - 认证中间件已禁用
+2026-01-08 11:27:26 - main - INFO - 正在启动应用...
+2026-01-08 11:27:26 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:27:26 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:27:26 - main - INFO - 数据库初始化成功
+2026-01-08 11:27:26 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:27:26 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:27:26 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:27:26 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:27:26 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:27:26 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:27:26 - main - INFO - 应用启动完成
+2026-01-08 11:27:26 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:31 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:31 - main - INFO - 正在关闭应用...
+2026-01-08 11:27:31 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:27:31 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:27:31 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:27:31 - main - INFO - 应用关闭完成
+2026-01-08 11:27:31 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:27:32 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:32 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:27:32 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:27:32 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:27:32 - main - INFO - 认证中间件已禁用
+2026-01-08 11:27:32 - main - INFO - 正在启动应用...
+2026-01-08 11:27:32 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:27:32 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:27:32 - main - INFO - 数据库初始化成功
+2026-01-08 11:27:32 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:27:32 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:27:32 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:27:32 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:27:32 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:27:32 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:27:32 - main - INFO - 应用启动完成
+2026-01-08 11:27:32 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:37 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:37 - main - INFO - 正在关闭应用...
+2026-01-08 11:27:37 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:27:37 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:27:37 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:27:37 - main - INFO - 应用关闭完成
+2026-01-08 11:27:37 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:27:38 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 11:27:39 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:27:39 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:27:39 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:27:39 - main - INFO - 认证中间件已禁用
+2026-01-08 11:27:39 - main - INFO - 正在启动应用...
+2026-01-08 11:27:39 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:27:39 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:27:39 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:27:39 - main - INFO - 数据库初始化成功
+2026-01-08 11:27:39 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:27:39 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:27:39 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:27:39 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:27:39 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:27:39 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:27:39 - main - INFO - 应用启动完成
+2026-01-08 11:27:43 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 11:28:14 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:28:14 - main - INFO - 正在关闭应用...
+2026-01-08 11:28:14 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-08 11:28:14 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-08 11:28:14 - core.database - INFO - MongoDB connection closed
+2026-01-08 11:28:14 - main - INFO - 应用关闭完成
+2026-01-08 11:28:14 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-08 11:28:14 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:28:15 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:28:15 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-08 11:28:15 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-08 11:28:15 - main - INFO - 认证中间件已禁用
+2026-01-08 11:28:15 - main - INFO - 正在启动应用...
+2026-01-08 11:28:15 - core.database - INFO - MongoDB connected: yi_ai
+2026-01-08 11:28:15 - core.database - INFO - Ensured unique index for rss.link
+2026-01-08 11:28:15 - main - INFO - 数据库初始化成功
+2026-01-08 11:28:15 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-08 11:28:15 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-08 11:28:15 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-08 11:28:15 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-08 11:28:15 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-08 11:28:15 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-08 11:28:15 - main - INFO - 应用启动完成
+2026-01-08 11:28:15 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:29:23 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:29:24 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:31:53 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:31:54 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:33:25 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:33:26 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:34:54 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:34:55 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:38:30 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:38:31 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 11:38:47 - watchfiles.main - INFO - 1 change detected
+2026-01-08 11:38:48 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 12:23:05 - watchfiles.main - INFO - 1 change detected
+2026-01-08 12:23:05 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 12:23:09 - watchfiles.main - INFO - 1 change detected
+2026-01-08 12:23:10 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 12:27:49 - watchfiles.main - INFO - 1 change detected
+2026-01-08 12:27:50 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 12:28:15 - apscheduler.executors.default - INFO - Running job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 13:28:15 CST)" (scheduled at 2026-01-08 12:28:15.207738+08:00)
+2026-01-08 12:28:15 - services.rss.rss_scheduler - INFO - 开始执行定时 RSS 解析任务
+2026-01-08 12:28:15 - services.rss.rss_scheduler - INFO - 定时 RSS 解析任务完成: 成功 0 个，失败 0 个
+2026-01-08 12:28:15 - apscheduler.executors.default - INFO - Job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 13:28:15 CST)" executed successfully
+2026-01-08 12:32:49 - watchfiles.main - INFO - 1 change detected
+2026-01-08 12:32:50 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:02:32 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:02:33 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:05:33 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:05:34 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:08:36 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:08:37 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:08:38 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:14:51 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:14:52 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:14:53 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:15:08 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:15:09 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:18:05 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:18:06 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:21:23 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:21:24 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:22:37 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 13:24:25 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:24:26 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:24:26 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:25:15 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:25:16 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:27:58 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:27:58 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:28:15 - apscheduler.executors.default - INFO - Running job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 14:28:15 CST)" (scheduled at 2026-01-08 13:28:15.207738+08:00)
+2026-01-08 13:28:15 - services.rss.rss_scheduler - INFO - 开始执行定时 RSS 解析任务
+2026-01-08 13:28:15 - services.rss.rss_scheduler - INFO - 定时 RSS 解析任务完成: 成功 0 个，失败 0 个
+2026-01-08 13:28:15 - apscheduler.executors.default - INFO - Job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 14:28:15 CST)" executed successfully
+2026-01-08 13:29:42 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:29:43 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:32:08 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:32:10 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:32:10 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:35:24 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:35:25 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:35:30 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:35:31 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:39:30 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:39:31 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:42:51 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:42:52 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:42:52 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:45:58 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:46:00 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:46:00 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:46:42 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:46:43 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:49:06 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:49:07 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:50:17 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:50:18 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:52:56 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:52:57 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 13:52:57 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 13:53:45 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:53:45 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:56:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:56:04 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:57:33 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:57:34 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 13:59:20 - watchfiles.main - INFO - 1 change detected
+2026-01-08 13:59:21 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:04:31 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:04:32 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:04:32 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:07:24 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:07:25 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:09:10 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:09:12 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:12:33 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:12:34 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:12:34 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:15:34 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:15:35 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:16:27 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:16:28 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:17:40 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:18:49 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:18:50 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:18:51 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:19:53 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:19:54 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:21:15 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:21:52 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:21:53 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:21:54 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:24:33 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:24:34 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:25:28 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:25:29 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:25:29 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:27:58 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:27:59 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:28:15 - apscheduler.executors.default - INFO - Running job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 15:28:15 CST)" (scheduled at 2026-01-08 14:28:15.207738+08:00)
+2026-01-08 14:28:15 - services.rss.rss_scheduler - INFO - 开始执行定时 RSS 解析任务
+2026-01-08 14:28:15 - services.rss.rss_scheduler - INFO - 定时 RSS 解析任务完成: 成功 0 个，失败 0 个
+2026-01-08 14:28:15 - apscheduler.executors.default - INFO - Job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 15:28:15 CST)" executed successfully
+2026-01-08 14:28:51 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:28:51 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:34:19 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:34:20 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:39:22 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:39:23 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:40:36 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:40:37 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:44:06 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:44:07 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:44:08 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:44:09 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:44:13 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:48:24 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:48:25 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:49:25 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:50:59 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:51:28 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:51:29 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:51:33 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:51:35 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:51:35 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:54:29 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:54:30 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:54:48 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:54:49 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 14:54:50 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 14:55:42 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:56:32 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 14:59:01 - watchfiles.main - INFO - 1 change detected
+2026-01-08 14:59:02 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 14:59:24 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 15:23:03 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:23:04 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 15:23:10 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 15:26:17 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:26:18 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 15:28:15 - apscheduler.executors.default - INFO - Running job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 16:28:15 CST)" (scheduled at 2026-01-08 15:28:15.207738+08:00)
+2026-01-08 15:28:15 - services.rss.rss_scheduler - INFO - 开始执行定时 RSS 解析任务
+2026-01-08 15:28:15 - services.rss.rss_scheduler - INFO - 定时 RSS 解析任务完成: 成功 0 个，失败 0 个
+2026-01-08 15:28:15 - apscheduler.executors.default - INFO - Job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 16:28:15 CST)" executed successfully
+2026-01-08 15:29:22 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:29:23 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 15:29:23 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 15:30:31 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:30:32 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 15:32:24 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:32:25 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 15:35:43 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:35:44 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 15:39:06 - watchfiles.main - INFO - 1 change detected
+2026-01-08 15:39:07 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 15:39:07 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 16:03:42 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:03:43 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:03:45 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:03:46 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:04:12 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 16:07:04 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:07:05 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:07:35 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 16:07:35 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:07:55 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE)}
+2026-01-08 16:08:05 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE)}
+2026-01-08 16:08:07 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:11:13 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:11:15 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 16:11:15 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 16:11:45 - services.database.data_service - INFO - Querying collection: goals, Filter: {'year': re.compile('.*2026.*', re.IGNORECASE), 'quarter': re.compile('.*Q1.*', re.IGNORECASE), 'month': re.compile('.*01.*', re.IGNORECASE)}
+2026-01-08 16:11:45 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:12:25 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:12:25 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:12:33 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:12:33 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:14:01 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:14:01 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:14:27 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:14:29 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 16:14:29 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 16:15:27 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:15:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:18:49 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:18:50 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:18:57 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:18:58 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:22:35 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:22:36 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:22:38 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:22:39 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:22:47 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:22:47 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:22:49 - services.database.data_service - INFO - Querying collection: goals, Filter: {}
+2026-01-08 16:22:49 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-08 16:26:41 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:26:42 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:28:15 - apscheduler.executors.default - INFO - Running job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 17:28:15 CST)" (scheduled at 2026-01-08 16:28:15.207738+08:00)
+2026-01-08 16:28:15 - services.rss.rss_scheduler - INFO - 开始执行定时 RSS 解析任务
+2026-01-08 16:28:15 - services.rss.rss_scheduler - INFO - 定时 RSS 解析任务完成: 成功 0 个，失败 0 个
+2026-01-08 16:28:15 - apscheduler.executors.default - INFO - Job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 17:28:15 CST)" executed successfully
+2026-01-08 16:30:10 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:30:11 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:33:17 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:33:18 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:33:22 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:33:23 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:36:36 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:36:37 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 16:36:38 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 16:40:21 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:40:22 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:41:36 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:41:37 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:43:37 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:43:38 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:47:35 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:47:36 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:48:44 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:48:45 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:50:38 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:50:39 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 16:50:39 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 16:53:42 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:53:43 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:56:43 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:56:44 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 16:58:13 - watchfiles.main - INFO - 1 change detected
+2026-01-08 16:58:14 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:00:30 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:00:31 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 17:00:31 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 17:04:13 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:04:14 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:07:25 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:07:26 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:09:51 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:09:52 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:10:28 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:10:29 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 17:10:29 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 17:15:26 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:15:26 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:15:27 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:15:28 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:20:45 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:20:46 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:26:25 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:26:26 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 17:26:26 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 17:26:28 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:26:29 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:28:15 - apscheduler.executors.default - INFO - Running job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 18:28:15 CST)" (scheduled at 2026-01-08 17:28:15.207738+08:00)
+2026-01-08 17:28:15 - services.rss.rss_scheduler - INFO - 开始执行定时 RSS 解析任务
+2026-01-08 17:28:15 - services.rss.rss_scheduler - INFO - 定时 RSS 解析任务完成: 成功 0 个，失败 0 个
+2026-01-08 17:28:15 - apscheduler.executors.default - INFO - Job "rss_scheduler_job (trigger: interval[1:00:00], next run at: 2026-01-08 18:28:15 CST)" executed successfully
+2026-01-08 17:32:22 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:32:23 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:37:49 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:37:50 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:37:51 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:37:51 - watchfiles.main - INFO - 3 changes detected
+2026-01-08 17:37:52 - watchfiles.main - INFO - 2 changes detected
+2026-01-08 17:40:55 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:40:56 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 17:50:59 - watchfiles.main - INFO - 1 change detected
+2026-01-08 17:51:00 - watchfiles.main - INFO - 5 changes detected
+2026-01-08 18:00:16 - watchfiles.main - INFO - 1 change detected
+2026-01-08 18:00:17 - watchfiles.main - INFO - 5 changes detected

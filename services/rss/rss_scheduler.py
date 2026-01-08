@@ -7,9 +7,9 @@ from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
 from core.database import db
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
-from core.config import settings
+from apscheduler.triggers.cron import CronTrigger
+from core.settings import settings
 from services.rss.feed_service import process_feed_from_url
 
 logger = logging.getLogger(__name__)

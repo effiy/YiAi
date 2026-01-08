@@ -5,7 +5,7 @@ import aiohttp
 from typing import Dict, Any, Optional
 from fastapi import HTTPException
 from core.database import db
-from core.config import settings
+from core.settings import settings
 from core.utils import get_current_time
 
 logger = logging.getLogger(__name__)

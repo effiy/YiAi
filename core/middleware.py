@@ -3,7 +3,7 @@ import os
 import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from core.config import settings
+from core.settings import settings
 from core.response import fail
 from core.error_codes import ErrorCode
 
@@ -63,7 +63,7 @@ async def header_verification_middleware(request: Request, call_next):
             return response
 
         # 检查中间件是否启用
-        enable_middleware = settings.is_auth_middleware_enabled()
+        enable_middleware = settings.middleware_auth_enabled
         if not enable_middleware:
             response = await call_next(request)
             return response

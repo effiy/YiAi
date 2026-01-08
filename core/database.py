@@ -6,7 +6,7 @@ import logging
 from typing import Optional, List, Dict, Any, TypeVar
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone
-from core.config import settings
+from core.settings import settings
 
 logger = logging.getLogger(__name__)
 

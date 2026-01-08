@@ -1,7 +1,9 @@
 import logging
+import asyncio
+import functools
 from typing import Dict, Any, Optional
 from ollama import Client
-from core.config import settings
+from core.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +97,13 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
     user_content = params.get("user", "")
     model_name = params.get("model", "qwen3")
     
-    return service.generate_response(
-        system_prompt=system_prompt,
-        user_content=user_content,
-        model_name=model_name
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None,
+        functools.partial(
+            service.generate_response,
+            system_prompt=system_prompt,
+            user_content=user_content,
+            model_name=model_name
+        )
     )

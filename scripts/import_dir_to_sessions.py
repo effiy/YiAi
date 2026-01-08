@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.append(os.getcwd())
 
 from core.database import db
-from core.config import settings
+from core.settings import settings
 from core.utils import estimate_tokens
 
 # 配置日志

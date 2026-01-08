@@ -9,7 +9,7 @@ import base64
 from typing import Optional, List, Dict, Any
 from fastapi import UploadFile, HTTPException
 from datetime import datetime, timezone
-from core.config import settings
+from core.settings import settings
 from core.database import db
 
 logger = logging.getLogger(__name__)

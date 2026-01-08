@@ -7,11 +7,14 @@ import logging
 import json
 from typing import Dict, Any, Union
 from fastapi import HTTPException
-from core.config import settings
+from core.settings import settings
 
 logger = logging.getLogger(__name__)
 
-EXEC_ALLOWLIST = set(settings.module_allowlist)
+allowlist = settings.module_allowlist
+if isinstance(allowlist, str):
+    allowlist = [x.strip() for x in allowlist.split(',') if x.strip()]
+EXEC_ALLOWLIST = set(allowlist)
 
 def parse_parameters(parameters: Union[Dict[str, Any], str]) -> Dict[str, Any]:
     """

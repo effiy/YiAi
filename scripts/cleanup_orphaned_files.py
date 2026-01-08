@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.append(os.getcwd())
 
 from core.database import db
-from core.config import settings
+from core.settings import settings
 
 async def cleanup(dry_run: bool = True):
     print(f"模式: {'[Dry Run] (不执行删除)' if dry_run else '[Live] (执行删除)'}")
