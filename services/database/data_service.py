@@ -352,12 +352,53 @@ async def update_document(params: Dict[str, Any]) -> Dict[str, Any]:
     
     return {'key': doc_id, 'updated': True}
 
+async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
+    collection_name = params.get('collection_name') or params.get('cname')
+    filter_doc = params.get('filter')
+    update_doc = params.get('update')
+    
+    if not collection_name:
+        raise ValueError("Collection name (collection_name/cname) is required")
+    if not filter_doc:
+        raise ValueError("Filter (filter) is required")
+    if not update_doc:
+        raise ValueError("Update data (update) is required")
+
+    await db.initialize()
+    collection_name = _validate_collection_name(collection_name)
+    collection = db.db[collection_name]
+    
+    # 确保 update_doc 包含 atomic operators
+    if not any(k.startswith('$') for k in update_doc.keys()):
+        # 如果没有操作符，假设是 $set
+        update_doc = {'$set': update_doc}
+
+    # 强制添加系统字段
+    if '$set' not in update_doc:
+        update_doc['$set'] = {}
+    update_doc['$set']['updatedTime'] = get_current_time()
+    
+    if '$setOnInsert' not in update_doc:
+        update_doc['$setOnInsert'] = {}
+    update_doc['$setOnInsert']['createdTime'] = get_current_time()
+    
+    if 'key' not in update_doc['$setOnInsert']:
+        update_doc['$setOnInsert']['key'] = str(uuid.uuid4())
+
+    result = await collection.update_one(filter_doc, update_doc, upsert=True)
+    
+    return {
+        "matched_count": result.matched_count,
+        "modified_count": result.modified_count,
+        "upserted_id": str(result.upserted_id) if result.upserted_id else None
+    }
+
 async def delete_document(params: Dict[str, Any]) -> Dict[str, Any]:
     collection_name = params.get('collection_name') or params.get('cname')
-    doc_id = params.get('id')
+    doc_id = params.get('key') or params.get('id')
     
     if not collection_name or not doc_id:
-        raise ValueError("collection_name/cname and id are required")
+        raise ValueError("collection_name/cname and key are required")
         
     await db.initialize()
     collection_name = _validate_collection_name(collection_name)

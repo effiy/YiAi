@@ -1,0 +1,72 @@
+.searchCard{
+  padding:10px;
+}
+.searchRow{
+  display:flex;
+  gap:6px;
+  align-items:stretch;
+  flex-wrap:nowrap;
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f6f6f6;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid transparent;
+}
+
+/* 搜索框聚焦状态 */
+.searchBox:focus-within {
+  background: #fff;
+  border-color: rgba(7, 193, 96, 0.2);
+  box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.08);
+}
+/* 桌面端悬浮效果 */
+@media (hover: hover) {
+  .searchBox:hover:not(:focus-within) {
+    background: #fafafa;
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+}
+/* 搜索图标样式 */
+.searchBox__icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: #9b9b9b;
+  transition: fill 0.2s ease, transform 0.15s ease;
+}
+
+/* 搜索框聚焦时图标高亮 */
+.searchBox:focus-within .searchBox__icon {
+  fill: var(--green);
+}
+
+/* 搜索框悬浮效果（桌面端） */
+@media (hover: hover) {
+  .searchBox:hover .searchBox__icon {
+    fill: #666;
+  }
+  
+  .searchBox:focus-within .searchBox__icon {
+    fill: var(--green);
+  }
+}
+.searchBox__input{
+  flex:1;
+  background:transparent;
+  font-size:15px;
+}
+.searchBox__clear{
+  width:22px;height:22px;
+  border-radius:11px;
+  color:#9b9b9b;
+  display:grid;place-items:center;
+}
+.searchBox__clear:active{background:rgba(0,0,0,.06)}

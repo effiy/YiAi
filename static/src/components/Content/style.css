@@ -1,0 +1,206 @@
+/* ---------- Changelog / Version history ---------- */
+.changelogMeta{
+  padding: 2px 0 10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.changelogMeta__row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.changelogMeta__k{
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  flex:none;
+}
+.changelogMeta__v{
+  font-size: 12px;
+  font-weight: 800;
+  color:#2b2b2b;
+  text-align:right;
+  min-width:0;
+}
+
+.changelogList{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.changelogEmpty{
+  padding: 10px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.release{
+  padding: 10px 12px;
+  border-radius: 14px;
+  background:#f6f6f6;
+  border:1px solid rgba(0,0,0,.06);
+}
+.release__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.release__ver{
+  font-weight: 900;
+  font-size: 13px;
+  color:#1f1f1f;
+}
+.release__date{
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--muted);
+  flex:none;
+}
+.release__title{
+  margin-top: 6px;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.35;
+  color:#2b2b2b;
+}
+.release__changes{
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.release__change{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.release__tag{
+  flex:none;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(7,193,96,.14);
+  color:#056a36;
+}
+.release__text{
+  color:#2b2b2b;
+  font-weight: 700;
+  min-width:0;
+}
+.release__notes{
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.85);
+  border: 1px solid rgba(0,0,0,.06);
+}
+
+/* Context / Page Desc */
+.contextHint{
+  margin: 2px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.contextContent{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  font-size:13px;
+  color:#2b2b2b;
+  overflow-x:hidden;
+  overflow-wrap:break-word;
+  word-wrap:break-word;
+  max-width:100%;
+}
+.contextSection{
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f6f6f6;
+  border:1px solid rgba(0,0,0,.06);
+  overflow-x:hidden;
+  overflow-wrap:break-word;
+  word-wrap:break-word;
+  max-width:100%;
+}
+.contextLabel{
+  font-weight:700;
+  margin-bottom:4px;
+  color:#666;
+  overflow-x:hidden;
+  overflow-wrap:break-word;
+  word-wrap:break-word;
+  max-width:100%;
+}
+.contextValue{
+  line-height:1.5;
+  word-break:break-word;
+  overflow-wrap:break-word;
+  word-wrap:break-word;
+  overflow-x:hidden;
+  max-width:100%;
+}
+.contextLink{
+  color:#0a7b40;
+  word-break:break-all;
+  overflow-wrap:break-word;
+  word-wrap:break-word;
+  overflow-x:hidden;
+  max-width:100%;
+  text-decoration:none;
+}
+.contextLink:hover{
+  text-decoration:underline;
+}
+
+/* 页面上下文和页面描述中的内容禁止横向滚动，自动换行 */
+.contextContent *,
+#contextContent *,
+#pageDescContent *{
+  max-width:100%;
+  overflow-x:hidden;
+  overflow-wrap:break-word;
+  word-wrap:break-word;
+  box-sizing:border-box;
+}
+
+/* 代码块和预格式化文本也要换行 */
+.contextContent pre,
+.contextContent code,
+#contextContent pre,
+#contextContent code,
+#pageDescContent pre,
+#pageDescContent code{
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow-wrap:break-word;
+  max-width:100%;
+  overflow-x:hidden;
+}
+
+/* 表格也要禁止横向滚动 */
+.contextContent table,
+#contextContent table,
+#pageDescContent table{
+  max-width:100%;
+  table-layout:fixed;
+  word-break:break-word;
+  overflow-wrap:break-word;
+}
+
+.contextContent table td,
+.contextContent table th,
+#contextContent table td,
+#contextContent table th,
+#pageDescContent table td,
+#pageDescContent table th{
+  word-break:break-word;
+  overflow-wrap:break-word;
+  max-width:100%;
+}

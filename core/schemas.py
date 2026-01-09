@@ -36,6 +36,18 @@ class FileUploadRequest(BaseModel):
     is_base64: bool = Field(default=False, description="内容是否为 Base64 编码")
     target_dir: str = Field(default="static", description="目标存储目录")
 
+class FolderDeleteRequest(BaseModel):
+    """
+    文件夹删除请求模型
+    """
+    target_dir: str = Field(..., description="要删除的目录路径")
+
+class FileDeleteRequest(BaseModel):
+    """
+    文件删除请求模型
+    """
+    target_file: str = Field(..., description="要删除的文件路径")
+
 # --- RSS Schemas ---
 class ParseRssRequest(BaseModel):
     """
