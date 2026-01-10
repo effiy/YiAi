@@ -48,6 +48,20 @@ class FileDeleteRequest(BaseModel):
     """
     target_file: str = Field(..., description="要删除的文件路径")
 
+class FileReadRequest(BaseModel):
+    """
+    文件读取请求模型
+    """
+    target_file: str = Field(..., description="要读取的文件路径")
+
+class FileWriteRequest(BaseModel):
+    """
+    文件写入请求模型
+    """
+    target_file: str = Field(..., description="要写入的文件路径")
+    content: str = Field(..., description="文件内容")
+    is_base64: bool = Field(default=False, description="内容是否为 Base64 编码")
+
 # --- RSS Schemas ---
 class ParseRssRequest(BaseModel):
     """
