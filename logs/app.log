@@ -5467,3 +5467,1016 @@
 2026-01-10 09:07:47 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
 2026-01-10 09:07:48 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
 2026-01-10 09:07:49 - services.database.data_service - INFO - Querying collection: comments, Filter: {'key': re.compile('.*src/config\\.js.*', re.IGNORECASE)}
+2026-01-10 12:01:31 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-10 12:01:31 - main - INFO - 认证中间件已禁用
+2026-01-10 12:01:31 - main - INFO - 正在启动应用...
+2026-01-10 12:01:31 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-10 12:01:31 - core.database - INFO - Ensured unique index for rss.link
+2026-01-10 12:01:31 - main - INFO - 数据库初始化成功
+2026-01-10 12:01:31 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-10 12:01:31 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-10 12:01:31 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-10 12:01:31 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-10 12:01:31 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-10 12:01:31 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-10 12:01:31 - main - INFO - 应用启动完成
+2026-01-10 12:01:40 - main - INFO - 正在关闭应用...
+2026-01-10 12:01:40 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-10 12:01:40 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-10 12:01:40 - core.database - INFO - MongoDB connection closed
+2026-01-10 12:01:40 - main - INFO - 应用关闭完成
+2026-01-10 12:01:40 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-10 12:01:40 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-10 12:01:40 - main - INFO - 认证中间件已禁用
+2026-01-10 12:01:40 - main - INFO - 正在启动应用...
+2026-01-10 12:01:40 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-10 12:01:40 - core.database - INFO - Ensured unique index for rss.link
+2026-01-10 12:01:40 - main - INFO - 数据库初始化成功
+2026-01-10 12:01:40 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-10 12:01:40 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-10 12:01:40 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-10 12:01:40 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-10 12:01:40 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-10 12:01:40 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-10 12:01:40 - main - INFO - 应用启动完成
+2026-01-10 12:02:12 - main - INFO - 正在关闭应用...
+2026-01-10 12:02:12 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-10 12:02:12 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-10 12:02:12 - core.database - INFO - MongoDB connection closed
+2026-01-10 12:02:12 - main - INFO - 应用关闭完成
+2026-01-10 12:02:12 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-10 12:02:13 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-10 12:02:13 - main - INFO - 认证中间件已禁用
+2026-01-10 12:02:13 - main - INFO - 正在启动应用...
+2026-01-10 12:02:13 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-10 12:02:13 - core.database - INFO - Ensured unique index for rss.link
+2026-01-10 12:02:13 - main - INFO - 数据库初始化成功
+2026-01-10 12:02:13 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-10 12:02:13 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-10 12:02:13 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-10 12:02:13 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-10 12:02:13 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-10 12:02:13 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-10 12:02:13 - main - INFO - 应用启动完成
+2026-01-10 12:03:00 - api.routes.upload - INFO - 成功重命名文件: /Users/yi/Yi/YiAi/static/test_rename.txt -> /Users/yi/Yi/YiAi/static/test_renamed.txt
+2026-01-10 12:03:00 - core.exception_handler - WARNING - 业务异常: 文件不存在: test_rename.txt | Code: 1002
+2026-01-10 12:03:00 - api.routes.upload - INFO - 成功删除文件: /Users/yi/Yi/YiAi/static/test_renamed.txt
+2026-01-10 12:03:47 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:47 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:03:48 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:03:53 - api.routes.upload - INFO - 成功重命名文件夹: /Users/yi/Yi/YiAi/static/src/background/handlers -> /Users/yi/Yi/YiAi/static/src/background/handlers9
+2026-01-10 12:03:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:53 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:03:53 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a43c2dd3-6382-4a2b-aea0-046f9e837028'}
+2026-01-10 12:03:53 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:03:53 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a43c2dd3-6382-4a2b-aea0-046f9e837028'}
+2026-01-10 12:03:53 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:03:53 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a43c2dd3-6382-4a2b-aea0-046f9e837028'}
+2026-01-10 12:03:53 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:03:53 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a43c2dd3-6382-4a2b-aea0-046f9e837028'}
+2026-01-10 12:03:53 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:03:53 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a43c2dd3-6382-4a2b-aea0-046f9e837028'}
+2026-01-10 12:03:53 - services.execution.executor - ERROR - Execution error: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败
+2026-01-10 12:03:53 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败 | Status: 500
+2026-01-10 12:03:53 - services.execution.executor - ERROR - Execution error: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败
+2026-01-10 12:03:53 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败 | Status: 500
+2026-01-10 12:03:53 - services.execution.executor - ERROR - Execution error: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败
+2026-01-10 12:03:53 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败 | Status: 500
+2026-01-10 12:03:53 - services.execution.executor - ERROR - Execution error: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败
+2026-01-10 12:03:53 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 a43c2dd3-6382-4a2b-aea0-046f9e837028 的数据或删除失败 | Status: 500
+2026-01-10 12:03:55 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:57 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:59 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:59 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60', 'data': {'id': 'src/background/handlers9/screenshotHandler.js', 'url': 'aicr-session://1768017835226-7vr9qzzfz', 'title': 'screenshotHandler.js', 'pageTitle': 'screenshotHandler.js', 'pageDescription': '文件：src/background/handlers9/screenshotHandler.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background', 'handlers9'], 'isFavorite': False, 'createdAt': 1768017835226, 'updatedAt': 1768017835226, 'lastAccessTime': 1768017835226, 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60'}}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60', 'data': {'id': 'src/background/handlers9/petHandler.js', 'url': 'aicr-session://1768017836602-k28o3v9z1', 'title': 'petHandler.js', 'pageTitle': 'petHandler.js', 'pageDescription': '文件：src/background/handlers9/petHandler.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background', 'handlers9'], 'isFavorite': False, 'createdAt': 1768017836602, 'updatedAt': 1768017836602, 'lastAccessTime': 1768017836602, 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60'}}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60', 'data': {'id': 'src/background/handlers9/messageForwardHandler.js', 'url': 'aicr-session://1768017837641-tlm9iuips', 'title': 'messageForwardHandler.js', 'pageTitle': 'messageForwardHandler.js', 'pageDescription': '文件：src/background/handlers9/messageForwardHandler.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background', 'handlers9'], 'isFavorite': False, 'createdAt': 1768017837641, 'updatedAt': 1768017837641, 'lastAccessTime': 1768017837641, 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60'}}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60', 'data': {'id': 'src/background/handlers9/tabHandler.js', 'url': 'aicr-session://1768017839361-fjfo6jn61', 'title': 'tabHandler.js', 'pageTitle': 'tabHandler.js', 'pageDescription': '文件：src/background/handlers9/tabHandler.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background', 'handlers9'], 'isFavorite': False, 'createdAt': 1768017839361, 'updatedAt': 1768017839361, 'lastAccessTime': 1768017839361, 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60'}}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60', 'data': {'id': 'src/background/handlers9/extensionHandler.js', 'url': 'aicr-session://1768017839375-05emun7v9', 'title': 'extensionHandler.js', 'pageTitle': 'extensionHandler.js', 'pageDescription': '文件：src/background/handlers9/extensionHandler.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background', 'handlers9'], 'isFavorite': False, 'createdAt': 1768017839375, 'updatedAt': 1768017839375, 'lastAccessTime': 1768017839375, 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60'}}
+2026-01-10 12:03:59 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bc79e359-28a2-42db-9bb5-18bc5df35c60'}
+2026-01-10 12:03:59 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:03:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:03:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '3b2a8cd0-60e9-410f-8b82-5ec17eb12d3a', 'data': {'id': 'src/background/handlers9/weworkHandler.js', 'url': 'aicr-session://1768017839453-jltvl2zcn', 'title': 'weworkHandler.js', 'pageTitle': 'weworkHandler.js', 'pageDescription': '文件：src/background/handlers9/weworkHandler.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background', 'handlers9'], 'isFavorite': False, 'createdAt': 1768017839375, 'updatedAt': 1768017839453, 'lastAccessTime': 1768017839453, 'key': '3b2a8cd0-60e9-410f-8b82-5ec17eb12d3a'}}
+2026-01-10 12:04:37 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:04:37 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:04:38 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:08:20 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:20 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:08:21 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:08:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:25 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '1b3c2038-456d-4d79-b141-703e644a1e6e'}
+2026-01-10 12:08:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:25 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '5d0c43d0-86c7-4b55-9f26-7347fd6ee35b'}
+2026-01-10 12:08:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:25 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '704a6651-726c-4889-a761-a29bc1a503ff'}
+2026-01-10 12:08:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:25 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e1f3d305-fd0e-4894-b315-bdbea07c8668'}
+2026-01-10 12:08:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:25 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '68ab5f11-2a9d-44b0-bbd4-e5c0547da566'}
+2026-01-10 12:08:25 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:25 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'dc617375-0b0c-47c0-a5dd-f57facb7a321'}
+2026-01-10 12:08:25 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:26 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:26 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '3b2a8cd0-60e9-410f-8b82-5ec17eb12d3a'}
+2026-01-10 12:08:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:26 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:26 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'b50c5e66-184e-4602-8309-92586468f3f3'}
+2026-01-10 12:08:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:26 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:26 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '2b7222c8-bdd3-4820-9d29-72e1d2365036'}
+2026-01-10 12:08:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:26 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:26 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '2d9d6940-0427-43f6-bd0b-dc6cf4d123c5'}
+2026-01-10 12:08:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:26 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:26 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0bb2342b-8c8a-4a92-adf4-b96bfc998612'}
+2026-01-10 12:08:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:26 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:26 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '04582a19-8ced-4014-98c7-fdc75102eaf3'}
+2026-01-10 12:08:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:30 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:30 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:08:31 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:08:38 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:38 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '2b747165-9c15-45d9-a20a-d6da121d6421'}
+2026-01-10 12:08:38 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:38 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '15ae2344-1b46-4ba9-bf65-f46f9c6d6190'}
+2026-01-10 12:08:38 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:38 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'b12c57cf-8369-4405-a36d-7e129ea810b5'}
+2026-01-10 12:08:38 - api.routes.upload - INFO - 成功删除目录: /Users/yi/Yi/YiAi/static/src/background/services
+2026-01-10 12:08:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:38 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:38 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'dc6f99af-da24-4645-b48c-6b54feea1dbb'}
+2026-01-10 12:08:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:38 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:38 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'dff23ed6-7587-41d2-ad60-90ba671c6092'}
+2026-01-10 12:08:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:38 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:38 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'ef290e22-7a59-4ce7-8e30-2e79361fff87'}
+2026-01-10 12:08:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:41 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:41 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:08:42 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:08:46 - api.routes.upload - INFO - 成功重命名文件夹: /Users/yi/Yi/YiAi/static/src/background -> /Users/yi/Yi/YiAi/static/src/background1
+2026-01-10 12:08:46 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:46 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'dd5ded0c-404b-4c3a-b361-590827db6cb4'}
+2026-01-10 12:08:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:08:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'dd5ded0c-404b-4c3a-b361-590827db6cb4'}
+2026-01-10 12:08:46 - services.execution.executor - ERROR - Execution error: 未找到ID为 dd5ded0c-404b-4c3a-b361-590827db6cb4 的数据或删除失败
+2026-01-10 12:08:46 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 dd5ded0c-404b-4c3a-b361-590827db6cb4 的数据或删除失败 | Status: 500
+2026-01-10 12:08:46 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:48 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:48 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:08:48 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '62b5818c-cf47-451b-908e-38c3964375ab', 'data': {'id': 'src/background1/index.js', 'url': 'aicr-session://1768018126918-a7qpxmk2s', 'title': 'index.js', 'pageTitle': 'index.js', 'pageDescription': '文件：src/background1/index.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background1'], 'isFavorite': False, 'createdAt': 1768018126918, 'updatedAt': 1768018126918, 'lastAccessTime': 1768018126918, 'key': '62b5818c-cf47-451b-908e-38c3964375ab'}}
+2026-01-10 12:08:48 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:08:48 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '62b5818c-cf47-451b-908e-38c3964375ab', 'data': {'id': 'src/background11/index.js', 'url': 'aicr-session://1768018128056-neca0aihw', 'title': 'index.js', 'pageTitle': 'index.js', 'pageDescription': '文件：src/background11/index.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'background11'], 'isFavorite': False, 'createdAt': 1768018128056, 'updatedAt': 1768018128056, 'lastAccessTime': 1768018128056, 'key': '62b5818c-cf47-451b-908e-38c3964375ab'}}
+2026-01-10 12:08:52 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:08:52 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:08:53 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:11:22 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:23 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:11:23 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:11:26 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:26 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:11:27 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:11:30 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:11:30 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'ef9aaa01-9797-4478-9442-607ea85cbaff'}
+2026-01-10 12:11:30 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:30 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:11:30 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '62b5818c-cf47-451b-908e-38c3964375ab'}
+2026-01-10 12:11:30 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:34 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:34 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:11:35 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:11:40 - api.routes.upload - INFO - 成功重命名文件夹: /Users/yi/Yi/YiAi/static/src/content -> /Users/yi/Yi/YiAi/static/src/content12
+2026-01-10 12:11:40 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:40 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:40 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:11:40 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '2f2b01db-55ae-42a2-982b-c6b5d7dc759d'}
+2026-01-10 12:11:40 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:11:40 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '2f2b01db-55ae-42a2-982b-c6b5d7dc759d'}
+2026-01-10 12:11:40 - services.execution.executor - ERROR - Execution error: 未找到ID为 2f2b01db-55ae-42a2-982b-c6b5d7dc759d 的数据或删除失败
+2026-01-10 12:11:40 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 2f2b01db-55ae-42a2-982b-c6b5d7dc759d 的数据或删除失败 | Status: 500
+2026-01-10 12:11:41 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:41 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:41 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:11:41 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0ce1e963-b15d-401b-8058-e6f385bba57e', 'data': {'id': 'src/content12/index.js', 'url': 'aicr-session://1768018301630-7i8cwx1ae', 'title': 'index.js', 'pageTitle': 'index.js', 'pageDescription': '文件：src/content12/index.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'content12'], 'isFavorite': False, 'createdAt': 1768018301631, 'updatedAt': 1768018301630, 'lastAccessTime': 1768018301630, 'key': '0ce1e963-b15d-401b-8058-e6f385bba57e'}}
+2026-01-10 12:11:41 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:11:41 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0ce1e963-b15d-401b-8058-e6f385bba57e', 'data': {'id': 'src/content12/bootstrap.js', 'url': 'aicr-session://1768018301648-vepvhknag', 'title': 'bootstrap.js', 'pageTitle': 'bootstrap.js', 'pageDescription': '文件：src/content12/bootstrap.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'content12'], 'isFavorite': False, 'createdAt': 1768018301648, 'updatedAt': 1768018301648, 'lastAccessTime': 1768018301648, 'key': '0ce1e963-b15d-401b-8058-e6f385bba57e'}}
+2026-01-10 12:11:48 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:11:48 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:11:49 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:14:04 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:04 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:14:05 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:14:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:07 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:14:08 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:14:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:27 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:27 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0ce1e963-b15d-401b-8058-e6f385bba57e'}
+2026-01-10 12:14:27 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:27 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0ce1e963-b15d-401b-8058-e6f385bba57e'}
+2026-01-10 12:14:27 - services.execution.executor - ERROR - Execution error: 未找到ID为 0ce1e963-b15d-401b-8058-e6f385bba57e 的数据或删除失败
+2026-01-10 12:14:27 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 0ce1e963-b15d-401b-8058-e6f385bba57e 的数据或删除失败 | Status: 500
+2026-01-10 12:14:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:27 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:27 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'f66d28f8-d168-4b46-bdb8-4eb5cf3f3c71'}
+2026-01-10 12:14:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:27 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:27 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '9f79dc06-66cd-4940-b19a-53fa2bc18093'}
+2026-01-10 12:14:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:30 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:31 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:14:31 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:14:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:56 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:56 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0908c068-94e0-40a5-a179-92262db3b27f'}
+2026-01-10 12:14:56 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:56 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0908c068-94e0-40a5-a179-92262db3b27f'}
+2026-01-10 12:14:56 - services.execution.executor - ERROR - Execution error: 未找到ID为 0908c068-94e0-40a5-a179-92262db3b27f 的数据或删除失败
+2026-01-10 12:14:56 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 0908c068-94e0-40a5-a179-92262db3b27f 的数据或删除失败 | Status: 500
+2026-01-10 12:14:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:56 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:56 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0d1d3ac3-8cb4-4606-b16e-e2080b2d34e4'}
+2026-01-10 12:14:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:14:56 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:14:56 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4d2ee765-e8e3-41e9-bbcb-f2731c3e91b9'}
+2026-01-10 12:14:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:01 - api.routes.upload - INFO - 成功重命名文件夹: /Users/yi/Yi/YiAi/static/src/features/chat -> /Users/yi/Yi/YiAi/static/src/features/chat1
+2026-01-10 12:15:01 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:01 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:01 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:15:01 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'cfb24c73-a1a2-4ddf-a9ba-bc1c7f007595'}
+2026-01-10 12:15:01 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:01 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:15:01 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '32db796e-ab29-4960-86d3-2cf2bada581f', 'data': {'id': 'src/features/chat1/export-chat-to-png.js', 'url': 'aicr-session://1768018501488-co8sr3cil', 'title': 'export-chat-to-png.js', 'pageTitle': 'export-chat-to-png.js', 'pageDescription': '文件：src/features/chat1/export-chat-to-png.js', 'pageContent': '', 'messages': [], 'tags': ['src', 'features', 'chat1'], 'isFavorite': False, 'createdAt': 1768018501488, 'updatedAt': 1768018501488, 'lastAccessTime': 1768018501488, 'key': '32db796e-ab29-4960-86d3-2cf2bada581f'}}
+2026-01-10 12:15:04 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:04 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:15:05 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:15:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:15:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '32db796e-ab29-4960-86d3-2cf2bada581f'}
+2026-01-10 12:15:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:15:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '32db796e-ab29-4960-86d3-2cf2bada581f'}
+2026-01-10 12:15:09 - services.execution.executor - ERROR - Execution error: 未找到ID为 32db796e-ab29-4960-86d3-2cf2bada581f 的数据或删除失败
+2026-01-10 12:15:09 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 32db796e-ab29-4960-86d3-2cf2bada581f 的数据或删除失败 | Status: 500
+2026-01-10 12:15:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:15:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e7776527-3455-4be6-a5a2-a7ac67086980'}
+2026-01-10 12:15:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:15:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'dd5e2dca-ea00-4e34-93c8-112ff91b1cda'}
+2026-01-10 12:15:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:11 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:12 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:15:12 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:15:16 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:15:16 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:15:17 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:16:04 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:16:04 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:16:05 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:19:20 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:19:20 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:19:21 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:19:52 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:19:52 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:19:52 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'fb13a9d5-bdad-41ca-a907-c8a12f8da0d2'}
+2026-01-10 12:19:52 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:19:52 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:19:52 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e9e5efbb-7fc9-4487-85f9-2287a3c0b5ca'}
+2026-01-10 12:19:52 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:19:56 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:19:56 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:19:57 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:19:57 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:19:58 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:19:59 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:20:02 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:20:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '81a41408-1675-46af-a7a0-fb65aa652b3e'}
+2026-01-10 12:20:02 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:20:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'fa874b9c-b95e-4243-b2f7-5d8fd691593f'}
+2026-01-10 12:20:02 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:06 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:06 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:20:07 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:20:13 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:13 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:20:13 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6d85407c-b1f8-42c0-8596-63e65db3f54e'}
+2026-01-10 12:20:13 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:32 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:32 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:20:32 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'ff691c7c-2a71-416e-b1b2-59d1f34016d6'}
+2026-01-10 12:20:32 - api.routes.upload - INFO - 成功删除文件: /Users/yi/Yi/YiAi/static/src/features/faq/tags.js
+2026-01-10 12:20:32 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:34 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:34 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:20:35 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:20:58 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:20:58 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:20:58 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '11816802-3908-4c0a-a6c2-40526e2521f2'}
+2026-01-10 12:20:58 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:09 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:21:10 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:21:46 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:46 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:21:47 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:21:50 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:50 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:21:50 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '120d4636-531c-4d0f-8398-2d6617754cc3'}
+2026-01-10 12:21:50 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:50 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:21:50 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '7fd13638-430d-4d6c-aa07-41f5e8c2378a'}
+2026-01-10 12:21:50 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:21:53 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:21:54 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:22:03 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:03 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:22:04 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:22:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:22:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '401b3b39-ade0-4138-b7b5-cb517b7a41d3'}
+2026-01-10 12:22:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:22:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6d7ca08a-348c-4d2a-97c8-e7d05b20b66a'}
+2026-01-10 12:22:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:09 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:22:09 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:22:14 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:22:14 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4f4d076a-9541-4d01-a30b-320f9474099e'}
+2026-01-10 12:22:14 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:16 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:16 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:22:17 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:22:37 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:22:37 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '5f6dc8ca-8270-4ca9-ac2b-fea4ea367e6a'}
+2026-01-10 12:22:37 - api.routes.upload - INFO - 成功删除目录: /Users/yi/Yi/YiAi/static/src/features/faq
+2026-01-10 12:22:37 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:22:37 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:22:37 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '5b66fed8-edc8-406c-8651-e19024a4dc7e'}
+2026-01-10 12:22:37 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0966ee25-f1fb-4cca-a24c-20e6f555e5bf'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e6d6769c-1be5-4a7a-a632-c660317486e6'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '76de4986-2f31-4812-8b9b-e64a53155baa'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'c7b686f4-3bdc-4980-8bd1-ab20cad0f6ae'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '56479c6e-7676-4d2c-9ce7-9460cf10f0c7'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a4137da0-74f8-4e12-a781-debaf49d2fb8'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e105c7bf-6f9f-4836-ae70-8b2c5407664a'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '285fd029-7ec2-44a4-953b-f57da30a4c3a'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '864cbaa8-b0fe-46f1-96ff-231b3cf6baae'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e558588c-b50b-41ca-b0e4-fc011554b5c2'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'c7b095c5-0330-4394-bad5-df3d5b563246'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '3d8366d3-f945-4b77-981a-71030fc6a0b0'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'fc489c71-10b7-4f54-8c41-11d77850af0f'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'c2d052a3-2adc-43b7-8aa3-7a36a964a8fd'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'da50c617-ab9c-4989-bbbd-662a895a8913'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6ca7d32b-654c-4a21-be95-2b1a6af9c905'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '74212631-e854-4b63-9cca-38d64e25e782'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bfd3fa35-9ccf-4da0-a5cf-6970aa1363e0'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e4b51479-a21c-4a1e-b9a6-279ee035c48a'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'd443b41d-3557-4d47-a366-55c84c03a14c'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'eb459af2-41d2-43f0-b67e-a13b66b3109d'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '45218325-6c4d-4dc2-9cf0-5b8369c8b9f8'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '8dba9080-0ae1-4e90-8b48-e5e1a6d606a3'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '8ecd0a6b-aae2-4268-b7e0-1bb62b492b38'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'b15f3f9f-0aaa-4cf3-9b87-fdcadbb7a045'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '1bba9ee2-d0c7-4858-904f-70bae5f14b82'}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6ad2baca-6ef6-4204-960b-f441a0d437dd'}
+2026-01-10 12:23:02 - api.routes.upload - INFO - 成功删除目录: /Users/yi/Yi/YiAi/static/src
+2026-01-10 12:23:02 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:02 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:02 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.ai.js'}
+2026-01-10 12:23:02 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.ai.js 的数据或删除失败
+2026-01-10 12:23:02 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.ai.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:03 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.auth.js'}
+2026-01-10 12:23:03 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.auth.js 的数据或删除失败
+2026-01-10 12:23:03 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.auth.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:04 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:04 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:04 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.calendar.js'}
+2026-01-10 12:23:04 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.calendar.js 的数据或删除失败
+2026-01-10 12:23:04 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.calendar.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:05 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:05 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:05 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.chat.js'}
+2026-01-10 12:23:05 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.chat.js 的数据或删除失败
+2026-01-10 12:23:05 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.chat.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:05 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:05 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:05 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.chatUi.js'}
+2026-01-10 12:23:05 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.chatUi.js 的数据或删除失败
+2026-01-10 12:23:05 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.chatUi.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:05 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:05 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:05 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.core.js'}
+2026-01-10 12:23:05 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.core.js 的数据或删除失败
+2026-01-10 12:23:05 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.core.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:05 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:05 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:05 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.drag.js'}
+2026-01-10 12:23:05 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.drag.js 的数据或删除失败
+2026-01-10 12:23:05 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.drag.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:05 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:05 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:05 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.editor.js'}
+2026-01-10 12:23:05 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.editor.js 的数据或删除失败
+2026-01-10 12:23:05 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.editor.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:06 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:06 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:06 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.events.js'}
+2026-01-10 12:23:06 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.events.js 的数据或删除失败
+2026-01-10 12:23:06 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.events.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:06 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:06 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:06 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.io.js'}
+2026-01-10 12:23:06 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.io.js 的数据或删除失败
+2026-01-10 12:23:06 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.io.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.js'}
+2026-01-10 12:23:07 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.js 的数据或删除失败
+2026-01-10 12:23:07 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.media.js'}
+2026-01-10 12:23:07 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.media.js 的数据或删除失败
+2026-01-10 12:23:07 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.media.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.mermaid.js'}
+2026-01-10 12:23:07 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.mermaid.js 的数据或删除失败
+2026-01-10 12:23:07 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.mermaid.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.message.js'}
+2026-01-10 12:23:07 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.message.js 的数据或删除失败
+2026-01-10 12:23:07 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.message.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.messaging.js'}
+2026-01-10 12:23:07 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.messaging.js 的数据或删除失败
+2026-01-10 12:23:07 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.messaging.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:08 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:08 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.pageInfo.js'}
+2026-01-10 12:23:08 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.pageInfo.js 的数据或删除失败
+2026-01-10 12:23:08 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.pageInfo.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:08 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:08 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.parser.js'}
+2026-01-10 12:23:08 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.parser.js 的数据或删除失败
+2026-01-10 12:23:08 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.parser.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:08 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:08 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.pet.js'}
+2026-01-10 12:23:08 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.pet.js 的数据或删除失败
+2026-01-10 12:23:08 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.pet.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:08 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:08 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.robot.js'}
+2026-01-10 12:23:08 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.robot.js 的数据或删除失败
+2026-01-10 12:23:08 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.robot.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:08 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:08 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.roles.js'}
+2026-01-10 12:23:08 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.roles.js 的数据或删除失败
+2026-01-10 12:23:08 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.roles.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.screenshot.js'}
+2026-01-10 12:23:09 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.screenshot.js 的数据或删除失败
+2026-01-10 12:23:09 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.screenshot.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.session.js'}
+2026-01-10 12:23:09 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.session.js 的数据或删除失败
+2026-01-10 12:23:09 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.session.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.sessionEditor.js'}
+2026-01-10 12:23:09 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.sessionEditor.js 的数据或删除失败
+2026-01-10 12:23:09 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.sessionEditor.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.state.js'}
+2026-01-10 12:23:09 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.state.js 的数据或删除失败
+2026-01-10 12:23:09 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.state.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:09 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:09 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.tags.js'}
+2026-01-10 12:23:09 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.tags.js 的数据或删除失败
+2026-01-10 12:23:09 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.tags.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:10 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:10 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:10 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/features/pet/petManager.ui.js'}
+2026-01-10 12:23:10 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/features/pet/petManager.ui.js 的数据或删除失败
+2026-01-10 12:23:10 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/features/pet/petManager.ui.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:10 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:10 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:10 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'src/config.js'}
+2026-01-10 12:23:10 - services.execution.executor - ERROR - Execution error: 未找到ID为 src/config.js 的数据或删除失败
+2026-01-10 12:23:10 - core.exception_handler - WARNING - HTTP异常: Execution failed: 未找到ID为 src/config.js 的数据或删除失败 | Status: 500
+2026-01-10 12:23:10 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:10 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:10 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:38 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:23:39 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': [], 'filename': 'manifest.json'}, 'update': {'$set': {'tags': [], 'filename': 'manifest.json', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/manifest.json', 'size': 3816, 'tokens': 970, 'mime_type': 'application/json', 'extension': '.json'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'manifest.json'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src'], 'filename': 'config.js'}, 'update': {'$set': {'tags': ['src'], 'filename': 'config.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/config.js', 'size': 6920, 'tokens': 1755, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'config.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background'], 'filename': 'index.js'}, 'update': {'$set': {'tags': ['src', 'background'], 'filename': 'index.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/index.js', 'size': 14792, 'tokens': 3967, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'index.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'routers'], 'filename': 'messageRouter.js'}, 'update': {'$set': {'tags': ['src', 'background', 'routers'], 'filename': 'messageRouter.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/routers/messageRouter.js', 'size': 5449, 'tokens': 1435, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'messageRouter.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'handlers'], 'filename': 'tabHandler.js'}, 'update': {'$set': {'tags': ['src', 'background', 'handlers'], 'filename': 'tabHandler.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/handlers/tabHandler.js', 'size': 1223, 'tokens': 323, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'tabHandler.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'handlers'], 'filename': 'screenshotHandler.js'}, 'update': {'$set': {'tags': ['src', 'background', 'handlers'], 'filename': 'screenshotHandler.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/handlers/screenshotHandler.js', 'size': 4531, 'tokens': 1213, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'screenshotHandler.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'handlers'], 'filename': 'messageForwardHandler.js'}, 'update': {'$set': {'tags': ['src', 'background', 'handlers'], 'filename': 'messageForwardHandler.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/handlers/messageForwardHandler.js', 'size': 1519, 'tokens': 395, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'messageForwardHandler.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'handlers'], 'filename': 'petHandler.js'}, 'update': {'$set': {'tags': ['src', 'background', 'handlers'], 'filename': 'petHandler.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/handlers/petHandler.js', 'size': 2792, 'tokens': 741, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'petHandler.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'handlers'], 'filename': 'weworkHandler.js'}, 'update': {'$set': {'tags': ['src', 'background', 'handlers'], 'filename': 'weworkHandler.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/handlers/weworkHandler.js', 'size': 1585, 'tokens': 421, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'weworkHandler.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'handlers'], 'filename': 'extensionHandler.js'}, 'update': {'$set': {'tags': ['src', 'background', 'handlers'], 'filename': 'extensionHandler.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/handlers/extensionHandler.js', 'size': 1093, 'tokens': 288, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'extensionHandler.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'services'], 'filename': 'tabMessaging.js'}, 'update': {'$set': {'tags': ['src', 'background', 'services'], 'filename': 'tabMessaging.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/services/tabMessaging.js', 'size': 3331, 'tokens': 854, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'tabMessaging.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'services'], 'filename': 'injectionService.js'}, 'update': {'$set': {'tags': ['src', 'background', 'services'], 'filename': 'injectionService.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/services/injectionService.js', 'size': 7646, 'tokens': 1976, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'injectionService.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'background', 'services'], 'filename': 'weworkService.js'}, 'update': {'$set': {'tags': ['src', 'background', 'services'], 'filename': 'weworkService.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/background/services/weworkService.js', 'size': 2368, 'tokens': 622, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'weworkService.js'}}}
+2026-01-10 12:23:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'chat'], 'filename': 'export-chat-to-png.js'}, 'update': {'$set': {'tags': ['src', 'features', 'chat'], 'filename': 'export-chat-to-png.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/features/chat/export-chat-to-png.js', 'size': 40319, 'tokens': 10399, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'export-chat-to-png.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'faq'], 'filename': 'tags.js'}, 'update': {'$set': {'tags': ['src', 'features', 'faq'], 'filename': 'tags.js', 'updated_at': '2026-01-10 12:23:46', 'file_path': '/static/src/features/faq/tags.js', 'size': 20824, 'tokens': 5284, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:46', 'title': 'tags.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'faq'], 'filename': 'faq.js'}, 'update': {'$set': {'tags': ['src', 'features', 'faq'], 'filename': 'faq.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/faq/faq.js', 'size': 20250, 'tokens': 5096, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'faq.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.tags.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.tags.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.tags.js', 'size': 40693, 'tokens': 10565, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.tags.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.auth.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.auth.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.auth.js', 'size': 10420, 'tokens': 2714, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.auth.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.js', 'size': 1746, 'tokens': 478, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.editor.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.editor.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.editor.js', 'size': 75187, 'tokens': 19326, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.editor.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.screenshot.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.screenshot.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.screenshot.js', 'size': 44918, 'tokens': 11614, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.screenshot.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.media.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.media.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.media.js', 'size': 15067, 'tokens': 3923, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.media.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.messaging.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.messaging.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.messaging.js', 'size': 5157, 'tokens': 1313, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.messaging.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.chatUi.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.chatUi.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.chatUi.js', 'size': 9968, 'tokens': 2620, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.chatUi.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.parser.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.parser.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.parser.js', 'size': 6684, 'tokens': 1739, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.parser.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.roles.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.roles.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.roles.js', 'size': 80395, 'tokens': 20818, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.roles.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.drag.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.drag.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.drag.js', 'size': 10377, 'tokens': 2608, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.drag.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.core.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.core.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.core.js', 'size': 103126, 'tokens': 27184, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.core.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.pet.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.pet.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.pet.js', 'size': 12308, 'tokens': 3243, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.pet.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.mermaid.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.mermaid.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.mermaid.js', 'size': 66959, 'tokens': 17342, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.mermaid.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.chat.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.chat.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.chat.js', 'size': 47594, 'tokens': 12646, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.chat.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.robot.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.robot.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.robot.js', 'size': 28790, 'tokens': 7596, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.robot.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.calendar.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.calendar.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.calendar.js', 'size': 37033, 'tokens': 9547, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.calendar.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.session.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.session.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.session.js', 'size': 105848, 'tokens': 28246, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.session.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.message.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.message.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.message.js', 'size': 9020, 'tokens': 2381, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.message.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.ui.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.ui.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.ui.js', 'size': 29325, 'tokens': 7469, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.ui.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.state.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.state.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.state.js', 'size': 13130, 'tokens': 3471, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.state.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.events.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.events.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.events.js', 'size': 8069, 'tokens': 2151, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.events.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.io.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.io.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.io.js', 'size': 33091, 'tokens': 8704, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.io.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.ai.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.ai.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.ai.js', 'size': 66790, 'tokens': 17650, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.ai.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.sessionEditor.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.sessionEditor.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.sessionEditor.js', 'size': 72313, 'tokens': 18710, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.sessionEditor.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.pageInfo.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.pageInfo.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.pageInfo.js', 'size': 13231, 'tokens': 3460, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.pageInfo.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.requestEditor.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet'], 'filename': 'petManager.requestEditor.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/petManager.requestEditor.js', 'size': 12426, 'tokens': 3193, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'petManager.requestEditor.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet', 'components'], 'filename': 'ChatWindow.css'}, 'update': {'$set': {'tags': ['src', 'features', 'pet', 'components'], 'filename': 'ChatWindow.css', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/components/ChatWindow.css', 'size': 57494, 'tokens': 14373, 'mime_type': 'text/css', 'extension': '.css'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'ChatWindow.css'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet', 'components'], 'filename': 'ChatWindow.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet', 'components'], 'filename': 'ChatWindow.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/components/ChatWindow.js', 'size': 120654, 'tokens': 30902, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'ChatWindow.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'pet', 'components'], 'filename': 'SessionItem.js'}, 'update': {'$set': {'tags': ['src', 'features', 'pet', 'components'], 'filename': 'SessionItem.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/pet/components/SessionItem.js', 'size': 17644, 'tokens': 4453, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'SessionItem.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'mermaid'], 'filename': 'render-mermaid.js'}, 'update': {'$set': {'tags': ['src', 'features', 'mermaid'], 'filename': 'render-mermaid.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/mermaid/render-mermaid.js', 'size': 7619, 'tokens': 2002, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'render-mermaid.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'mermaid'], 'filename': 'load-mermaid.js'}, 'update': {'$set': {'tags': ['src', 'features', 'mermaid'], 'filename': 'load-mermaid.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/mermaid/load-mermaid.js', 'size': 2921, 'tokens': 761, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'load-mermaid.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'mermaid'], 'filename': 'inject-mermaid.js'}, 'update': {'$set': {'tags': ['src', 'features', 'mermaid'], 'filename': 'inject-mermaid.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/mermaid/inject-mermaid.js', 'size': 1658, 'tokens': 429, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'inject-mermaid.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'mermaid'], 'filename': 'preview-mermaid.js'}, 'update': {'$set': {'tags': ['src', 'features', 'mermaid'], 'filename': 'preview-mermaid.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/mermaid/preview-mermaid.js', 'size': 1975, 'tokens': 508, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'preview-mermaid.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'session'], 'filename': 'import-sessions.js'}, 'update': {'$set': {'tags': ['src', 'features', 'session'], 'filename': 'import-sessions.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/session/import-sessions.js', 'size': 5967, 'tokens': 1577, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'import-sessions.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'session'], 'filename': 'export-sessions.js'}, 'update': {'$set': {'tags': ['src', 'features', 'session'], 'filename': 'export-sessions.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/session/export-sessions.js', 'size': 4375, 'tokens': 1164, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'export-sessions.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'features', 'session'], 'filename': 'load-jszip.js'}, 'update': {'$set': {'tags': ['src', 'features', 'session'], 'filename': 'load-jszip.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/features/session/load-jszip.js', 'size': 2473, 'tokens': 647, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'load-jszip.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'content'], 'filename': 'bootstrap.js'}, 'update': {'$set': {'tags': ['src', 'content'], 'filename': 'bootstrap.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/content/bootstrap.js', 'size': 16878, 'tokens': 4347, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'bootstrap.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'content'], 'filename': 'index.js'}, 'update': {'$set': {'tags': ['src', 'content'], 'filename': 'index.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/content/index.js', 'size': 1339, 'tokens': 378, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'index.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'api'], 'filename': 'faqApi.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'api'], 'filename': 'faqApi.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/api/faqApi.js', 'size': 9649, 'tokens': 2509, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'faqApi.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'api'], 'filename': 'sessionApi.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'api'], 'filename': 'sessionApi.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/api/sessionApi.js', 'size': 11937, 'tokens': 3109, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'sessionApi.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'messageHelper.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'messageHelper.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/messageHelper.js', 'size': 3288, 'tokens': 863, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'messageHelper.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'errorHandlerCompat.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'errorHandlerCompat.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/errorHandlerCompat.js', 'size': 3504, 'tokens': 917, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'errorHandlerCompat.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'globalAccessor.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'globalAccessor.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/globalAccessor.js', 'size': 3205, 'tokens': 849, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'globalAccessor.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'requestUtils.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'requestUtils.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/requestUtils.js', 'size': 7046, 'tokens': 1847, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'requestUtils.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'imageResourceManager.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'imageResourceManager.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/imageResourceManager.js', 'size': 9890, 'tokens': 2597, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'imageResourceManager.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'domHelper.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'domHelper.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/domHelper.js', 'size': 3900, 'tokens': 1022, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'domHelper.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'sessionManager.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'sessionManager.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/sessionManager.js', 'size': 34852, 'tokens': 9322, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'sessionManager.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'baseApiManager.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'baseApiManager.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/baseApiManager.js', 'size': 10556, 'tokens': 2738, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'baseApiManager.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'loadingAnimationMixin.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'loadingAnimationMixin.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/loadingAnimationMixin.js', 'size': 3727, 'tokens': 985, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'loadingAnimationMixin.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'errorHandler.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'errorHandler.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/errorHandler.js', 'size': 9543, 'tokens': 2484, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'errorHandler.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'urlUtils.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'urlUtils.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/urlUtils.js', 'size': 2045, 'tokens': 547, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'urlUtils.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'loggerUtils.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'loggerUtils.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/loggerUtils.js', 'size': 8548, 'tokens': 2185, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'loggerUtils.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'loadingAnimation.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'loadingAnimation.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/loadingAnimation.js', 'size': 14549, 'tokens': 3845, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'loadingAnimation.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'tokenUtils.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'tokenUtils.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/tokenUtils.js', 'size': 8816, 'tokens': 2316, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'tokenUtils.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'moduleUtils.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'moduleUtils.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/moduleUtils.js', 'size': 4515, 'tokens': 1203, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'moduleUtils.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'utils', 'helpers'], 'filename': 'storageUtils.js'}, 'update': {'$set': {'tags': ['src', 'utils', 'helpers'], 'filename': 'storageUtils.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/utils/helpers/storageUtils.js', 'size': 8193, 'tokens': 2119, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'storageUtils.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'libs'], 'filename': 'mermaid.min.js'}, 'update': {'$set': {'tags': ['src', 'libs'], 'filename': 'mermaid.min.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/libs/mermaid.min.js', 'size': 3336811, 'tokens': 835267, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'mermaid.min.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'libs'], 'filename': 'jszip.min.js'}, 'update': {'$set': {'tags': ['src', 'libs'], 'filename': 'jszip.min.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/libs/jszip.min.js', 'size': 97630, 'tokens': 24407, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'jszip.min.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'libs'], 'filename': 'html2canvas.min.js'}, 'update': {'$set': {'tags': ['src', 'libs'], 'filename': 'html2canvas.min.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/libs/html2canvas.min.js', 'size': 198691, 'tokens': 49822, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'html2canvas.min.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'libs'], 'filename': 'turndown.js'}, 'update': {'$set': {'tags': ['src', 'libs'], 'filename': 'turndown.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/libs/turndown.js', 'size': 26682, 'tokens': 6670, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'turndown.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'libs'], 'filename': 'md5.js'}, 'update': {'$set': {'tags': ['src', 'libs'], 'filename': 'md5.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/libs/md5.js', 'size': 7632, 'tokens': 1913, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'md5.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'libs'], 'filename': 'marked.min.js'}, 'update': {'$set': {'tags': ['src', 'libs'], 'filename': 'marked.min.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/libs/marked.min.js', 'size': 39903, 'tokens': 9975, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'marked.min.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'styles'], 'filename': 'content.css'}, 'update': {'$set': {'tags': ['src', 'styles'], 'filename': 'content.css', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/styles/content.css', 'size': 21032, 'tokens': 5329, 'mime_type': 'text/css', 'extension': '.css'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'content.css'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'styles'], 'filename': 'tailwind.css'}, 'update': {'$set': {'tags': ['src', 'styles'], 'filename': 'tailwind.css', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/styles/tailwind.css', 'size': 5706, 'tokens': 1426, 'mime_type': 'text/css', 'extension': '.css'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'tailwind.css'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'styles'], 'filename': 'popup.css'}, 'update': {'$set': {'tags': ['src', 'styles'], 'filename': 'popup.css', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/styles/popup.css', 'size': 6523, 'tokens': 1638, 'mime_type': 'text/css', 'extension': '.css'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'popup.css'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'views', 'popup'], 'filename': 'index.html'}, 'update': {'$set': {'tags': ['src', 'views', 'popup'], 'filename': 'index.html', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/views/popup/index.html', 'size': 2597, 'tokens': 663, 'mime_type': 'text/html', 'extension': '.html'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'index.html'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'views', 'popup'], 'filename': 'index.js'}, 'update': {'$set': {'tags': ['src', 'views', 'popup'], 'filename': 'index.js', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/views/popup/index.js', 'size': 20397, 'tokens': 5446, 'mime_type': 'text/javascript', 'extension': '.js'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'index.js'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '教师'], 'filename': 'icon.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '教师'], 'filename': 'icon.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/教师/icon.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '教师', 'run'], 'filename': '2.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '教师', 'run'], 'filename': '2.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/教师/run/2.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '2.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '教师', 'run'], 'filename': '3.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '教师', 'run'], 'filename': '3.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/教师/run/3.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '3.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '教师', 'run'], 'filename': '1.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '教师', 'run'], 'filename': '1.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/教师/run/1.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '1.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '医生'], 'filename': 'icon.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '医生'], 'filename': 'icon.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/医生/icon.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '医生', 'run'], 'filename': '2.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '医生', 'run'], 'filename': '2.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/医生/run/2.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '2.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '医生', 'run'], 'filename': '3.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '医生', 'run'], 'filename': '3.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/医生/run/3.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '3.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '医生', 'run'], 'filename': '1.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '医生', 'run'], 'filename': '1.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/医生/run/1.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '1.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '警察'], 'filename': 'icon.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '警察'], 'filename': 'icon.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/警察/icon.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '警察', 'run'], 'filename': '2.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '警察', 'run'], 'filename': '2.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/警察/run/2.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '2.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '警察', 'run'], 'filename': '3.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '警察', 'run'], 'filename': '3.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/警察/run/3.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '3.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '警察', 'run'], 'filename': '1.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '警察', 'run'], 'filename': '1.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/警察/run/1.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '1.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '甜品师'], 'filename': 'icon.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '甜品师'], 'filename': 'icon.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/甜品师/icon.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '甜品师', 'run'], 'filename': '2.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '甜品师', 'run'], 'filename': '2.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/甜品师/run/2.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '2.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '甜品师', 'run'], 'filename': '3.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '甜品师', 'run'], 'filename': '3.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/甜品师/run/3.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '3.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'images', '甜品师', 'run'], 'filename': '1.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'images', '甜品师', 'run'], 'filename': '1.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/images/甜品师/run/1.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': '1.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon16.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon16.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/icons/icon16.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon16.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/icons/icon.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon48.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon48.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/icons/icon48.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon48.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon128.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon128.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/icons/icon128.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon128.png'}}}
+2026-01-10 12:23:47 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: upsert_document
+2026-01-10 12:23:47 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'filter': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon32.png'}, 'update': {'$set': {'tags': ['src', 'assets', 'icons'], 'filename': 'icon32.png', 'updated_at': '2026-01-10 12:23:47', 'file_path': '/static/src/assets/icons/icon32.png', 'size': 68, 'tokens': 0, 'mime_type': 'image/png', 'extension': '.png'}, '$setOnInsert': {'created_at': '2026-01-10 12:23:47', 'title': 'icon32.png'}}}
+2026-01-10 12:23:49 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:23:49 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:23:50 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:23:59 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:23:59 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '85da38c8-a9a5-45b0-8b74-b802d8584d68'}
+2026-01-10 12:23:59 - api.routes.upload - INFO - 成功删除文件: /Users/yi/Yi/YiAi/static/src/assets/icons/icon.png
+2026-01-10 12:23:59 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:15 - api.routes.upload - INFO - 成功重命名文件: /Users/yi/Yi/YiAi/static/src/assets/icons/icon128.png -> /Users/yi/Yi/YiAi/static/src/assets/icons/icon12.png
+2026-01-10 12:24:15 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:15 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:24:15 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '823d78d9-9caf-441c-8752-6997464bf350'}
+2026-01-10 12:24:15 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:15 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:24:15 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '55aa00e9-49e3-41fd-91a5-57164aa06340', 'data': {'id': 'src/assets/icons/icon12.png', 'url': 'aicr-session://1768019055972-6udswv1yc', 'title': 'icon12.png', 'pageTitle': 'icon12.png', 'pageDescription': '文件：src/assets/icons/icon12.png', 'pageContent': '', 'messages': [], 'tags': ['src', 'assets', 'icons'], 'isFavorite': False, 'createdAt': 1768019055972, 'updatedAt': 1768019055972, 'lastAccessTime': 1768019055972, 'key': '55aa00e9-49e3-41fd-91a5-57164aa06340'}}
+2026-01-10 12:24:17 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:17 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:24:18 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:24:20 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:20 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:24:21 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:24:35 - api.routes.upload - INFO - 成功重命名文件: /Users/yi/Yi/YiAi/static/src/assets/icons/icon12.png -> /Users/yi/Yi/YiAi/static/src/assets/icons/icon122.png
+2026-01-10 12:24:35 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:35 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:24:35 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '55aa00e9-49e3-41fd-91a5-57164aa06340'}
+2026-01-10 12:24:35 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:35 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
+2026-01-10 12:24:35 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '37cc248e-fe48-4554-ae97-de3dcf270a83', 'data': {'id': 'src/assets/icons/icon122.png', 'url': 'aicr-session://1768019075204-w79ydfsf5', 'title': 'icon122.png', 'pageTitle': 'icon122.png', 'pageDescription': '文件：src/assets/icons/icon122.png', 'pageContent': '', 'messages': [], 'tags': ['src', 'assets', 'icons'], 'isFavorite': False, 'createdAt': 1768019055972, 'updatedAt': 1768019075204, 'lastAccessTime': 1768019075204, 'key': '37cc248e-fe48-4554-ae97-de3dcf270a83'}}
+2026-01-10 12:24:57 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:24:57 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:24:57 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '37cc248e-fe48-4554-ae97-de3dcf270a83'}
+2026-01-10 12:24:57 - api.routes.upload - INFO - 成功删除文件: /Users/yi/Yi/YiAi/static/src/assets/icons/icon122.png
+2026-01-10 12:24:57 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:25:10 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:25:10 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:25:11 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:32:38 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:32:38 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:32:39 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:32:42 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:32:42 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:32:43 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:32:56 - core.exception_handler - WARNING - 参数验证失败: target_dir: Field required | URL: http://localhost:8000/delete-folder
+2026-01-10 12:33:00 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:33:01 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:33:01 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:33:10 - api.routes.upload - INFO - 成功重命名文件: /Users/yi/Yi/YiAi/static/src/assets/images/教师/run/1.png -> /Users/yi/Yi/YiAi/static/src/assets/images/教师/run/1.png5
+2026-01-10 12:36:09 - main - INFO - 正在关闭应用...
+2026-01-10 12:36:09 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-10 12:36:09 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-10 12:36:09 - core.database - INFO - MongoDB connection closed
+2026-01-10 12:36:09 - main - INFO - 应用关闭完成
+2026-01-10 12:36:09 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-10 12:36:10 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-10 12:36:10 - main - INFO - 认证中间件已禁用
+2026-01-10 12:36:10 - main - INFO - 正在启动应用...
+2026-01-10 12:36:10 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-10 12:36:10 - core.database - INFO - Ensured unique index for rss.link
+2026-01-10 12:36:10 - main - INFO - 数据库初始化成功
+2026-01-10 12:36:10 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-10 12:36:10 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-10 12:36:10 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-10 12:36:10 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-10 12:36:10 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-10 12:36:10 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-10 12:36:10 - main - INFO - 应用启动完成
+2026-01-10 12:36:20 - main - INFO - 正在关闭应用...
+2026-01-10 12:36:20 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-10 12:36:20 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-10 12:36:20 - core.database - INFO - MongoDB connection closed
+2026-01-10 12:36:20 - main - INFO - 应用关闭完成
+2026-01-10 12:36:20 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-10 12:38:45 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-10 12:38:45 - main - INFO - 认证中间件已禁用
+2026-01-10 12:38:45 - main - INFO - 正在启动应用...
+2026-01-10 12:38:45 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-10 12:38:45 - core.database - INFO - Ensured unique index for rss.link
+2026-01-10 12:38:45 - main - INFO - 数据库初始化成功
+2026-01-10 12:38:45 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-10 12:38:45 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-10 12:38:45 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-10 12:38:45 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-10 12:38:45 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-10 12:38:45 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-10 12:38:45 - main - INFO - 应用启动完成
+2026-01-10 12:38:45 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:38:45 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:38:45 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:38:48 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:38:50 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:38:51 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:38:51 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:38:53 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:38:53 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:38:54 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:39:12 - core.exception_handler - WARNING - 参数验证失败: target_dir: Field required | URL: http://localhost:8000/delete-folder
+2026-01-10 12:39:31 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:39:31 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:39:32 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:39:35 - core.exception_handler - WARNING - 参数验证失败: target_dir: Field required | URL: http://localhost:8000/delete-folder
+2026-01-10 12:39:39 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:39:39 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:39:40 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:39:45 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:39:45 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '81b75b5e-41d2-407a-8f43-cae51e3e3972'}
+2026-01-10 12:39:45 - core.exception_handler - WARNING - 参数验证失败: target_file: Field required | URL: http://localhost:8000/delete-file
+2026-01-10 12:39:45 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:52:16 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:52:16 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:52:17 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:52:17 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:52:18 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:52:22 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:52:22 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'af14418c-94c0-4049-b4ca-c7ca0b4d74ab'}
+2026-01-10 12:52:22 - core.exception_handler - WARNING - 参数验证失败: target_file: Field required | URL: http://localhost:8000/delete-file
+2026-01-10 12:52:22 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:53:04 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:53:04 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e28a8309-f02c-4b02-b5a7-38ac63dfd097'}
+2026-01-10 12:53:04 - core.exception_handler - WARNING - 参数验证失败: target_file: Field required | URL: http://localhost:8000/delete-file
+2026-01-10 12:53:04 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:53:22 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:53:23 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:53:23 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:53:26 - api.routes.upload - INFO - 成功重命名文件: /Users/yi/Yi/YiAi/static/src/assets/images/教师/run/3.png -> /Users/yi/Yi/YiAi/static/src/assets/images/教师/run/3.png2
+2026-01-10 12:53:52 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:53:53 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:53:53 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:53:58 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:53:58 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '23278f9a-2308-4965-b879-c6ac14ebb141'}
+2026-01-10 12:53:58 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'f113ca39-291d-4d3f-a72b-edbb5ac825c6'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'f874ef98-f991-40c1-81fa-0e0d63622e9c'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '7db74020-10d8-4ddb-ab76-b8e74f3689b7'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'd916f628-d00e-4671-a060-6ccaf44b4983'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'd347f94a-0ebd-48c7-adf3-7ec70f1ab009'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'f302dae0-42c3-4e33-908c-6c16a571d503'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '701af78e-a288-4d81-9abf-b86a24979b25'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '001a5208-ed0e-4de4-a5fd-3b556b566aec'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '9c49c029-202a-4b25-a03d-299102fd30b2'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'ab7f42eb-4b9c-42f0-af54-7a2d8863fc36'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'd2b44a64-89a0-4cab-a334-000f10a468f1'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4b500962-c75e-4127-99aa-cf88370a9166'}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a707cd60-1f7f-4328-9ddd-846e426771b3'}
+2026-01-10 12:54:12 - api.routes.upload - INFO - 成功删除目录: /Users/yi/Yi/YiAi/static/src/assets/images
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '5f452225-9bb1-4236-bbf8-e7934060c7c8'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4a075e88-67e7-43a4-a4e2-8d13ed971a58'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '3f882169-5699-4bd7-8ce0-bda9796b3f85'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4561b580-d718-4a72-84cb-393996dcc323'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '9315b0c1-0dcc-48dc-b31b-134d6ecbba30'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a8a80eec-3a90-4a9e-bccf-70efef125559'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '9acd107d-fa66-426d-8daf-8d6716a9d380'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a613e3cb-a960-43fe-ba52-e3a0ca09f104'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6caf1129-b146-42fd-94dd-dea60f678bb3'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'ff5e4071-cc22-48e7-a145-44958182bcd6'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'f9bd937e-5ea7-41c6-9fa6-8245a213ff76'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'a1cfaf44-8702-4f18-b720-f863859ab15b'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:12 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:12 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '35f21474-a5b6-4be9-aec7-df5a53e49ff2'}
+2026-01-10 12:54:12 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:20 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:21 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:54:22 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:54:33 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:33 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '735f0f30-f62d-4682-b227-318f9115b0ea'}
+2026-01-10 12:54:33 - api.routes.upload - INFO - 成功删除文件: /Users/yi/Yi/YiAi/static/src/background/handlers/extensionHandler.js
+2026-01-10 12:54:33 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:39 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:54:40 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:54:41 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-10 12:54:46 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:54:46 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4f713b29-0549-46f4-bbca-52ce499426d4'}
+2026-01-10 12:54:46 - api.routes.upload - INFO - 成功删除文件: /Users/yi/Yi/YiAi/static/src/background/handlers/messageForwardHandler.js
+2026-01-10 12:54:46 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'fcefb63c-971d-4f07-8e11-75fb1a96e8b9'}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'ed8f58b5-1bf0-48f4-8b78-a2fb29468da5'}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '8535448f-a260-4372-8535-6cbba3e8c38c'}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'e857d156-2338-401b-acb6-f36cc07876df'}
+2026-01-10 12:55:07 - api.routes.upload - INFO - 成功删除目录: /Users/yi/Yi/YiAi/static/src/background/handlers
+2026-01-10 12:55:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '5cb62f39-8366-4671-b7a0-ebcf600c165a'}
+2026-01-10 12:55:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '42e9c78a-d150-42a7-b6aa-be81614e0a52'}
+2026-01-10 12:55:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6d95d757-0f5f-40c4-acf3-c1dbfc0a2563'}
+2026-01-10 12:55:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:07 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-10 12:55:07 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'd9f04d50-98c5-4022-ac66-8ffd502930e2'}
+2026-01-10 12:55:07 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:09 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-10 12:55:09 - services.database.data_service - INFO - Querying collection: commenters, Filter: {}
+2026-01-10 12:55:10 - services.database.data_service - INFO - Querying collection: comments, Filter: {}

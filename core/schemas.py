@@ -62,6 +62,20 @@ class FileWriteRequest(BaseModel):
     content: str = Field(..., description="文件内容")
     is_base64: bool = Field(default=False, description="内容是否为 Base64 编码")
 
+class FileRenameRequest(BaseModel):
+    """
+    文件重命名请求模型
+    """
+    old_path: str = Field(..., description="旧文件路径")
+    new_path: str = Field(..., description="新文件路径")
+
+class FolderRenameRequest(BaseModel):
+    """
+    文件夹重命名请求模型
+    """
+    old_dir: str = Field(..., description="旧目录路径")
+    new_dir: str = Field(..., description="新目录路径")
+
 # --- RSS Schemas ---
 class ParseRssRequest(BaseModel):
     """
