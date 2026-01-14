@@ -5,6 +5,7 @@ import importlib
 import asyncio
 import logging
 import json
+import inspect
 from typing import Dict, Any, Union
 from fastapi import HTTPException
 from core.settings import settings
@@ -65,10 +66,13 @@ async def execute_module(module_path: str, function_name: str, parameters: Union
         raise HTTPException(status_code=422, detail=f"Module or function not found: {str(e)}")
 
     try:
+        if inspect.isasyncgenfunction(target_function):
+            return target_function(parameters_dict)
+        if inspect.isgeneratorfunction(target_function):
+            return target_function(parameters_dict)
         if asyncio.iscoroutinefunction(target_function):
             return await target_function(parameters_dict)
         return target_function(parameters_dict)
     except Exception as e:
         logger.error(f"Execution error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
-

@@ -96,14 +96,52 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
     system_prompt = params.get("system", "你是一个有用的AI助手。")
     user_content = params.get("user", "")
     model_name = params.get("model", "qwen3")
-    
+    stream = params.get("stream") is True
+
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        None,
-        functools.partial(
-            service.generate_response,
-            system_prompt=system_prompt,
-            user_content=user_content,
-            model_name=model_name
+    if not stream:
+        return await loop.run_in_executor(
+            None,
+            functools.partial(
+                service.generate_response,
+                system_prompt=system_prompt,
+                user_content=user_content,
+                model_name=model_name
+            )
         )
-    )
+
+    async def gen():
+        queue: asyncio.Queue[Optional[str]] = asyncio.Queue()
+
+        def _worker():
+            try:
+                client = service._get_client()
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content}
+                ]
+                for item in client.chat(model=model_name, messages=messages, stream=True):
+                    try:
+                        delta = ""
+                        if isinstance(item, dict):
+                            delta = (item.get("message") or {}).get("content") or ""
+                        else:
+                            delta = getattr(item, "message", {}).get("content", "") or ""
+                        if delta:
+                            asyncio.run_coroutine_threadsafe(queue.put(str(delta)), loop)
+                    except Exception:
+                        continue
+            except Exception as e:
+                asyncio.run_coroutine_threadsafe(queue.put(f"请求失败：{e}"), loop)
+            finally:
+                asyncio.run_coroutine_threadsafe(queue.put(None), loop)
+
+        asyncio.create_task(asyncio.to_thread(_worker))
+
+        while True:
+            item = await queue.get()
+            if item is None:
+                break
+            yield {"data": {"message": item}}
+
+    return gen()
