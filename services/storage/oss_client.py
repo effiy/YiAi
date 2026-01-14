@@ -84,6 +84,35 @@ async def upload_file_to_oss(
         "object_name": object_name
     }
 
+async def upload_bytes_to_oss(
+    content: bytes,
+    filename: str,
+    directory: Optional[str] = None
+) -> dict:
+    config = OSSConfig()
+    bucket = get_bucket(config)
+
+    ALLOWED_EXTENSIONS = set(ext.lower() for ext in settings.oss_allowed_extensions)
+    safe_filename = (filename or "").strip() or "image.png"
+    file_ext = os.path.splitext(safe_filename)[1].lower() or ".png"
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_ext}")
+
+    if len(content) > settings.oss_max_file_size:
+        raise HTTPException(status_code=400, detail="File too large")
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    object_name = f"{directory + '/' if directory else ''}{timestamp}{file_ext}"
+
+    bucket.put_object(object_name, content)
+    file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
+
+    return {
+        "url": file_url,
+        "filename": safe_filename,
+        "object_name": object_name
+    }
+
 async def delete_oss_file(object_name: str):
     """
     删除 OSS 文件，并清理相关标签与信息
@@ -327,4 +356,3 @@ async def list_files(directory: Optional[str] = None, tags: Optional[str] = None
         files.append(file_data)
 
     return files
-

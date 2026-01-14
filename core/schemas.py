@@ -36,6 +36,11 @@ class FileUploadRequest(BaseModel):
     is_base64: bool = Field(default=False, description="内容是否为 Base64 编码")
     target_dir: str = Field(default="static", description="目标存储目录")
 
+class ImageUploadToOssRequest(BaseModel):
+    data_url: str = Field(..., description="DataURL 或 Base64 字符串")
+    filename: str = Field(default="image.png", description="文件名（含扩展名）")
+    directory: str = Field(default="aicr", description="OSS 目录前缀")
+
 class FolderDeleteRequest(BaseModel):
     """
     文件夹删除请求模型
@@ -116,4 +121,3 @@ class SchedulerConfigRequest(BaseModel):
     type: Optional[str] = Field(None, description="调度类型: interval 或 cron")
     interval: Optional[int] = Field(None, description="间隔时间(秒)，仅 interval 类型有效")
     cron: Optional[Dict[str, Any]] = Field(None, description="Cron 表达式配置，仅 cron 类型有效")
-

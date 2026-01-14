@@ -5,13 +5,35 @@ import shutil
 from fastapi import APIRouter
 from core.error_codes import ErrorCode
 from core.exceptions import BusinessException
-from core.schemas import FileUploadRequest, FolderDeleteRequest, FileDeleteRequest, FileReadRequest, FileWriteRequest, FileRenameRequest, FolderRenameRequest
+from core.schemas import FileUploadRequest, ImageUploadToOssRequest, FolderDeleteRequest, FileDeleteRequest, FileReadRequest, FileWriteRequest, FileRenameRequest, FolderRenameRequest
 from core.response import success
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from core.settings import settings
+from services.storage.oss_client import upload_bytes_to_oss
+
+@router.post("/upload-image-to-oss")
+async def upload_image_to_oss(request: ImageUploadToOssRequest):
+    raw = (request.data_url or "").strip()
+    if not raw:
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="图片数据为空")
+
+    base64_part = raw
+    if raw.startswith("data:"):
+        comma = raw.find(",")
+        if comma < 0:
+            raise BusinessException(ErrorCode.INVALID_PARAMS, message="图片数据格式错误")
+        base64_part = raw[comma + 1 :].strip()
+
+    try:
+        content = base64.b64decode(base64_part, validate=True)
+    except Exception:
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="Base64 解码失败")
+
+    result = await upload_bytes_to_oss(content, request.filename, directory=(request.directory or "aicr"))
+    return success(data=result)
 
 @router.post("/read-file")
 async def read_file(request: FileReadRequest):
