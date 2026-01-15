@@ -15,6 +15,7 @@ from core.settings import settings
 from services.storage.oss_client import upload_bytes_to_oss
 
 @router.post("/upload-image-to-oss")
+@router.post("/upload/upload-image-to-oss")
 async def upload_image_to_oss(request: ImageUploadToOssRequest):
     raw = (request.data_url or "").strip()
     if not raw:

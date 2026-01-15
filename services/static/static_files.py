@@ -8,7 +8,7 @@ import shutil
 import tempfile
 from typing import Optional, List, Dict, Any
 from fastapi import UploadFile, HTTPException
-from core.config import settings
+from core.settings import settings
 
 logger = logging.getLogger(__name__)
 

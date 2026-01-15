@@ -36,7 +36,7 @@ async def unzip_from_path(params: Dict[str, Any]) -> Dict[str, Any]:
         
     import zipfile
     import shutil
-    from core.config import settings
+    from core.settings import settings
     
     base_dir = settings.static_base_dir
     if project_id:

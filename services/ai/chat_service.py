@@ -1,11 +1,86 @@
 import logging
 import asyncio
 import functools
-from typing import Dict, Any, Optional
+import base64
+from typing import Dict, Any, Optional, List
+import aiohttp
 from ollama import Client
 from core.settings import settings
 
 logger = logging.getLogger(__name__)
+
+def _extract_user_only_text(user_content: str) -> str:
+    text = (user_content or "").strip()
+    if not text:
+        return ""
+    if "## 当前消息" in text:
+        after = text.split("## 当前消息", 1)[1].strip()
+        if after.startswith("#"):
+            after = after.lstrip("#").strip()
+        if after.startswith("当前消息"):
+            after = after[len("当前消息") :].strip()
+        return after
+    return text
+
+def _is_http_url(v: str) -> bool:
+    s = (v or "").strip().lower()
+    return s.startswith("http://") or s.startswith("https://")
+
+async def _fetch_image_bytes(url: str, *, timeout_seconds: float = 15.0, max_bytes: int = 10 * 1024 * 1024) -> Optional[bytes]:
+    u = (url or "").strip()
+    if not u:
+        return None
+    timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.get(u) as resp:
+            if resp.status < 200 or resp.status >= 300:
+                return None
+            ct = (resp.headers.get("Content-Type") or "").lower()
+            if ct and not ct.startswith("image/"):
+                return None
+            buf = bytearray()
+            async for chunk in resp.content.iter_chunked(256 * 1024):
+                if not chunk:
+                    continue
+                buf.extend(chunk)
+                if len(buf) > max_bytes:
+                    return None
+            return bytes(buf)
+
+async def _resolve_images(images: Any) -> List[bytes]:
+    if not isinstance(images, list):
+        return []
+    out: List[bytes] = []
+    http_urls: List[str] = []
+    for item in images:
+        raw = (item or "").strip() if isinstance(item, str) else ""
+        if not raw:
+            continue
+        if _is_http_url(raw):
+            http_urls.append(raw)
+            continue
+        if raw.startswith("data:"):
+            comma = raw.find(",")
+            if comma >= 0:
+                raw = raw[comma + 1 :].strip()
+        try:
+            out.append(base64.b64decode(raw, validate=True))
+        except Exception:
+            continue
+
+    if http_urls:
+        sem = asyncio.Semaphore(4)
+
+        async def _task(u: str) -> Optional[bytes]:
+            async with sem:
+                try:
+                    return await _fetch_image_bytes(u)
+                except Exception:
+                    return None
+
+        fetched = await asyncio.gather(*[_task(u) for u in http_urls], return_exceptions=False)
+        out.extend([b for b in fetched if isinstance(b, (bytes, bytearray)) and b])
+    return out
 
 class OllamaService:
     """Ollama 服务客户端封装"""
@@ -36,6 +111,7 @@ class OllamaService:
                           system_prompt: str = "你是一个有用的AI助手。", 
                           user_content: str = "", 
                           model_name: str = "qwen3",
+                          images: Optional[List[bytes]] = None,
                           max_retries: int = 2) -> Dict[str, Any]:
         """
         生成 AI 响应
@@ -47,9 +123,10 @@ class OllamaService:
             max_retries: 最大重试次数
         """
         client = self._get_client()
+        images = images or []
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content}
+            {"role": "user", "content": user_content, **({"images": images} if images else {})}
         ]
         attempt = 0
         last_error: Optional[str] = None
@@ -97,6 +174,13 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
     user_content = params.get("user", "")
     model_name = params.get("model", "qwen3")
     stream = params.get("stream") is True
+    images_param = params.get("images")
+    has_images_param = isinstance(images_param, list) and any(isinstance(x, str) and x.strip() for x in images_param)
+    images = await _resolve_images(images_param)
+
+    if has_images_param:
+        model_name = "qwen3-vl"
+        user_content = _extract_user_only_text(user_content)
 
     loop = asyncio.get_running_loop()
     if not stream:
@@ -106,7 +190,8 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
                 service.generate_response,
                 system_prompt=system_prompt,
                 user_content=user_content,
-                model_name=model_name
+                model_name=model_name,
+                images=images
             )
         )
 
@@ -118,7 +203,7 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
                 client = service._get_client()
                 messages = [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content}
+                    {"role": "user", "content": user_content, **({"images": images} if images else {})}
                 ]
                 for item in client.chat(model=model_name, messages=messages, stream=True):
                     try:

@@ -8,7 +8,7 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 
 from core.database import db
-from core.config import settings
+from core.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -532,4 +532,3 @@ class MongoDBService:
             "modified_count": result.modified_count,
             "upserted_id": str(result.upserted_id) if result.upserted_id else None
         }
-
