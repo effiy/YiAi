@@ -134,6 +134,11 @@ def _build_filter(query_params: Dict[str, Any]) -> Dict[str, Any]:
         if not value:
             continue
 
+        # key 字段使用精确匹配
+        if key == 'key' and isinstance(value, str):
+            filter_dict[key] = value
+            continue
+
         if _handle_iso_date_filter(key, value, filter_dict):
             continue
 
@@ -173,6 +178,12 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
     query_params = params.copy()
     query_params.pop('cname', None)
     query_params.pop('collection_name', None)
+    
+    # 处理 filter 参数：如果存在 filter 参数，将其内容合并到查询参数中
+    filter_param = query_params.pop('filter', None)
+    if filter_param and isinstance(filter_param, dict):
+        # 将 filter 中的内容合并到 query_params 中
+        query_params.update(filter_param)
     
     # 兼容旧参数
     try:
