@@ -21,7 +21,7 @@ from core.settings import settings
 from core.middleware import header_verification_middleware
 from core.logger import setup_logging
 from core.exception_handler import register_exception_handlers
-from api.routes import debug, upload, execution
+from api.routes import debug, upload, execution, wework
 
 # 导入服务模块
 from services.rss.rss_scheduler import init_rss_system, shutdown_rss_system
@@ -91,6 +91,7 @@ def create_app(
     app.include_router(debug.router, tags=["Debug"])
     app.include_router(upload.router, tags=["Upload"])
     app.include_router(execution.router, tags=["Execution"])
+    app.include_router(wework.router, tags=["WeWork"])
 
     origins = settings.get_cors_origins()
     app.add_middleware(

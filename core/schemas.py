@@ -121,3 +121,17 @@ class SchedulerConfigRequest(BaseModel):
     type: Optional[str] = Field(None, description="调度类型: interval 或 cron")
     interval: Optional[int] = Field(None, description="间隔时间(秒)，仅 interval 类型有效")
     cron: Optional[Dict[str, Any]] = Field(None, description="Cron 表达式配置，仅 cron 类型有效")
+
+# --- WeWork Schemas ---
+class WeWorkWebhookRequest(BaseModel):
+    """
+    企业微信机器人 Webhook 请求模型
+    
+    Example:
+        {
+            "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx",
+            "content": "要发送的消息内容"
+        }
+    """
+    webhook_url: str = Field(..., description="企业微信机器人 Webhook URL")
+    content: str = Field(..., description="要发送的消息内容")

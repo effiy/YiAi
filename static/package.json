@@ -1,0 +1,57 @@
+{
+  "name": "@dolphin/monorepo",
+  "description": "Convert lark cloud documents to markdown",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "lint": "eslint .",
+    "format": "prettier . --write --ignore-path .gitignore --ignore-path .prettierignore",
+    "format-check": "prettier . --check --ignore-path .gitignore --ignore-path .prettierignore",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "lark",
+    "markdown"
+  ],
+  "author": "Junji Lu",
+  "devDependencies": {
+    "@changesets/changelog-github": "catalog:cli",
+    "@changesets/cli": "catalog:cli",
+    "@dolphin/typescript-config": "workspace:^",
+    "@eslint/js": "catalog:lint",
+    "@types/node": "catalog:types",
+    "@types/regexp.escape": "catalog:types",
+    "eslint": "catalog:lint",
+    "happy-dom": "catalog:dev",
+    "husky": "catalog:lint",
+    "lint-staged": "catalog:lint",
+    "prettier": "catalog:lint",
+    "regexp.escape": "catalog:utils",
+    "rolldown-vite": "catalog:build",
+    "tsdown": "catalog:build",
+    "turbo": "catalog:monorepo",
+    "typescript": "catalog:dev",
+    "typescript-eslint": "catalog:lint",
+    "vitest": "catalog:test",
+    "web-ext": "catalog:tools"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint"
+    ],
+    "*.{js,jsx,ts,tsx,json,md,css}": [
+      "prettier --check --ignore-path .gitignore --ignore-path .prettierignore"
+    ]
+  },
+  "packageManager": "pnpm@10.15.0",
+  "volta": {
+    "node": "22.18.0",
+    "pnpm": "10.15.0"
+  },
+  "dependencies": {
+    "core-js": "catalog:prod"
+  }
+}
