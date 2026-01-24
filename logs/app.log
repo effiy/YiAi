@@ -16258,3 +16258,24 @@ AttributeError: INTERNAL_ERROR
 2026-01-24 21:07:17 - core.middleware - INFO - 收到请求: OPTIONS http://127.0.0.1:8000/read-file, Content-Type: 
 2026-01-24 21:07:17 - core.middleware - INFO - 收到请求: POST http://127.0.0.1:8000/read-file, Content-Type: application/json
 2026-01-24 21:07:17 - core.middleware - WARNING - 无效的请求头: X-Token=
+2026-01-24 21:17:37 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 21:17:37 - main - INFO - 认证中间件已启用
+2026-01-24 21:17:37 - main - INFO - 正在启动应用...
+2026-01-24 21:17:37 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-24 21:17:37 - core.database - INFO - Ensured unique index for rss.link
+2026-01-24 21:17:37 - main - INFO - 数据库初始化成功
+2026-01-24 21:17:37 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-24 21:17:37 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-24 21:17:37 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-24 21:17:37 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-24 21:17:37 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-24 21:17:37 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-24 21:17:37 - main - INFO - 应用启动完成
+2026-01-24 21:17:52 - core.middleware - INFO - 收到请求: POST http://localhost:8001/write-file, Content-Type: application/json
+2026-01-24 21:18:00 - core.middleware - INFO - 收到请求: POST http://localhost:8001/read-file, Content-Type: application/json
+2026-01-24 21:18:16 - main - INFO - 正在关闭应用...
+2026-01-24 21:18:16 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-24 21:18:16 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-24 21:18:16 - core.database - INFO - MongoDB connection closed
+2026-01-24 21:18:16 - main - INFO - 应用关闭完成
+2026-01-24 21:18:16 - apscheduler.scheduler - INFO - Scheduler has been shut down

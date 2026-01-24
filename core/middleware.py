@@ -62,6 +62,11 @@ async def header_verification_middleware(request: Request, call_next):
             response = await call_next(request)
             return response
 
+        # 白名单路径，跳过鉴权
+        # write-file/read-file/delete-file/upload 是本地文件操作接口，通常由前端直接调用
+        if request.url.path in ["/write-file", "/read-file", "/delete-file", "/upload"]:
+            return await call_next(request)
+
         # 检查中间件是否启用
         enable_middleware = settings.middleware_auth_enabled
         if not enable_middleware:
