@@ -14,6 +14,21 @@ router = APIRouter()
 from core.settings import settings
 from services.storage.oss_client import upload_bytes_to_oss
 
+def _resolve_static_path(target_file: str) -> str:
+    rel = (target_file or "").strip().replace("\\", "/")
+    if rel.startswith("static/"):
+        rel = rel[7:]
+    if not rel or rel.startswith("/") or ".." in rel:
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="非法路径")
+
+    base_dir = os.path.realpath(os.path.abspath(settings.static_base_dir))
+    abs_path = os.path.realpath(os.path.abspath(os.path.join(base_dir, os.path.normpath(rel))))
+
+    if os.path.commonpath([base_dir, abs_path]) != base_dir:
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="非法路径")
+
+    return abs_path
+
 @router.post("/upload-image-to-oss")
 @router.post("/upload/upload-image-to-oss")
 async def upload_image_to_oss(request: ImageUploadToOssRequest):
@@ -42,48 +57,13 @@ async def read_file(request: FileReadRequest):
     读取文件接口
     """
     target_file = request.target_file
-    # 安全检查
-    if not target_file or '..' in target_file or target_file.startswith('/'):
-        raise BusinessException(ErrorCode.INVALID_PARAMS, message="非法路径")
+    found_path = _resolve_static_path(target_file)
 
-    # 构造绝对路径
-    base_dir = os.path.abspath(settings.static_base_dir)
-    abs_path = os.path.join(base_dir, target_file)
-    
-    found_path = None
-    
-    # 1. 尝试在 static_base_dir 中查找
-    if os.path.exists(abs_path) and os.path.isfile(abs_path):
-        # 路径遍历检查
-        if os.path.abspath(abs_path).startswith(base_dir):
-            found_path = abs_path
-
-    # 2. 如果未找到，尝试在项目根目录下的其他子目录中查找 (Monorepo 支持)
-    if not found_path:
-        # 假设当前工作目录是 YiAi，项目根目录是上一级
-        current_dir = os.getcwd()
-        project_root = os.path.abspath(os.path.join(current_dir, ".."))
-        
-        # 简单的安全检查：确保我们在预期的目录结构中
-        # 遍历项目根目录下的子目录 (e.g., YiPet, YiWeb)
-        try:
-            if os.path.exists(project_root) and os.path.isdir(project_root):
-                for item in os.listdir(project_root):
-                    subdir = os.path.join(project_root, item)
-                    # 跳过隐藏目录和当前目录 (YiAi)
-                    if os.path.isdir(subdir) and not item.startswith('.') and subdir != current_dir:
-                        candidate = os.path.join(subdir, target_file)
-                        if os.path.exists(candidate) and os.path.isfile(candidate):
-                            # 安全检查：必须在项目根目录下
-                            if os.path.abspath(candidate).startswith(project_root):
-                                found_path = candidate
-                                logger.info(f"在兄弟目录中找到文件: {found_path}")
-                                break
-        except Exception as e:
-            logger.warn(f"搜索兄弟目录失败: {e}")
-
-    if not found_path:
+    if not os.path.exists(found_path):
         raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"文件不存在: {target_file}")
+
+    if not os.path.isfile(found_path):
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"路径不是一个文件: {target_file}")
 
     try:
         # 尝试以文本方式读取
@@ -111,47 +91,10 @@ async def write_file(request: FileWriteRequest):
     content = request.content
     is_base64 = request.is_base64
 
-    # 安全检查
-    if not target_file or '..' in target_file or target_file.startswith('/'):
-        raise BusinessException(ErrorCode.INVALID_PARAMS, message="非法路径")
-
-    # 构造绝对路径
-    base_dir = os.path.abspath(settings.static_base_dir)
-    abs_path = os.path.join(base_dir, target_file)
-    
-    found_path = None
-    
-    # 1. 尝试在 static_base_dir 中查找
-    if os.path.exists(abs_path) and os.path.isfile(abs_path):
-        # 路径遍历检查
-        if os.path.abspath(abs_path).startswith(base_dir):
-            found_path = abs_path
-
-    # 2. 如果未找到，尝试在项目根目录下的其他子目录中查找 (Monorepo 支持)
-    if not found_path:
-        current_dir = os.getcwd()
-        project_root = os.path.abspath(os.path.join(current_dir, ".."))
-        
-        try:
-            if os.path.exists(project_root) and os.path.isdir(project_root):
-                for item in os.listdir(project_root):
-                    subdir = os.path.join(project_root, item)
-                    # 跳过隐藏目录和当前目录 (YiAi)
-                    if os.path.isdir(subdir) and not item.startswith('.') and subdir != current_dir:
-                        candidate = os.path.join(subdir, target_file)
-                        if os.path.exists(candidate) and os.path.isfile(candidate):
-                            # 安全检查：必须在项目根目录下
-                            if os.path.abspath(candidate).startswith(project_root):
-                                found_path = candidate
-                                logger.info(f"在兄弟目录中找到文件: {found_path}")
-                                break
-        except Exception as e:
-            logger.warn(f"搜索兄弟目录失败: {e}")
-
-    # 确定最终写入路径：如果找到现有文件则覆盖，否则默认在 static_base_dir 下创建
-    target_path = found_path if found_path else abs_path
+    target_path = _resolve_static_path(target_file)
     
     try:
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
         if is_base64:
              content_bytes = base64.b64decode(content)
              with open(target_path, "wb") as f:

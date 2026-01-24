@@ -12273,3 +12273,179 @@ AttributeError: INTERNAL_ERROR
 2026-01-20 19:22:54 - services.database.data_service - INFO - Querying collection: sessions, Filter: {'key': '0db97b15-4828-4125-a733-87570e054ea3'}
 2026-01-20 19:22:54 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: update_document
 2026-01-20 19:22:54 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '0db97b15-4828-4125-a733-87570e054ea3', 'data': {'key': '0db97b15-4828-4125-a733-87570e054ea3', 'url': 'https://effiy.cn/', 'title': 'YiWeb', 'pageTitle': 'YiWeb', 'pageDescription': '', 'pageContent': '', 'messages': [{'type': 'user', 'message': '这是啥', 'timestamp': 1768907215504}, {'type': 'user', 'message': '这是啥', 'timestamp': 1768907408581}, {'type': 'pet', 'message': '您好，我是通义千问，一个由通义实验室开发的超大规模语言模型。有什么可以帮助您的吗？', 'timestamp': 1768907408582}, {'type': 'user', 'content': '这是啥', 'timestamp': 1768907752369}, {'type': 'user', 'content': '这是啥', 'timestamp': 1768908119666}], 'tags': ['effiy.cn'], 'isFavorite': False, 'createdAt': 1768898535631, 'updatedAt': 1768908119666, 'lastAccessTime': 1768908101575}}
+2026-01-24 09:09:13 - __main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:09:13 - __main__ - INFO - 认证中间件已禁用
+2026-01-24 09:09:14 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:09:14 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-24 09:09:14 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:09:14 - main - INFO - 认证中间件已禁用
+2026-01-24 09:09:14 - main - INFO - 正在启动应用...
+2026-01-24 09:09:14 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-24 09:09:14 - core.database - INFO - Ensured unique index for rss.link
+2026-01-24 09:09:14 - main - INFO - 数据库初始化成功
+2026-01-24 09:09:14 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-24 09:09:14 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-24 09:09:14 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-24 09:09:14 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-24 09:09:14 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-24 09:09:14 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-24 09:09:14 - main - INFO - 应用启动完成
+2026-01-24 09:09:27 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:09:28 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:09:31 - api.routes.upload - INFO - 在兄弟目录中找到文件: /Users/yi/Downloads/knowledge/constructing/codereview/cr_claim-amount_2025-12_胡俊天.md
+2026-01-24 09:09:31 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*bbf9f342\\-8a31\\-4773\\-8552\\-53787f60316a.*', re.IGNORECASE)}
+2026-01-24 09:09:57 - main - INFO - 正在关闭应用...
+2026-01-24 09:09:57 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-24 09:09:57 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-24 09:09:57 - core.database - INFO - MongoDB connection closed
+2026-01-24 09:09:57 - main - INFO - 应用关闭完成
+2026-01-24 09:09:57 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-24 09:10:03 - __main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:10:03 - __main__ - INFO - 认证中间件已禁用
+2026-01-24 09:10:04 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:10:04 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-24 09:10:04 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:10:04 - main - INFO - 认证中间件已禁用
+2026-01-24 09:10:04 - main - INFO - 正在启动应用...
+2026-01-24 09:10:04 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-24 09:10:04 - core.database - INFO - Ensured unique index for rss.link
+2026-01-24 09:10:04 - main - INFO - 数据库初始化成功
+2026-01-24 09:10:04 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-24 09:10:04 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-24 09:10:04 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-24 09:10:04 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-24 09:10:04 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-24 09:10:04 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-24 09:10:04 - main - INFO - 应用启动完成
+2026-01-24 09:10:35 - api.routes.upload - INFO - 在兄弟目录中找到文件: /Users/yi/Downloads/knowledge/developer/process/process_repair_2025-12_王洋.md
+2026-01-24 09:10:36 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*2f4bcfc8\\-6d21\\-4284\\-93d4\\-a8fa12816357.*', re.IGNORECASE)}
+2026-01-24 09:10:37 - api.routes.upload - INFO - 在兄弟目录中找到文件: /Users/yi/Downloads/knowledge/developer/process/process_knowledge_2025-12_亮亮.md
+2026-01-24 09:10:38 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*9cffd082\\-0b8e\\-4206\\-94d0\\-238d24aa34dd.*', re.IGNORECASE)}
+2026-01-24 09:11:15 - core.exception_handler - WARNING - 业务异常: 文件不存在: effiy.cn/YiWeb | Code: 1002
+2026-01-24 09:11:16 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*066df2c4\\-a135\\-416c\\-a0a3\\-711f77643317.*', re.IGNORECASE)}
+2026-01-24 09:11:22 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:11:22 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:11:22 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '066df2c4-a135-416c-a0a3-711f77643317'}
+2026-01-24 09:11:22 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:12:48 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:12:48 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '458ebc95-1f8e-4c43-8bf2-ef853fb80caf'}
+2026-01-24 09:12:48 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:13:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:13:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'df70d09d-aa8f-4767-a777-76f352431fe9'}
+2026-01-24 09:13:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:13:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'c93232b2-62f5-4c64-889c-c7ece2c0834c'}
+2026-01-24 09:13:03 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:13:39 - main - INFO - 正在关闭应用...
+2026-01-24 09:13:39 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-24 09:13:39 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-24 09:13:39 - core.database - INFO - MongoDB connection closed
+2026-01-24 09:13:39 - main - INFO - 应用关闭完成
+2026-01-24 09:13:39 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-24 09:13:47 - __main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:13:47 - __main__ - INFO - 认证中间件已禁用
+2026-01-24 09:13:48 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:13:48 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-24 09:13:48 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:13:48 - main - INFO - 认证中间件已禁用
+2026-01-24 09:13:48 - main - INFO - 正在启动应用...
+2026-01-24 09:13:48 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-24 09:13:48 - core.database - INFO - Ensured unique index for rss.link
+2026-01-24 09:13:48 - main - INFO - 数据库初始化成功
+2026-01-24 09:13:48 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-24 09:13:48 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-24 09:13:48 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-24 09:13:48 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-24 09:13:48 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-24 09:13:48 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-24 09:13:48 - main - INFO - 应用启动完成
+2026-01-24 09:13:58 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:13:59 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:14:00 - core.exception_handler - WARNING - 业务异常: 文件不存在: constructing/codereview/cr_claim-amount_2025-12_胡俊天.md | Code: 1002
+2026-01-24 09:14:00 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*bbf9f342\\-8a31\\-4773\\-8552\\-53787f60316a.*', re.IGNORECASE)}
+2026-01-24 09:16:57 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:16:57 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:16:57 - services.database.data_service - INFO - Querying collection: sessions, Filter: {'key': 'bbf9f342-8a31-4773-8552-53787f60316a'}
+2026-01-24 09:16:57 - core.exception_handler - WARNING - 业务异常: 文件不存在: constructing/codereview/cr_claim-amount_2025-12_胡俊天.md | Code: 1002
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bbf9f342-8a31-4773-8552-53787f60316a'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '6fa4c184-3a8c-46a8-aa5f-7b1c214872a1'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '57df67d3-3088-4c5d-8bc4-bfb1fba6d7a9'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '8a096bd0-fb4d-45c3-9b54-24f23bf4a331'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '8c515ce7-d56b-4c48-a32f-ff11c72baeac'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '236a35af-e661-42f0-9550-92f235a72434'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'd49030d3-a96b-44c1-a478-3329971cad0b'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '4698c56e-e89f-416e-9290-7aa863eb677e'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '24af9ef1-4249-4147-b0de-225d79a50341'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '40c68f0e-ba8c-4d12-a4d9-fb7c8fce7dbb'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '662396f7-8994-4dd8-86f5-be6a7aa8f6e3'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '9cffd082-0b8e-4206-94d0-238d24aa34dd'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '2f4bcfc8-6d21-4284-93d4-a8fa12816357'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'c2558db5-35ee-4889-b115-232df87ea0f5'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '328d80db-5a02-499c-8868-ac76a9d452e9'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'bd0fd2ee-3049-44c1-94cb-6aae408240d4'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '7c41d4c1-1e2c-4dea-a13e-df95777d4189'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '30c187d6-df08-4d28-9b18-6e7cc78ed0cb'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'cef40881-9455-4299-91c8-1e978406143f'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '1ae88b38-4535-4e6a-a937-6ef64d73a582'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '1e7edf2c-b9d3-4907-a99d-ac3949cf30a5'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': '19544182-f90b-4db8-b7ef-7297f33e9472'}
+2026-01-24 09:17:03 - api.routes.execution - INFO - 执行模块: services.database.data_service, 方法: delete_document
+2026-01-24 09:17:03 - api.routes.execution - INFO - 参数: {'cname': 'sessions', 'key': 'c28871da-ad47-4cec-96c3-99d64da74638'}
+2026-01-24 09:17:03 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:17:06 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*bbf9f342\\-8a31\\-4773\\-8552\\-53787f60316a.*', re.IGNORECASE)}
+2026-01-24 09:17:06 - services.database.data_service - INFO - Querying collection: comments, Filter: {'fileKey': re.compile('.*bbf9f342\\-8a31\\-4773\\-8552\\-53787f60316a.*', re.IGNORECASE)}
+2026-01-24 09:17:06 - core.exception_handler - WARNING - 业务异常: 文件不存在: constructing/codereview/cr_claim-amount_2025-12_胡俊天.md | Code: 1002
+2026-01-24 09:17:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:17:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:17:08 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:17:09 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:11 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:17:11 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:11 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:12 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:12 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:14 - services.database.data_service - INFO - Querying collection: sessions, Filter: {}
+2026-01-24 09:17:14 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:14 - services.database.data_service - INFO - Querying collection: comments, Filter: {}
+2026-01-24 09:17:46 - main - INFO - 正在关闭应用...
+2026-01-24 09:17:46 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已停止
+2026-01-24 09:17:46 - services.rss.rss_scheduler - INFO - RSS 定时任务已停止
+2026-01-24 09:17:46 - core.database - INFO - MongoDB connection closed
+2026-01-24 09:17:46 - main - INFO - 应用关闭完成
+2026-01-24 09:17:46 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-01-24 09:17:46 - __mp_main__ - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:17:46 - __mp_main__ - INFO - 认证中间件已禁用
+2026-01-24 09:17:46 - main - INFO - CORS 配置: 已启用, Origins: ['*']
+2026-01-24 09:17:46 - main - INFO - 认证中间件已禁用
+2026-01-24 09:17:46 - main - INFO - 正在启动应用...
+2026-01-24 09:17:46 - core.database - INFO - MongoDB connected: ruiyi
+2026-01-24 09:17:46 - core.database - INFO - Ensured unique index for rss.link
+2026-01-24 09:17:46 - main - INFO - 数据库初始化成功
+2026-01-24 09:17:46 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动（间隔模式）: 3600 秒
+2026-01-24 09:17:46 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-24 09:17:46 - apscheduler.scheduler - INFO - Added job "rss_scheduler_job" to job store "default"
+2026-01-24 09:17:46 - apscheduler.scheduler - INFO - Scheduler started
+2026-01-24 09:17:46 - services.rss.rss_scheduler - INFO - RSS 定时解析任务已启动
+2026-01-24 09:17:46 - services.rss.rss_scheduler - INFO - RSS 定时任务已启动
+2026-01-24 09:17:46 - main - INFO - 应用启动完成
