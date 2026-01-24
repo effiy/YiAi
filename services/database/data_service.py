@@ -226,10 +226,16 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
         fields = [f.strip() for f in str(fields_param).split(',') if f.strip()]
         if 'key' not in fields:
             fields.append('key')
+        if collection_name == 'sessions':
+            fields = [f for f in fields if f != 'pageContent']
         projection = {'_id': 0, **{f: 1 for f in fields}}
     elif exclude_fields_param:
         exclude_fields = [f.strip() for f in str(exclude_fields_param).split(',') if f.strip()]
+        if collection_name == 'sessions' and 'pageContent' not in exclude_fields:
+            exclude_fields.append('pageContent')
         projection = {'_id': 0, **{f: 0 for f in exclude_fields}}
+    elif collection_name == 'sessions':
+        projection = {'_id': 0, 'pageContent': 0}
 
     collection = db.db[collection_name]
     
@@ -259,7 +265,10 @@ async def get_document_detail(params: Dict[str, Any]) -> Dict[str, Any]:
         
     await db.initialize()
     collection = db.db[collection_name]
-    document = await collection.find_one({'key': doc_id}, {'_id': 0})
+    projection = {'_id': 0}
+    if collection_name == 'sessions':
+        projection['pageContent'] = 0
+    document = await collection.find_one({'key': doc_id}, projection)
 
     if not document:
         raise ValueError(f"未找到ID为 {doc_id} 的数据")
@@ -299,6 +308,8 @@ async def create_document(params: Dict[str, Any]) -> Dict[str, Any]:
         'createdTime': current_time,
         'updatedTime': current_time
     })
+    if collection_name == 'sessions':
+        data_copy.pop('pageContent', None)
 
     try:
         max_order_doc = await collection.find_one(
@@ -353,6 +364,8 @@ async def update_document(params: Dict[str, Any]) -> Dict[str, Any]:
     update_data.pop('_id', None)
     update_data.pop('key', None)
     update_data.pop('createdTime', None)
+    if collection_name == 'sessions':
+        update_data.pop('pageContent', None)
     
     update_data['updatedTime'] = get_current_time()
     
@@ -395,6 +408,11 @@ async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
     
     if 'key' not in update_doc['$setOnInsert']:
         update_doc['$setOnInsert']['key'] = str(uuid.uuid4())
+    if collection_name == 'sessions':
+        if isinstance(update_doc.get('$set'), dict):
+            update_doc['$set'].pop('pageContent', None)
+        if isinstance(update_doc.get('$setOnInsert'), dict):
+            update_doc['$setOnInsert'].pop('pageContent', None)
 
     result = await collection.update_one(filter_doc, update_doc, upsert=True)
     
