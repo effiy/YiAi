@@ -66,7 +66,7 @@ async def parse_rss_source_safe(url: str, name: Optional[str] = None) -> Dict[st
     """
     return await process_feed_from_url(url, name)
 
-async def parse_all_enabled_rss_sources() -> Dict[str, Any]:
+async def parse_all_enabled_rss_sources(params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     解析所有启用的 RSS 源
     
@@ -133,7 +133,7 @@ async def rss_scheduler_job():
     """
     try:
         logger.info("开始执行定时 RSS 解析任务")
-        result = await parse_all_enabled_rss_sources()
+        result = await parse_all_enabled_rss_sources({})
         logger.info(f"定时 RSS 解析任务完成: 成功 {result.get('success_count', 0)} 个，失败 {result.get('failed_count', 0)} 个")
     except Exception as e:
         logger.error(f"RSS 定时解析任务执行失败: {str(e)}", exc_info=True)
@@ -150,7 +150,7 @@ def get_scheduler():
         _rss_scheduler = AsyncIOScheduler()
     return _rss_scheduler
 
-def start_rss_scheduler():
+def start_rss_scheduler(params: Optional[Dict[str, Any]] = None):
     """
     启动 RSS 定时解析任务
     
@@ -204,7 +204,7 @@ def start_rss_scheduler():
     _rss_scheduler_running = True
     logger.info("RSS 定时解析任务已启动")
 
-def stop_rss_scheduler():
+def stop_rss_scheduler(params: Optional[Dict[str, Any]] = None):
     """
     停止 RSS 定时解析任务
     
@@ -222,7 +222,7 @@ def stop_rss_scheduler():
     _rss_scheduler_running = False
     logger.info("RSS 定时解析任务已停止")
 
-def set_scheduler_config(config: Dict[str, Any]):
+def set_scheduler_config(params: Dict[str, Any]):
     """
     设置 RSS 定时器配置
     
@@ -239,6 +239,8 @@ def set_scheduler_config(config: Dict[str, Any]):
         GET /?module_name=services.rss.rss_scheduler&method_name=set_scheduler_config&parameters={"config": {"type": "interval", "interval": 7200}}
     """
     global _rss_scheduler_config
+
+    config = params.get('config') if isinstance(params, dict) and isinstance(params.get('config'), dict) else params
 
     if config.get('type') == 'interval':
         interval = config.get('interval')
@@ -279,10 +281,10 @@ def set_scheduler_config(config: Dict[str, Any]):
         pass
 
     if _rss_scheduler_running:
-        stop_rss_scheduler()
-        start_rss_scheduler()
+        stop_rss_scheduler({})
+        start_rss_scheduler({})
 
-def get_scheduler_status_info() -> Dict[str, Any]:
+def get_scheduler_status_info(params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     获取调度器状态信息
     
