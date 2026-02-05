@@ -168,7 +168,10 @@ async def parse_feed(params: Dict[str, Any]) -> Dict[str, Any]:
         
     return {
         "success": result.get('success', False),
+        "url": url,
         "source": result.get('source_name', 'Unknown'),
         "saved_count": result.get('saved_count', 0),
-        "updated_count": result.get('updated_count', 0)
+        "updated_count": result.get('updated_count', 0),
+        "total_items": result.get('total_items', 0),
+        "error": result.get('error')
     }
