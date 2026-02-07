@@ -1,5 +1,6 @@
 import os
 import base64
+import re
 import logging
 import shutil
 from fastapi import APIRouter
@@ -13,6 +14,9 @@ router = APIRouter()
 
 from core.settings import settings
 from services.storage.oss_client import upload_bytes_to_oss
+
+def _normalize_no_spaces(value: str) -> str:
+    return re.sub(r"\s+", "_", (value or "").strip())
 
 def _resolve_static_path(target_file: str) -> str:
     rel = (target_file or "").strip().replace("\\", "/")
@@ -48,7 +52,9 @@ async def upload_image_to_oss(request: ImageUploadToOssRequest):
     except Exception:
         raise BusinessException(ErrorCode.INVALID_PARAMS, message="Base64 解码失败")
 
-    result = await upload_bytes_to_oss(content, request.filename, directory=(request.directory or "aicr"))
+    filename = _normalize_no_spaces(request.filename)
+    directory = _normalize_no_spaces(request.directory or "aicr")
+    result = await upload_bytes_to_oss(content, filename, directory=directory)
     return success(data=result)
 
 @router.post("/read-file")
@@ -56,7 +62,7 @@ async def read_file(request: FileReadRequest):
     """
     读取文件接口
     """
-    target_file = request.target_file
+    target_file = _normalize_no_spaces(request.target_file)
     found_path = _resolve_static_path(target_file)
 
     if not os.path.exists(found_path):
@@ -87,7 +93,7 @@ async def write_file(request: FileWriteRequest):
     """
     写入文件接口
     """
-    target_file = request.target_file
+    target_file = _normalize_no_spaces(request.target_file)
     content = request.content
     is_base64 = request.is_base64
 
@@ -113,7 +119,7 @@ async def delete_file(request: FileDeleteRequest):
     """
     删除文件接口
     """
-    target_file = request.target_file
+    target_file = _normalize_no_spaces(request.target_file)
     # 安全检查
     if not target_file or '..' in target_file or target_file.startswith('/'):
         raise BusinessException(ErrorCode.INVALID_PARAMS, message="非法路径")
@@ -146,7 +152,7 @@ async def delete_folder(request: FolderDeleteRequest):
     """
     删除文件夹接口
     """
-    target_dir = request.target_dir
+    target_dir = _normalize_no_spaces(request.target_dir)
     # 安全检查
     if not target_dir or '..' in target_dir or target_dir.startswith('/'):
         raise BusinessException(ErrorCode.INVALID_PARAMS, message="非法路径")
@@ -181,7 +187,7 @@ async def rename_file(request: FileRenameRequest):
     重命名文件接口
     """
     old_path_str = request.old_path
-    new_path_str = request.new_path
+    new_path_str = _normalize_no_spaces(request.new_path)
 
     # 安全检查
     if not old_path_str or '..' in old_path_str or old_path_str.startswith('/'):
@@ -337,7 +343,7 @@ async def rename_folder(request: FolderRenameRequest):
     重命名文件夹接口
     """
     old_dir_str = request.old_dir
-    new_dir_str = request.new_dir
+    new_dir_str = _normalize_no_spaces(request.new_dir)
 
     # 安全检查
     if not old_dir_str or '..' in old_dir_str or old_dir_str.startswith('/'):
@@ -417,12 +423,12 @@ async def upload_file(request: FileUploadRequest):
     """
     文件上传接口 (JSON 方式)
     """
-    target_dir = request.target_dir
+    target_dir = _normalize_no_spaces(request.target_dir)
     # 确保目录存在 (相对于当前工作目录)
     save_dir = os.path.join(os.getcwd(), target_dir)
     os.makedirs(save_dir, exist_ok=True)
     
-    filename = request.filename
+    filename = _normalize_no_spaces(request.filename)
     file_path = os.path.join(save_dir, filename)
     
     try:
