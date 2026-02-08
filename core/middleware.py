@@ -64,7 +64,8 @@ async def header_verification_middleware(request: Request, call_next):
 
         # 白名单路径，跳过鉴权
         # write-file/read-file/delete-file/upload 是本地文件操作接口，通常由前端直接调用
-        if request.url.path in ["/write-file", "/read-file", "/delete-file", "/upload"]:
+        # /static 下的内容为静态资源，不需要鉴权
+        if request.url.path in ["/write-file", "/read-file", "/delete-file", "/upload"] or request.url.path.startswith("/static"):
             return await call_next(request)
 
         # 检查中间件是否启用
