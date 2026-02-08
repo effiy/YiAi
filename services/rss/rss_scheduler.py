@@ -3,6 +3,7 @@
 - 提供启动/停止与动态配置能力
 """
 import logging
+import asyncio
 from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
 from core.database import db
@@ -101,15 +102,29 @@ async def parse_all_enabled_rss_sources(params: Optional[Dict[str, Any]] = None)
 
         logger.info(f"开始批量解析 {len(sources)} 个 RSS 源")
         
-        for source in sources:
+        # 使用信号量限制并发数，防止内存溢出
+        # 2G 内存建议并发数不超过 3
+        sem = asyncio.Semaphore(3)
+
+        async def worker(source):
             url = source.get('url')
             name = source.get('name')
             if not url:
-                continue
-                
-            result = await parse_rss_source_safe(url, name)
-            results.append(result)
+                return None
             
+            async with sem:
+                return await parse_rss_source_safe(url, name)
+
+        # 创建并执行任务
+        tasks = [worker(source) for source in sources]
+        # 使用 gather 并发执行
+        raw_results = await asyncio.gather(*tasks)
+        
+        # 过滤掉无效结果 (None)
+        results = [r for r in raw_results if r is not None]
+
+        # 统计结果
+        for result in results:
             if result.get('success'):
                 success_count += 1
             else:

@@ -2,6 +2,7 @@ import logging
 import uuid
 import feedparser
 import aiohttp
+import gc
 from typing import Dict, Any, Optional
 from fastapi import HTTPException
 from core.database import db
@@ -23,16 +24,38 @@ async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
     Raises:
         HTTPException: 获取或解析失败时抛出
     """
+    # 限制最大 RSS 大小为 10MB，防止内存溢出
+    MAX_RSS_SIZE = 10 * 1024 * 1024
+    
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+            # 增加超时时间到 60秒
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as response:
                 if response.status != 200:
                     raise HTTPException(
                         status_code=400,
                         detail=f"无法获取 RSS 源，HTTP 状态码: {response.status}"
                     )
-                content = await response.text()
-                feed = feedparser.parse(content)
+                
+                # 检查 Content-Length
+                content_length = response.headers.get('Content-Length')
+                if content_length and int(content_length) > MAX_RSS_SIZE:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"RSS 源过大 (Content-Length: {content_length})，超过限制 {MAX_RSS_SIZE} 字节"
+                    )
+
+                # 流式读取并限制大小
+                content = bytearray()
+                async for chunk in response.content.iter_chunked(8192):
+                    content.extend(chunk)
+                    if len(content) > MAX_RSS_SIZE:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"RSS 源实际内容过大，超过限制 {MAX_RSS_SIZE} 字节"
+                        )
+                
+                feed = feedparser.parse(bytes(content))
 
                 if feed.bozo and feed.bozo_exception:
                     logger.warning(f"RSS 解析警告: {feed.bozo_exception}")
@@ -63,15 +86,20 @@ async def process_feed_from_url(url: str, name: Optional[str] = None) -> Dict[st
         source_name = name or feed.feed.get('title', '未知源')
         tags = [source_name] if source_name else []
 
-        # 准备要存储的数据
-        items_to_save = []
         current_time = get_current_time()
+        collection = db.db[settings.collection_rss]
+        
+        saved_count = 0
+        updated_count = 0
+        total_items = 0
 
-        # 解析每个条目
+        # 解析每个条目并直接入库，避免构建大列表占用内存
         for entry in feed.entries:
             item_link = entry.get('link', '')
             if not item_link:
                 continue  # 跳过没有链接的条目
+            
+            total_items += 1
 
             item_data = {
                 'title': entry.get('title', ''),
@@ -96,32 +124,29 @@ async def process_feed_from_url(url: str, name: Optional[str] = None) -> Dict[st
                 if content_list and len(content_list) > 0:
                     item_data['content'] = content_list[0].get('value', '')
 
-            items_to_save.append(item_data)
-
-        # 批量存入 MongoDB
-        collection = db.db[settings.collection_rss]
-        saved_count = 0
-        updated_count = 0
-
-        for item in items_to_save:
+            # 直接存入 MongoDB
             # 检查是否已存在
-            existing_item = await collection.find_one({'link': item['link']})
+            existing_item = await collection.find_one({'link': item_data['link']})
 
             if existing_item:
                 # 更新
-                item['key'] = existing_item.get('key', str(uuid.uuid4()))
-                item['createdTime'] = existing_item.get('createdTime', current_time)
+                item_data['key'] = existing_item.get('key', str(uuid.uuid4()))
+                item_data['createdTime'] = existing_item.get('createdTime', current_time)
                 result = await collection.update_one(
-                    {'link': item['link']},
-                    {'$set': item}
+                    {'link': item_data['link']},
+                    {'$set': item_data}
                 )
                 if result.modified_count > 0:
                     updated_count += 1
             else:
                 # 新增
-                item['key'] = str(uuid.uuid4())
-                await collection.insert_one(item)
+                item_data['key'] = str(uuid.uuid4())
+                await collection.insert_one(item_data)
                 saved_count += 1
+        
+        # 主动释放内存
+        del feed
+        gc.collect()
 
         return {
             'url': url,
@@ -129,7 +154,7 @@ async def process_feed_from_url(url: str, name: Optional[str] = None) -> Dict[st
             'success': True,
             'saved_count': saved_count,
             'updated_count': updated_count,
-            'total_items': len(items_to_save)
+            'total_items': total_items
         }
     except Exception as e:
         logger.error(f"处理 RSS 源 {url} 失败: {str(e)}")
