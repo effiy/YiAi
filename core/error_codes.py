@@ -28,6 +28,7 @@ class ErrorCode(Enum):
     DATA_STORE_FAIL = ErrorInfo(1005, http_status.HTTP_500_INTERNAL_SERVER_ERROR, "新增失败")
     DATA_UPDATE_FAIL = ErrorInfo(1006, http_status.HTTP_500_INTERNAL_SERVER_ERROR, "更新失败")
     DATA_DESTROY_FAIL = ErrorInfo(1007, http_status.HTTP_500_INTERNAL_SERVER_ERROR, "删除失败")
+    INTERNAL_ERROR = ErrorInfo(5001, http_status.HTTP_500_INTERNAL_SERVER_ERROR, "内部错误")
     SERVER_ERROR = ErrorInfo(5000, http_status.HTTP_500_INTERNAL_SERVER_ERROR, "服务器繁忙")
 
     @property
