@@ -6,6 +6,7 @@ import asyncio
 import logging
 import json
 import inspect
+import subprocess
 from typing import Dict, Any, Union
 from fastapi import HTTPException
 from core.settings import settings
@@ -20,13 +21,13 @@ EXEC_ALLOWLIST = set(allowlist)
 def parse_parameters(parameters: Union[Dict[str, Any], str]) -> Dict[str, Any]:
     """
     解析参数，支持字典或 JSON 字符串
-    
+
     Args:
         parameters: 参数字典或 JSON 字符串
-        
+
     Returns:
         Dict[str, Any]: 解析后的参数字典
-        
+
     Raises:
         HTTPException: 如果 JSON 格式无效或解析后不是字典
     """
@@ -39,6 +40,71 @@ def parse_parameters(parameters: Union[Dict[str, Any], str]) -> Dict[str, Any]:
     if not isinstance(parsed, dict):
         raise HTTPException(status_code=400, detail="Parameters must be a JSON object")
     return parsed
+
+async def run_script(script_path: str, timeout: int = 300) -> Dict[str, Any]:
+    """
+    执行 Python 脚本
+
+    Args:
+        script_path: 脚本路径
+        timeout: 超时时间（秒）
+
+    Returns:
+        执行结果
+    """
+    try:
+        logger.info(f"开始执行脚本: {script_path}")
+
+        # 使用 asyncio.create_subprocess_exec 执行脚本
+        process = await asyncio.create_subprocess_exec(
+            'python3',
+            script_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        # 等待执行完成，设置超时
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            raise Exception(f"脚本执行超时（{timeout}秒）")
+
+        # 解码输出
+        stdout_text = stdout.decode('utf-8') if stdout else ''
+        stderr_text = stderr.decode('utf-8') if stderr else ''
+
+        logger.info(f"脚本执行完成，返回码: {process.returncode}")
+
+        if process.returncode != 0:
+            logger.error(f"脚本执行失败: {stderr_text}")
+            return {
+                'success': False,
+                'message': f'脚本执行失败（返回码: {process.returncode}）',
+                'stdout': stdout_text,
+                'stderr': stderr_text,
+                'returncode': process.returncode
+            }
+
+        return {
+            'success': True,
+            'message': '脚本执行成功',
+            'stdout': stdout_text,
+            'stderr': stderr_text,
+            'returncode': process.returncode
+        }
+
+    except Exception as e:
+        logger.error(f"执行脚本失败: {str(e)}", exc_info=True)
+        return {
+            'success': False,
+            'message': f'执行脚本失败: {str(e)}',
+            'error': str(e)
+        }
 
 async def execute_module(module_path: str, function_name: str, parameters: Union[Dict[str, Any], str]) -> Any:
     """执行目标模块/函数
@@ -76,3 +142,4 @@ async def execute_module(module_path: str, function_name: str, parameters: Union
     except Exception as e:
         logger.error(f"Execution error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
+
