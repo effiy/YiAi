@@ -366,6 +366,9 @@ async def update_document(params: Dict[str, Any]) -> Dict[str, Any]:
     update_data.pop('createdTime', None)
     if collection_name == 'sessions':
         update_data.pop('pageContent', None)
+        # 如果 messages 为空数组，也不更新（避免覆盖已有的消息数据）
+        if 'messages' in update_data and update_data['messages'] == []:
+            update_data.pop('messages', None)
     
     update_data['updatedTime'] = get_current_time()
     
@@ -411,6 +414,9 @@ async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
     if collection_name == 'sessions':
         if isinstance(update_doc.get('$set'), dict):
             update_doc['$set'].pop('pageContent', None)
+            # 如果 messages 为空数组，也不更新（避免覆盖已有的消息数据）
+            if 'messages' in update_doc['$set'] and update_doc['$set']['messages'] == []:
+                update_doc['$set'].pop('messages', None)
         if isinstance(update_doc.get('$setOnInsert'), dict):
             update_doc['$setOnInsert'].pop('pageContent', None)
 
