@@ -94,8 +94,17 @@ async def upload_image_to_oss(request: ImageUploadToOssRequest):
 async def read_file(request: FileReadRequest):
     """
     读取文件接口
+    要求 target_file 必须包含文件扩展名（如 .md, .txt, .json 等）
     """
     target_file = _normalize_no_spaces(request.target_file)
+
+    # 验证文件路径是否包含扩展名
+    if not target_file or '.' not in target_file.split('/')[-1]:
+        raise BusinessException(
+            ErrorCode.INVALID_PARAMS,
+            message=f"文件路径必须包含扩展名: {target_file}"
+        )
+
     found_path = _resolve_static_path(target_file)
 
     if not os.path.exists(found_path):
@@ -116,7 +125,7 @@ async def read_file(request: FileReadRequest):
                 content_bytes = f.read()
                 content_base64 = base64.b64encode(content_bytes).decode('utf-8')
                 return success(data={"content": content_base64, "type": "base64"})
-                
+
     except Exception as e:
         logger.error(f"读取文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"读取文件失败: {str(e)}")
