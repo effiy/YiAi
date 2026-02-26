@@ -28,7 +28,7 @@ default_user:
 
 # Static Files Settings
 static:
-  base_dir: "./static"
+  base_dir: "/var/www/YiKnowledge/static"
   max_zip_size_mb: 100
 
 # MongoDB Configuration

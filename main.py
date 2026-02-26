@@ -112,7 +112,8 @@ def create_app(
         logger.info("认证中间件已禁用")
 
     # 挂载静态文件
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    static_dir = settings.static_base_dir
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     return app
 
