@@ -1,0 +1,101 @@
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+
+# Uvicorn Settings
+uvicorn:
+  limit_concurrency: 1000
+  limit_max_requests: 10000
+  timeout_keep_alive: 5
+
+# CORS Settings
+cors:
+  origins:
+    - "*"
+  allow_any_origin: true
+
+# Pagination Settings
+pagination:
+  default_size: 2000
+  max_size: 8000
+  min_size: 1
+
+# User Settings
+default_user:
+  id: "default_user"
+
+# Static Files Settings
+static:
+  base_dir: "/var/www/YiKnowledge/static"
+  base_url: "https://api.effiy.cn/static"
+  max_zip_size_mb: 100
+
+# MongoDB Configuration
+mongodb:
+  url: "mongodb://localhost:27017"
+  db_name: "ruiyi"
+  pool_size: 10
+  max_pool_size: 50
+
+# Database Collections
+collection:
+  sessions: "sessions"
+  rss: "rss"
+  chat_records: "chat_records"
+  pet_data_sync: "pet_data_sync"
+  seeds: "seeds"
+  oss_file_tags: "oss_file_tags"
+  oss_file_info: "oss_file_info"
+
+# OSS (Object Storage Service) Configuration
+oss:
+  access_key: ""
+  secret_key: ""
+  endpoint: ""
+  bucket: ""
+  domain: ""
+  max_file_size_mb: 50
+  allowed_extensions:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".gif"
+    - ".pdf"
+    - ".doc"
+    - ".docx"
+    - ".epub"
+    - ".md"
+
+# RSS Scheduler Configuration
+rss:
+  scheduler_enabled: true
+  scheduler_interval: 3600
+
+# Startup Tasks
+startup:
+  init_database: true
+  init_rss_system: true
+
+# Middleware Configuration
+middleware:
+  auth_enabled: true
+  auth_token: "dev-token-change-me"
+
+# Module Execution Settings
+module:
+  allowlist:
+    - "*"
+
+# Ollama Configuration
+ollama:
+  url: "http://localhost:11434"
+  auth: ""
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  datefmt: "%Y-%m-%d %H:%M:%S"
+  propagate_uvicorn: false
