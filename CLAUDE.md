@@ -23,82 +23,66 @@ Server runs at http://localhost:8000 with auto-reload enabled. API docs availabl
 | Command | Purpose |
 |---------|---------|
 | `python main.py` | Start development server |
-| `python scripts/rss_manager.py --list` | List RSS feeds |
-| `python scripts/rss_manager.py --add <url>` | Add RSS feed |
-| `python scripts/import_dir_to_sessions.py --dir <path>` | Import directory to sessions |
+| `python -m pytest tests/ -v` | Run all tests |
+| `python -m pytest tests/test_core/test_config.py -v` | Run specific test file |
+| `python -m pytest tests/test_core/test_config.py::test_config_loaded -v` | Run single test |
 
 ## Architecture
 
 ### High-Level Structure
 
 ```
-main.py (FastAPI entry)
-├── api/routes/          # API endpoints
-│   ├── debug.py         # Debug/health endpoints
-│   ├── execution.py     # Dynamic module execution
-│   ├── upload.py        # File upload
-│   └── wework.py        # WeWork integration
-├── core/                 # Core infrastructure
-│   ├── settings.py      # Config (YAML + env vars)
-│   ├── database.py      # MongoDB singleton
-│   ├── logger.py        # Logging setup
-│   ├── exceptions.py    # Custom exceptions
-│   ├── response.py      # Unified response format
-│   └── schemas.py       # Pydantic models
-└── services/             # Business logic
-    ├── execution/       # Module executor
-    ├── rss/             # RSS feed management
-    ├── ai/              # Ollama chat service
-    ├── storage/         # OSS storage
-    ├── static/          # Static file service
-    └── database/        # Data access
+main.py (FastAPI entry, compatibility wrapper)
+├── src/
+│   ├── main.py (FastAPI application factory & lifecycle)
+│   ├── api/routes/          # API endpoints
+│   │   ├── debug.py         # Debug/health endpoints
+│   │   ├── execution.py     # Dynamic module execution
+│   │   ├── upload.py        # File upload
+│   │   ├── wework.py        # WeWork integration
+│   │   └── maintenance.py   # Maintenance endpoints
+│   ├── core/                 # Core infrastructure
+│   │   ├── config.py        # Config (YAML + env vars)
+│   │   ├── database.py      # MongoDB singleton
+│   │   ├── logger.py        # Logging setup
+│   │   ├── exceptions.py    # Custom exceptions
+│   │   ├── response.py      # Unified response format
+│   │   ├── middleware.py    # Authentication middleware
+│   │   └── exception_handler.py # Exception handlers
+│   ├── models/               # Pydantic models & collections
+│   └── services/             # Business logic
+│       ├── execution/       # Module executor
+│       ├── rss/             # RSS feed management
+│       ├── ai/              # Ollama chat service
+│       ├── storage/         # OSS storage
+│       ├── static/          # Static file service
+│       └── database/        # Data access
+├── config.yaml             # Configuration file
+└── tests/                  # Tests directory
 ```
 
 ### Key Architectural Patterns
 
-1. **Module Execution Engine**: `/execution` endpoint allows dynamic execution of any whitelisted module method via GET/POST. Supports sync/async functions and SSE streaming.
+1. **Module Execution Engine**: `/execution` endpoint allows dynamic execution of any whitelisted module method via GET/POST. Supports sync/async functions, generators, async generators, and SSE streaming.
 
 2. **Configuration System**: Uses Pydantic Settings with YAML config file (`config.yaml`) + environment variable override. Nested YAML keys are flattened to snake_case (e.g., `server.host` → `server_host`).
 
-3. **Database**: MongoDB singleton via Motor async driver. Access via `core.database.db` instance.
+3. **Database**: MongoDB singleton via Motor async driver. Access via `core.database.db` global instance.
 
-4. **Lifecycle Management**: FastAPI lifespan manages MongoDB connection and RSS scheduler startup/shutdown.
-
-## Important Modules
-
-### Module Execution (`services.execution.executor`)
-
-- Whitelist controlled via `config.yaml` > `module.allowlist`
-- Supports async/sync functions, generators, async generators
-- Auto-detects function type and handles appropriately
-- Parameters can be dict or JSON string
-
-**Example**:
-```python
-await execute_module(
-    module_path="module.path",
-    function_name="function_name",
-    parameters={"key": "value"}
-)
-```
-
-### RSS Service (`services.rss`)
-
-- `rss_scheduler.py`: APScheduler-based polling
-- `feed_service.py`: Feed parsing and storage
-- Runs automatically on startup if `startup.init_rss_system = true`
+4. **Lifecycle Management**: FastAPI lifespan manages MongoDB connection and RSS scheduler startup/shutdown in `src/main.py`.
 
 ## Configuration
 
 - Primary config: `config.yaml`
 - Environment variables override YAML config (uppercase, snake_case)
-- Access via `core.settings.settings` singleton
+- Access via `core.config.settings` singleton
 
 **Important Configs**:
 - `module.allowlist`: Module execution whitelist (use `["*"]` for all)
 - `mongodb.url`: MongoDB connection string
 - `static.base_dir`: Static file directory
 - `rss.scheduler_interval`: RSS poll interval in seconds
+- `middleware.auth_enabled`: Enable/disable token authentication
 
 ## Database Collections
 
@@ -117,14 +101,44 @@ await execute_module(
 | GET | `/debug/info` | System info |
 | GET | `/debug/health` | Health check |
 
-## Data Flow Example: Module Execution
+## Module Execution (`services.execution.executor`)
 
+The execution engine is the core of YiAi's extensibility:
+
+- Whitelist controlled via `config.yaml` > `module.allowlist`
+- Supports async/sync functions, generators, async generators
+- Auto-detects function type and handles appropriately
+- Parameters can be dict or JSON string
+- SSE streaming for generator functions
+
+**Example**:
+```python
+await execute_module(
+    module_path="module.path",
+    function_name="function_name",
+    parameters={"key": "value"}
+)
 ```
-Request → api/routes/execution.py
-         ↓
-services/execution/executor.py (validate whitelist, import module)
-         ↓
-Target service function
-         ↓
-Response (JSON or SSE stream)
+
+## Entry Points
+
+- **Root `main.py`**: Compatibility wrapper that adds `src/` to path and imports from `src.main`
+- **`src/main.py`**: Actual FastAPI application with `create_app()` factory and default `app` instance
+- **Both files** can be used interchangeably to run the server
+
+## Testing
+
+Tests use pytest. Run from project root:
+
+```bash
+# All tests
+python -m pytest tests/ -v
+
+# Specific test file
+python -m pytest tests/test_core/test_config.py -v
+
+# Single test
+python -m pytest tests/test_core/test_config.py::test_config_loaded -v
 ```
+
+Test fixtures in `tests/conftest.py` configure the test environment.
