@@ -34,7 +34,6 @@ main.py (FastAPI entry, compatibility wrapper)
 ├── src/
 │   ├── main.py (FastAPI application factory & lifecycle)
 │   ├── api/routes/          # API endpoints
-│   │   ├── debug.py         # Debug/health endpoints
 │   │   ├── execution.py     # Dynamic module execution
 │   │   ├── upload.py        # File upload
 │   │   ├── wework.py        # WeWork integration
@@ -96,8 +95,6 @@ main.py (FastAPI entry, compatibility wrapper)
 |--------|------|-------------|
 | GET/POST | `/execution` | Execute module method |
 | POST | `/upload` | Upload files |
-| GET | `/debug/info` | System info |
-| GET | `/debug/health` | Health check |
 
 ## Module Execution (`services.execution.executor`)
 
