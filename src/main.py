@@ -21,7 +21,7 @@ from core.config import settings
 from core.middleware import header_verification_middleware
 from core.logger import setup_logging
 from core.exception_handler import register_exception_handlers
-from api.routes import debug, upload, execution, wework, maintenance
+from api.routes import upload, execution, wework, maintenance
 
 # 导入服务模块
 from services.rss.rss_scheduler import init_rss_system, shutdown_rss_system
@@ -88,7 +88,6 @@ def create_app(
     register_exception_handlers(app)
 
     # 注册 API 路由
-    app.include_router(debug.router, tags=["Debug"])
     app.include_router(upload.router, tags=["Upload"])
     app.include_router(execution.router, tags=["Execution"])
     app.include_router(wework.router, tags=["WeWork"])
