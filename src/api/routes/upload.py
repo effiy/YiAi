@@ -3,6 +3,7 @@ import base64
 import re
 import logging
 import shutil
+from datetime import datetime
 from fastapi import APIRouter
 from core.error_codes import ErrorCode
 from core.exceptions import BusinessException
@@ -78,6 +79,38 @@ def _safe_rename(old_path: str, new_path: str, is_dir: bool = False) -> tuple[st
 
     return abs_old, abs_new
 
+async def _upload_to_local_storage(content: bytes, filename: str, directory: str) -> dict:
+    """Upload image to local static storage"""
+    # Get file extension
+    safe_filename = (filename or "").strip() or "image.png"
+    file_ext = os.path.splitext(safe_filename)[1].lower() or ".png"
+
+    # Generate unique filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_filename = f"{timestamp}{file_ext}"
+
+    # Build paths
+    rel_dir = directory.strip("/")
+    rel_path = f"{rel_dir}/{unique_filename}"
+    abs_path = os.path.join(settings.static_base_dir, rel_path)
+
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+
+    # Write file
+    with open(abs_path, "wb") as f:
+        f.write(content)
+
+    # Build URL
+    static_url = f"{settings.static_base_url.rstrip('/')}/{rel_path}"
+
+    return {
+        "url": static_url,
+        "filename": safe_filename,
+        "object_name": rel_path
+    }
+
+
 @router.post("/upload-image-to-oss")
 @router.post("/upload/upload-image-to-oss")
 async def upload_image_to_oss(request: ImageUploadToOssRequest):
@@ -99,8 +132,15 @@ async def upload_image_to_oss(request: ImageUploadToOssRequest):
 
     filename = _normalize_no_spaces(request.filename)
     directory = _normalize_no_spaces(request.directory or "aicr")
-    result = await upload_bytes_to_oss(content, filename, directory=directory)
-    return success(data=result)
+
+    # Try OSS first, fall back to local storage if OSS not configured
+    try:
+        result = await upload_bytes_to_oss(content, filename, directory=directory)
+        return success(data=result)
+    except Exception as e:
+        logger.warning(f"OSS upload failed, falling back to local storage: {e}")
+        result = await _upload_to_local_storage(content, filename, directory)
+        return success(data=result)
 
 @router.post("/read-file")
 async def read_file(request: FileReadRequest):

@@ -27,13 +27,18 @@ class OSSConfig:
 def get_bucket(config: OSSConfig) -> oss2.Bucket:
     """
     构建 Bucket 客户端
-    
+
     Args:
         config: OSS 配置对象
-        
+
     Returns:
         oss2.Bucket: OSS Bucket 实例
+
+    Raises:
+        RuntimeError: If OSS configuration is incomplete
     """
+    if not all([config.access_key_id, config.access_key_secret, config.endpoint, config.bucket_name]):
+        raise RuntimeError("OSS configuration is incomplete")
     auth = oss2.Auth(config.access_key_id, config.access_key_secret)
     return oss2.Bucket(auth, config.endpoint, config.bucket_name)
 
@@ -59,11 +64,11 @@ async def upload_file_to_oss(
     """上传文件到 OSS（参数校验、大小限制、返回可访问地址）"""
     config = OSSConfig()
     bucket = get_bucket(config)
-    
+
     ALLOWED_EXTENSIONS = set(ext.lower() for ext in settings.oss_allowed_extensions)
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename required")
-    
+
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_ext}")
@@ -77,7 +82,7 @@ async def upload_file_to_oss(
 
     bucket.put_object(object_name, content)
     file_url = build_oss_url(config.bucket_name, config.endpoint, object_name)
-    
+
     return {
         "url": file_url,
         "filename": file.filename,
