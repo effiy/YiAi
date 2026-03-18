@@ -45,8 +45,12 @@ main.py (FastAPI 入口，兼容性包装器)
 │   │   ├── exceptions.py    # 自定义异常
 │   │   ├── response.py      # 统一响应格式
 │   │   ├── middleware.py    # 认证中间件
-│   │   └── exception_handler.py # 异常处理器
+│   │   ├── exception_handler.py # 异常处理器
+│   │   ├── error_codes.py   # 错误码定义
+│   │   └── utils.py         # 工具函数
 │   ├── models/               # Pydantic 模型与集合
+│   │   ├── schemas.py       # Pydantic 模式
+│   │   └── collections.py   # 集合定义
 │   └── services/             # 业务逻辑
 │       ├── execution/       # 模块执行器
 │       ├── rss/             # RSS 源管理
@@ -55,6 +59,7 @@ main.py (FastAPI 入口，兼容性包装器)
 │       ├── static/          # 静态文件服务
 │       └── database/        # 数据访问
 ├── config.yaml             # 配置文件
+├── docs/                   # 详细文档目录
 └── tests/                  # 测试目录（如果存在）
 ```
 
@@ -67,6 +72,8 @@ main.py (FastAPI 入口，兼容性包装器)
 3. **数据库**：通过 Motor 异步驱动实现 MongoDB 单例。通过 `core.database.db` 全局实例访问。
 
 4. **生命周期管理**：FastAPI 生命周期在 `src/main.py` 中管理 MongoDB 连接和 RSS 调度器的启动/关闭。
+
+5. **双重存储策略**：文件上传功能支持 OSS 云存储和本地静态存储两种模式，自动 fallback。
 
 ## 配置
 
@@ -81,6 +88,8 @@ main.py (FastAPI 入口，兼容性包装器)
 - `rss.scheduler_interval`：RSS 轮询间隔（秒）
 - `middleware.auth_enabled`：启用/禁用令牌认证
 
+详细的配置说明请参考 [docs/配置指南.md](docs/配置指南.md)。
+
 ## 数据库集合
 
 - `sessions`：用户会话
@@ -88,13 +97,28 @@ main.py (FastAPI 入口，兼容性包装器)
 - `chat_records`：聊天历史
 - `oss_file_info`：文件元数据
 - `oss_file_tags`：文件标签
+- `pet_data_sync`：宠物数据同步（可选）
+- `seeds`：种子数据（可选）
+
+详细的数据库集合说明请参考 [docs/数据库集合.md](docs/数据库集合.md)。
 
 ## API 端点
 
 | 方法 | 路径 | 描述 |
 |--------|------|-------------|
 | GET/POST | `/execution` | 执行模块方法 |
-| POST | `/upload` | 上传文件 |
+| POST | `/upload` | 通用文件上传 |
+| POST | `/upload-image-to-oss` | 图片上传到 OSS |
+| POST | `/read-file` | 读取文件内容 |
+| POST | `/write-file` | 写入文件 |
+| POST | `/delete-file` | 删除文件 |
+| POST | `/delete-folder` | 删除文件夹 |
+| POST | `/rename-file` | 重命名文件 |
+| POST | `/rename-folder` | 重命名文件夹 |
+| POST | `/wework/send-message` | 发送消息到企业微信 |
+| POST | `/cleanup-unused-images` | 清理未引用的图片 |
+
+详细的 API 端点文档请参考 [docs/API端点.md](docs/API端点.md)。
 
 ## 模块执行（`services.execution.executor`）
 
@@ -115,8 +139,19 @@ await execute_module(
 )
 ```
 
+详细的模块执行说明请参考 [docs/核心功能/动态模块执行引擎.md](docs/核心功能/动态模块执行引擎.md)。
+
 ## 入口点
 
 - **根目录 `main.py`**：兼容性包装器，将 `src/` 添加到路径并从 `src.main` 导入
 - **`src/main.py`**：实际的 FastAPI 应用，包含 `create_app()` 工厂和默认 `app` 实例
 - **两个文件** 可以互换使用来运行服务器
+
+## 详细文档
+
+更多详细文档请参考 `docs/` 目录：
+
+- [docs/README.md](docs/README.md) - 项目文档首页
+- [docs/核心功能/](docs/核心功能/) - 核心功能详细介绍
+- [docs/开发规范/](docs/开发规范/) - 开发规范指南
+- [docs/架构设计.md](docs/架构设计.md) - 架构设计详解
