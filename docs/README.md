@@ -252,62 +252,20 @@ erDiagram
 
 YiAi 提供丰富的 REST API 端点，涵盖模块执行、文件管理、企业微信集成和系统维护等功能。
 
-### ⚡ 执行模块 API
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/execution` | 通过 URL 查询参数执行模块方法 |
-| POST | `/execution` | 通过 JSON 请求体执行模块方法 |
-
-**功能特点**：
-- 支持同步/异步函数、生成器、异步生成器
-- 自动 SSE 流式传输（生成器函数）
-- 白名单安全控制机制
-- 支持字典或 JSON 字符串参数
-
-### 📤 文件上传与管理 API
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | `/upload` | 通用文件上传（JSON 方式） |
-| POST | `/upload-image-to-oss` | 图片上传到 OSS（支持本地 fallback） |
-| POST | `/read-file` | 读取文件内容 |
-| POST | `/write-file` | 写入文件 |
-| POST | `/delete-file` | 删除文件 |
-| POST | `/delete-folder` | 删除文件夹 |
-| POST | `/rename-file` | 重命名文件 |
-| POST | `/rename-folder` | 重命名文件夹 |
-
-**功能特点**：
-- 双重存储：AliCloud OSS + 本地静态存储自动 fallback
-- 支持图片、文档等多种文件类型
-- Base64 编码上传支持
-- 路径安全防护（防路径遍历）
-
-### 🏢 企业微信 API
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | `/wework/send-message` | 发送消息到企业微信机器人 |
-
-**功能特点**：
-- Webhook 集成
-- 格式验证
-- 超时控制
-- 完善的错误处理
-
-### 🔧 维护工具 API
-
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | `/cleanup-unused-images` | 清理未引用的图片 |
-
-**功能特点**：
-- 扫描静态图片文件
-- 检测数据库引用关系
-- Dry-run 预览模式
-- 可清理无效会话数据
-- 空间释放统计
+| 分类 | 请求路径 | 说明 |
+|------|---------|------|
+| 执行模块 | GET `/execution` | 通过 URL 查询参数执行模块方法 |
+| 执行模块 | POST `/execution` | 通过 JSON 请求体执行模块方法 |
+| 文件上传与管理 | POST `/upload` | 通用文件上传（JSON 方式） |
+| 文件上传与管理 | POST `/upload-image-to-oss` | 图片上传到 OSS（支持本地 fallback） |
+| 文件上传与管理 | POST `/read-file` | 读取文件内容 |
+| 文件上传与管理 | POST `/write-file` | 写入文件 |
+| 文件上传与管理 | POST `/delete-file` | 删除文件 |
+| 文件上传与管理 | POST `/delete-folder` | 删除文件夹 |
+| 文件上传与管理 | POST `/rename-file` | 重命名文件 |
+| 文件上传与管理 | POST `/rename-folder` | 重命名文件夹 |
+| 企业微信 | POST `/wework/send-message` | 发送消息到企业微信机器人 |
+| 维护工具 | POST `/cleanup-unused-images` | 清理未引用的图片 |
 
 ---
 
