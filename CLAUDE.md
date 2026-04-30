@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在使用此仓库代码时提供指导。
+> **重要**：这是 Claude Code 的"长期记忆"和"操作指南"。在执行任何任务前，请先阅读此文件。
 
 ## 项目概述
 
@@ -16,7 +16,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-服务器运行在 http://localhost:8000，已启用自动重载。API 文档可通过 /docs 和 /redoc 访问。
+服务器运行在 https://api.effiy.cn，已启用自动重载。API 文档可通过 /docs 和 /redoc 访问。
 
 ## 关键命令
 
@@ -24,6 +24,116 @@ python main.py
 |---------|---------|
 | `python main.py` | 启动开发服务器 |
 | `python -m pytest tests/ -v` | 运行所有测试（如果存在测试） |
+
+---
+
+## 代码风格与规范
+
+### Python 代码风格
+
+- **代码格式化**：使用 Ruff 进行格式化和 linting
+- **命名约定**：
+  - 模块/文件：snake_case（如 `chat_service.py`）
+  - 类名：CapWords（如 `ChatService`）
+  - 函数/方法：snake_case（如 `send_message()`）
+  - 常量：UPPER_SNAKE_CASE（如 `MAX_RETRIES`）
+- **类型注解**：所有函数参数和返回值都应有类型注解
+- **文档字符串**：使用 Google 风格的 docstring
+
+**示例**：
+```python
+from typing import Optional, List
+from pydantic import BaseModel
+
+class Message(BaseModel):
+    content: str
+    role: str = "user"
+
+class ChatService:
+    """AI 聊天服务类"""
+    
+    async def send_message(
+        self,
+        message: Message,
+        user_id: Optional[str] = None
+    ) -> List[Message]:
+        """发送消息到 AI 服务并获取回复
+        
+        Args:
+            message: 消息对象
+            user_id: 可选的用户 ID
+            
+        Returns:
+            消息列表，包含用户消息和 AI 回复
+        """
+        pass
+```
+
+### Git 提交规范
+
+- 使用现在时态（"Add feature" 而非 "Added feature"）
+- 描述要清晰具体
+- 格式：`<type>(<scope>): <subject>`
+  - type: feat, fix, docs, style, refactor, test, chore
+
+**示例**：
+```
+feat(chat): add streaming support for AI responses
+fix(rss): handle feed parsing errors gracefully
+docs: update API documentation for upload endpoints
+```
+
+---
+
+## 开发工作流
+
+### 添加新功能
+
+1. **阅读规格**：查看 `specs/features/` 下的功能规格（如果存在）
+2. **设计方案**：确认架构设计，必要时更新 `docs/架构设计.md`
+3. **实现代码**：
+   - API 路由：`src/api/routes/`
+   - 业务逻辑：`src/services/`
+   - 数据模型：`src/models/schemas.py`
+4. **测试验证**：确保现有功能不受影响
+5. **更新文档**：更新相关文档和 CLAUDE.md（如需要）
+
+### 修复 Bug
+
+1. **理解问题**：确认 bug 的具体表现和影响范围
+2. **定位代码**：找到相关代码位置
+3. **编写修复**：修复问题并添加注释说明原因
+4. **验证修复**：测试确认问题已解决
+
+### 代码审查要点
+
+- 遵循代码风格规范
+- 有适当的类型注解和文档字符串
+- 没有引入安全漏洞
+- 错误处理适当
+- 日志记录合理
+
+---
+
+## AI Coding 配置
+
+### 自定义技能
+
+项目特定技能位于 `.claude/skills/` 目录，Claude Code 会自动加载。
+
+### 规格说明
+
+详细的功能规格、API 规格和架构规格位于 `specs/` 目录。
+
+### MCP 服务器
+
+MCP (Model Context Protocol) 配置位于 `mcp/` 目录，可扩展 Claude 的上下文访问能力。
+
+### 记忆目录
+
+`.claude/memory/` 目录用于持久化对话记忆，**不提交到 Git**。
+
+---
 
 ## 架构
 
@@ -88,7 +198,7 @@ main.py (FastAPI 入口，兼容性包装器)
 - `rss.scheduler_interval`：RSS 轮询间隔（秒）
 - `middleware.auth_enabled`：启用/禁用令牌认证
 
-详细的配置说明请参考 [docs/配置指南.md](docs/配置指南.md)。
+详细的配置说明请参考 [02-项目文档/配置指南.md](02-项目文档/配置指南.md)。
 
 ## 数据库集合
 
@@ -100,7 +210,7 @@ main.py (FastAPI 入口，兼容性包装器)
 - `pet_data_sync`：宠物数据同步（可选）
 - `seeds`：种子数据（可选）
 
-详细的数据库集合说明请参考 [docs/数据库集合.md](docs/数据库集合.md)。
+详细的数据库集合说明请参考 [02-项目文档/22_数据集合/](02-项目文档/22_数据集合/)。
 
 ## API 端点
 
@@ -118,7 +228,7 @@ main.py (FastAPI 入口，兼容性包装器)
 | POST | `/wework/send-message` | 发送消息到企业微信 |
 | POST | `/cleanup-unused-images` | 清理未引用的图片 |
 
-详细的 API 端点文档请参考 [docs/API端点.md](docs/API端点.md)。
+详细的 API 端点文档请参考 [02-项目文档/24_接口请求/](02-项目文档/24_接口请求/)。
 
 ## 模块执行（`services.execution.executor`）
 
@@ -139,7 +249,7 @@ await execute_module(
 )
 ```
 
-详细的模块执行说明请参考 [docs/核心功能/动态模块执行引擎.md](docs/核心功能/动态模块执行引擎.md)。
+详细的模块执行说明请参考 [02-项目文档/21_核心功能/动态执行/模块执行引擎.md](02-项目文档/21_核心功能/动态执行/模块执行引擎.md)。
 
 ## 入口点
 
@@ -151,7 +261,7 @@ await execute_module(
 
 更多详细文档请参考 `docs/` 目录：
 
-- [docs/README.md](docs/README.md) - 项目文档首页
-- [docs/核心功能/](docs/核心功能/) - 核心功能详细介绍
-- [docs/开发规范/](docs/开发规范/) - 开发规范指南
-- [docs/架构设计.md](docs/架构设计.md) - 架构设计详解
+- [02-项目文档/README.md](02-项目文档/README.md) - 项目文档首页
+- [02-项目文档/21_核心功能/](02-项目文档/21_核心功能/) - 核心功能详细介绍
+- [01-项目规范/12_开发规范/](01-项目规范/12_开发规范/) - 开发规范指南
+- [02-项目文档/架构设计.md](02-项目文档/架构设计.md) - 架构设计详解

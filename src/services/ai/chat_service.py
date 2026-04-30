@@ -107,10 +107,10 @@ class OllamaService:
         else:
             return Client(host=self.ollama_url)
 
-    def generate_response(self, 
-                          system_prompt: str = "你是一个有用的AI助手。", 
-                          user_content: str = "", 
-                          model_name: str = "qwen3",
+    def generate_response(self,
+                          system_prompt: str = "你是一个有用的AI助手。",
+                          user_content: str = "",
+                          model_name: str = "qwen3.5",
                           images: Optional[List[bytes]] = None,
                           max_retries: int = 2) -> Dict[str, Any]:
         """
@@ -153,6 +153,41 @@ class OllamaService:
             "model": model_name
         }
 
+    def list_models(self) -> Dict[str, Any]:
+        """
+        获取 Ollama 服务端可用模型列表
+
+        Returns:
+            Dict[str, Any]: 包含模型列表的字典
+                - success: bool - 是否成功
+                - models: List[Dict] - 模型列表 (成功时)
+                - error: str - 错误信息 (失败时)
+        """
+        client = self._get_client()
+        try:
+            logger.debug("调用 Ollama list models API")
+            response = client.list()
+
+            # 兼容字典和对象两种响应格式
+            models = []
+            if isinstance(response, dict):
+                models = response.get('models', [])
+            elif hasattr(response, 'models'):
+                models = response.models
+
+            logger.info(f"成功获取 Ollama 模型列表，共 {len(models)} 个模型")
+            return {
+                "success": True,
+                "models": models
+            }
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"获取 Ollama 模型列表失败: {error_msg}")
+            return {
+                "success": False,
+                "error": error_msg
+            }
+
 async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
     """
     结构化对话接口
@@ -172,7 +207,7 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
     service = OllamaService()
     system_prompt = params.get("system", "你是一个有用的AI助手。")
     user_content = params.get("user", "")
-    model_name = params.get("model", "qwen3")
+    model_name = params.get("model", "qwen3.5")
     stream = params.get("stream") is True
     images_param = params.get("images")
     has_images_param = isinstance(images_param, list) and any(isinstance(x, str) and x.strip() for x in images_param)
@@ -230,3 +265,29 @@ async def chat(params: Dict[str, Any]) -> Dict[str, Any]:
             yield {"data": {"message": item}}
 
     return gen()
+
+
+async def list_ollama_models(params: Dict[str, Any] = None) -> Dict[str, Any]:
+    """
+    获取 Ollama 可用模型列表（异步模块函数）
+
+    通过模块执行引擎调用此函数来获取 Ollama 服务端已安装的模型列表。
+
+    Args:
+        params: 参数字典 (可选，当前版本暂不使用)
+
+    Returns:
+        Dict[str, Any]: 模型列表响应，格式同 OllamaService.list_models()
+
+    Example:
+        GET /?module_name=services.ai.chat_service&method_name=list_ollama_models&parameters=%7B%7D
+    """
+    logger.debug("执行 list_ollama_models")
+    service = OllamaService()
+    loop = asyncio.get_running_loop()
+
+    # 使用线程池执行同步方法，避免阻塞事件循环
+    return await loop.run_in_executor(
+        None,
+        service.list_models
+    )

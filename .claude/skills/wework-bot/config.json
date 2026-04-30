@@ -1,0 +1,26 @@
+{
+  "default_robot": "general",
+  "api_url": "https://api.effiy.cn/wework/send-message",
+  "robots": {
+    "general": {
+      "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=80bcaa68-6511-4766-bfb3-510291371090"
+    }
+  },
+  "agents": {
+    "generate-document": "general",
+    "import-docs": "general",
+    "wework-bot": "general",
+    "implement-code": "general",
+    "planner": "general",
+    "architect": "general",
+    "code-reviewer": "general",
+    "security-reviewer": "general",
+    "doc-reviewer": "general",
+    "doc-updater": "general",
+    "docs-lookup": "general",
+    "e2e-tester": "general",
+    "impl-reporter": "general",
+    "message-pusher": "general",
+    "test-page-builder": "general"
+  }
+}

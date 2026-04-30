@@ -57,7 +57,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-服务器将在 http://localhost:8000 启动，已启用自动重载。
+服务器将在 https://api.effiy.cn 启动，已启用自动重载。
 
 API 文档可通过 /docs 和 /redoc 访问。
 
@@ -103,4 +103,4 @@ API 文档可通过 /docs 和 /redoc 访问。
 
 ## 📖 更多信息
 
-关于项目的更多详细信息，请参考 [CLAUDE.md](CLAUDE.md) 和 [docs/](docs/) 目录下的文档。
+关于项目的更多详细信息，请参考 [CLAUDE.md](CLAUDE.md) 和 [02-项目文档/](02-项目文档/) 目录下的文档。
