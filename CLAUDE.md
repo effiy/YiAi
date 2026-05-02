@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+> 行为规范见 .claude/shared/behavioral-guidelines.md
+> 项目架构约定见 docs/architecture.md
+
 > **重要**：这是 Claude Code 的"长期记忆"和"操作指南"。在执行任何任务前，请先阅读此文件。
 
 ## 项目概述
@@ -16,7 +19,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-服务器运行在 https://api.effiy.cn，已启用自动重载。API 文档可通过 /docs 和 /redoc 访问。
+服务器运行在 http://0.0.0.0:8000，已启用自动重载。API 文档可通过 /docs 和 /redoc 访问。
 
 ## 关键命令
 
@@ -51,18 +54,18 @@ class Message(BaseModel):
 
 class ChatService:
     """AI 聊天服务类"""
-    
+
     async def send_message(
         self,
         message: Message,
         user_id: Optional[str] = None
     ) -> List[Message]:
         """发送消息到 AI 服务并获取回复
-        
+
         Args:
             message: 消息对象
             user_id: 可选的用户 ID
-            
+
         Returns:
             消息列表，包含用户消息和 AI 回复
         """
@@ -198,7 +201,7 @@ main.py (FastAPI 入口，兼容性包装器)
 - `rss.scheduler_interval`：RSS 轮询间隔（秒）
 - `middleware.auth_enabled`：启用/禁用令牌认证
 
-详细的配置说明请参考 [02-项目文档/配置指南.md](02-项目文档/配置指南.md)。
+详细的配置说明请参考 [docs/架构设计.md](docs/architecture.md)。
 
 ## 数据库集合
 
@@ -210,7 +213,7 @@ main.py (FastAPI 入口，兼容性包装器)
 - `pet_data_sync`：宠物数据同步（可选）
 - `seeds`：种子数据（可选）
 
-详细的数据库集合说明请参考 [02-项目文档/22_数据集合/](02-项目文档/22_数据集合/)。
+详细的数据库集合说明请参考 docs/ 目录下的相关文档。
 
 ## API 端点
 
@@ -228,7 +231,7 @@ main.py (FastAPI 入口，兼容性包装器)
 | POST | `/wework/send-message` | 发送消息到企业微信 |
 | POST | `/cleanup-unused-images` | 清理未引用的图片 |
 
-详细的 API 端点文档请参考 [02-项目文档/24_接口请求/](02-项目文档/24_接口请求/)。
+详细的 API 端点文档请参考 docs/ 目录下的相关文档。
 
 ## 模块执行（`services.execution.executor`）
 
@@ -249,8 +252,6 @@ await execute_module(
 )
 ```
 
-详细的模块执行说明请参考 [02-项目文档/21_核心功能/动态执行/模块执行引擎.md](02-项目文档/21_核心功能/动态执行/模块执行引擎.md)。
-
 ## 入口点
 
 - **根目录 `main.py`**：兼容性包装器，将 `src/` 添加到路径并从 `src.main` 导入
@@ -261,7 +262,11 @@ await execute_module(
 
 更多详细文档请参考 `docs/` 目录：
 
-- [02-项目文档/README.md](02-项目文档/README.md) - 项目文档首页
-- [02-项目文档/21_核心功能/](02-项目文档/21_核心功能/) - 核心功能详细介绍
-- [01-项目规范/12_开发规范/](01-项目规范/12_开发规范/) - 开发规范指南
-- [02-项目文档/架构设计.md](02-项目文档/架构设计.md) - 架构设计详解
+- [docs/architecture.md](docs/architecture.md) - 架构设计
+- [docs/changelog.md](docs/changelog.md) - 变更日志
+- [docs/devops.md](docs/devops.md) - 构建与运维
+- [docs/network.md](docs/network.md) - 网络请求约定
+- [docs/state-management.md](docs/state-management.md) - 状态管理
+- [docs/FAQ.md](docs/FAQ.md) - 常见问题
+- [docs/auth.md](docs/auth.md) - 认证鉴权
+- [docs/security.md](docs/security.md) - 安全策略

@@ -39,7 +39,7 @@ def _stream_sync(gen: Iterator[Any]):
     finally:
         yield _format_sse({"done": True})
 
-@router.get("/")
+@router.get("/", operation_id="execute_module_get")
 async def execute_module_via_get(
     module_name: str = "",
     method_name: str = "",
@@ -63,7 +63,7 @@ async def execute_module_via_get(
         )
     return success(data=result)
 
-@router.post("/")
+@router.post("/", operation_id="execute_module_post")
 async def execute_module_via_post(request: ExecuteRequest):
     """
     POST 方式执行指定模块方法

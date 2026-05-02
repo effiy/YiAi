@@ -230,8 +230,8 @@ async def cleanup_sessions_with_missing_images(
     return cleaned_count
 
 
-@router.post("/cleanup-unused-images")
-@router.post("/maintenance/cleanup-unused-images")
+@router.post("/cleanup-unused-images", operation_id="cleanup_unused_images")
+@router.post("/maintenance/cleanup-unused-images", operation_id="cleanup_unused_images_alt")
 async def cleanup_unused_images(request: CleanupRequest):
     """
     清理未引用的图片

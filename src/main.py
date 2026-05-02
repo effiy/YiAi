@@ -15,6 +15,7 @@ sys.path.append(os.getcwd())
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_mcp import FastApiMCP
 
 from core.database import db
 from core.config import settings
@@ -114,6 +115,16 @@ def create_app(
     # 挂载静态文件
     static_dir = settings.static_base_dir
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # 创建并挂载 MCP 服务器
+    mcp = FastApiMCP(
+        app,
+        name="YiAi MCP",
+        describe_all_responses=True,
+        describe_full_response_schema=True,
+        exclude_tags=["Maintenance"]
+    )
+    mcp.mount()
 
     return app
 

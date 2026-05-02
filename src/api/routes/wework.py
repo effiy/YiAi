@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/wework/send-message")
+@router.post("/wework/send-message", operation_id="send_wework_message")
 async def send_wework_message(request: WeWorkWebhookRequest):
     """
     发送消息到企业微信机器人

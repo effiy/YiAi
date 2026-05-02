@@ -16,3 +16,4 @@ oss2>=2.18.0
 python-multipart>=0.0.9
 aiofiles>=23.2.1
 tenacity>=8.2.3
+fastapi-mcp>=0.4.0

@@ -111,8 +111,8 @@ async def _upload_to_local_storage(content: bytes, filename: str, directory: str
     }
 
 
-@router.post("/upload-image-to-oss")
-@router.post("/upload/upload-image-to-oss")
+@router.post("/upload-image-to-oss", operation_id="upload_image_to_oss")
+@router.post("/upload/upload-image-to-oss", operation_id="upload_image_to_oss_alt")
 async def upload_image_to_oss(request: ImageUploadToOssRequest):
     raw = (request.data_url or "").strip()
     if not raw:
@@ -142,7 +142,7 @@ async def upload_image_to_oss(request: ImageUploadToOssRequest):
         result = await _upload_to_local_storage(content, filename, directory)
         return success(data=result)
 
-@router.post("/read-file")
+@router.post("/read-file", operation_id="read_file")
 async def read_file(request: FileReadRequest):
     """
     读取文件接口
@@ -198,7 +198,7 @@ async def read_file(request: FileReadRequest):
         logger.error(f"读取文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"读取文件失败: {str(e)}")
 
-@router.post("/write-file")
+@router.post("/write-file", operation_id="write_file")
 async def write_file(request: FileWriteRequest):
     """
     写入文件接口
@@ -224,7 +224,7 @@ async def write_file(request: FileWriteRequest):
         logger.error(f"写入文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"写入文件失败: {str(e)}")
 
-@router.post("/delete-file")
+@router.post("/delete-file", operation_id="delete_file")
 async def delete_file(request: FileDeleteRequest):
     """
     删除文件接口
@@ -249,7 +249,7 @@ async def delete_file(request: FileDeleteRequest):
 
     return success(data={"message": "删除成功", "path": target_file})
 
-@router.post("/delete-folder")
+@router.post("/delete-folder", operation_id="delete_folder")
 async def delete_folder(request: FolderDeleteRequest):
     """
     删除文件夹接口
@@ -274,7 +274,7 @@ async def delete_folder(request: FolderDeleteRequest):
 
     return success(data={"message": "删除成功", "path": target_dir})
 
-@router.post("/rename-file")
+@router.post("/rename-file", operation_id="rename_file")
 async def rename_file(request: FileRenameRequest):
     """
     重命名文件接口
@@ -294,7 +294,7 @@ async def rename_file(request: FileRenameRequest):
 
     return success(data={"message": "重命名成功", "old_path": old_path_str, "new_path": new_path_str})
 
-@router.post("/rename-folder")
+@router.post("/rename-folder", operation_id="rename_folder")
 async def rename_folder(request: FolderRenameRequest):
     """
     重命名文件夹接口
@@ -314,7 +314,7 @@ async def rename_folder(request: FolderRenameRequest):
 
     return success(data={"message": "重命名成功", "old_path": old_dir_str, "new_path": new_dir_str})
 
-@router.post("/upload")
+@router.post("/upload", operation_id="upload_file")
 async def upload_file(request: FileUploadRequest):
     """
     文件上传接口 (JSON 方式)
