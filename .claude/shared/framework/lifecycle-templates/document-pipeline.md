@@ -75,4 +75,10 @@ node .claude/skills/generate-document/scripts/self-improve.js \
 
 ### 6. Document Postscript
 
-Every generated document must append a "Postscript: Future Planning & Improvements" section at the end.
+Every generated document must append three sections at the end, in this order:
+
+1. **Postscript: Future Planning & Improvements**
+2. **Workflow Standardization Review** — mandatory four-question retrospective on the process used to produce this document. Format and extraction rules are defined in `skills/self-improving/rules/collection-contract.md` §3.
+3. **System Architecture Evolution Thinking** — mandatory architecture reflection for the feature covered by this document. Format and extraction rules are defined in `skills/self-improving/rules/collection-contract.md` §4.
+
+These sections are consumed by the `self-improving` skill for weekly aggregation.

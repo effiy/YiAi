@@ -30,8 +30,8 @@ paths:
 | 2 | Upstream Grounding + Impact Analysis | Read upstream documents, `doc-impact-analyzer` impact chain closure (init: scan project code and config) | Fact-source mapping complete, impact chain written into document |
 | 3 | Expert Generation | `codes-builder` + `doc-architect` (init: infer architecture pattern) | Module division, interface specifications confirmed |
 | 4 | Per-Document Generation + Self-Check | Generate documents according to specifications; three-layer review gate + `doc-quality-tracker` | 01-05, 07 generated, gate passed |
-| 5 | Save + Knowledge Curation + Memory Persistence | Save documents, `docs-builder` curate knowledge, **`execution-memory.js` write this session's record** | Documents saved, execution memory appended |
-| 6 | Document Sync and Notification + Self-Improvement | **`import-docs` first, then `wework-bot`**; `weekly` command completion triggers `self-improve.js` | import-docs recorded real result, wework-bot sent, weekly contains self-improvement proposal |
+| 5 | Save + Knowledge Curation + Memory Persistence | Save documents, `docs-builder` curate knowledge, **`execution-memory.js` write this session's record**; verify every document ends with Workflow Standardization Review + System Architecture Evolution Thinking | Documents saved, execution memory appended, self-improvement sections present |
+| 6 | Document Sync and Notification + Self-Improvement | **`import-docs` first, then `wework-bot`**; `weekly` command triggers `self-improve.js` **and** `self-improving` aggregate | import-docs recorded real result, wework-bot sent, weekly contains self-improvement proposal + aggregate |
 
 ### 2.2 Update Mode (Jump by Change Level)
 
@@ -116,10 +116,16 @@ Record content must include: feature fingerprint, actual change level, invoked a
 
 ## 9. Self-Improvement Trigger (weekly Command)
 
-`weekly` command after stage 6 completes, must automatically trigger `self-improve.js`:
+`weekly` command after stage 6 completes, must automatically trigger two flows:
 
-```bash
-node skills/generate-document/scripts/self-improve.js --since <this Monday's date> --output docs/weekly/<week>/self-improve-proposal.md
-```
+1. **Execution-memory analysis**:
+   ```bash
+   node skills/generate-document/scripts/self-improve.js --since <this Monday's date> --output docs/weekly/<week>/self-improve-proposal.md
+   ```
+   Output appended to the end of weekly report as "System Self-Improvement Proposal" section.
 
-Output appended to the end of weekly report as "System Self-Improvement Proposal" section.
+2. **Per-document reflection aggregation** (`self-improving` skill):
+   ```bash
+   node skills/self-improving/scripts/collect-self-improvement.js --week <this Monday's date> --output docs/weekly/<week>/self-improvement-aggregate.md
+   ```
+   `weekly-analyzer` consumes this aggregate for weekly report §5.2 and §5.3.

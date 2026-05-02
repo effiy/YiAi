@@ -23,7 +23,17 @@ Prerequisites (checklist) + 30-second onboarding (3-5 steps)
 
 ### 4. Operation Scenarios (Core)
 
-3-5 scenarios: applicable situation → operation steps → expected results → notes (✅/❌)
+6-8 scenarios total, split into two groups:
+
+**Recommended Scenarios (正面场景)** — 3-5 items:
+- Cover the user's primary success paths and high-frequency operations.
+- Each item: applicable situation → operation steps → expected results → notes (✅).
+
+**Anti-patterns / Cautionary Scenarios (反面场景)** — 2-3 items:
+- Cover common misoperations, prohibited actions, and easily confused flows.
+- Each item: wrong operation / misconception → consequence / risk → correct approach → notes (❌).
+
+Both groups must correspond to real features described in upstream documents (02/03); fabrication is prohibited.
 
 ### 5. FAQ
 

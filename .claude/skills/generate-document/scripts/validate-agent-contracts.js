@@ -84,7 +84,7 @@ const KNOWN_NON_AGENTS = new Set([
   'scenario', 'operation', 'operations', 'tags', 'description',
   'triggers', 'tools', 'user', 'story', 'model', 'api', 'url', 'uri',
   'json', 'yaml', 'yml', 'xml', 'csv', 'html', 'css', 'js', 'ts', 'md',
-  'playwright', 'filesystem', 'browser', 'server', 'client',
+  'filesystem', 'browser', 'server', 'client',
   // CSS / testid class names (common false positives)
   'toolbar-container', 'toolbar-download-btn', 'toolbar-filename-input',
   'toolbar-result', 'toolbar-error-msg', 'testid',

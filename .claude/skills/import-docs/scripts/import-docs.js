@@ -4,6 +4,9 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const http = require('https');
+const util = require('util');
+const { execFile } = require('child_process');
+const execFileAsync = util.promisify(execFile);
 
 /**
  * 从起始目录向上查找 .git 目录，确定项目根目录
@@ -45,12 +48,38 @@ function isInClaudeDir(cwd, projectRoot) {
 }
 
 /**
- * 递归查找文件
+ * 查找文件，优先使用 git ls-files 以遵循 .gitignore 规则
  * @param {string} dir - 起始目录
  * @param {string[]} exts - 扩展名列表，为空表示所有文件
+ * @param {string} projectRoot - git 仓库根目录
  * @returns {Promise<string[]>} 文件路径列表
  */
-async function findFiles(dir, exts) {
+async function findFiles(dir, exts, projectRoot) {
+  const dirRel = path.relative(projectRoot, dir);
+  const canUseGit = projectRoot && !dirRel.startsWith('..') && !path.isAbsolute(dirRel);
+
+  if (canUseGit) {
+    try {
+      await fsp.access(path.join(projectRoot, '.git'));
+      const { stdout } = await execFileAsync('git', ['-C', projectRoot, 'ls-files', '--cached', '--others', '--exclude-standard'], {
+        maxBuffer: 50 * 1024 * 1024
+      });
+      const dirRelPosix = dirRel.split(path.sep).join('/');
+      return stdout
+        .split('\n')
+        .filter(Boolean)
+        .filter(file => dirRelPosix === '' || file === dirRelPosix || file.startsWith(dirRelPosix + '/'))
+        .filter(file => {
+          if (exts.length === 0) return true;
+          const ext = path.extname(file).slice(1).toLowerCase();
+          return exts.includes(ext);
+        })
+        .map(file => path.join(projectRoot, file));
+    } catch {
+      // 回退到文件系统遍历
+    }
+  }
+
   const results = [];
 
   async function traverse(currentDir) {
@@ -347,7 +376,7 @@ async function main() {
   }
   console.log();
 
-  const files = await findFiles(config.dir, config.exts);
+  const files = await findFiles(config.dir, config.exts, config.projectRoot);
   console.log(`Found ${files.length} files`);
 
   if (files.length === 0) {

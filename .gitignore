@@ -31,12 +31,5 @@ pip-wheel-metadata/
 *.log
 logs/
 
-# Claude Code - 只忽略敏感和自动生成的内容
-.claude/settings.local.json
-.claude/worktrees/
-.claude/scheduled_tasks.json
-.claude/memory/
-
-# AI Coding - 本地配置
-.claude/mcp/config.local.json
-agents/config.local.yaml
+# Claude - 只忽略敏感和自动生成的内容
+.claude

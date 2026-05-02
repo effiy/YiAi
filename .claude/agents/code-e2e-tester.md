@@ -105,7 +105,7 @@ Test data design → Stability assessment → Scheme output
 
 ### F. Automation feasibility
 18. Is it suitable for automation? (fully auto / partially auto / manual)
-19. What tool is recommended? (Playwright/Cypress/manual)
+19. What tool is recommended? (Cypress/manual)
 20. Which steps need manual verification?
 
 ### G. CI/CD and delivery
@@ -121,7 +121,7 @@ Test data design → Stability assessment → Scheme output
 - **Selector stable**: prioritize data-testid; avoid CSS class names and DOM structure.
 - **Data isolation**: each test must design independent data strategy.
 - **Dependency assessment**: must explicitly assess external dependency impact on stability.
-- **Default manual**: when Playwright is not installed, validate via manual browser operation.
+- **Default manual**: when no automation tool is installed, validate via manual browser operation.
 - **Unstable not automated**: unstable scenarios prioritize manual verification.
 - **Failure diagnosable**: scheme must include screenshot/log/DOM snapshot diagnostic suggestions.
 

@@ -26,13 +26,10 @@ Before executing any stage, check MCP availability. **Silent degradation is proh
 
 | Verification Scenario | Required MCP |
 |-----------------------|-------------|
-| UI interaction/E2E smoke | `playwright` |
 | Local file read/write/download verification | `filesystem` |
 | Pure build/lint/type check | No MCP needed |
 
 Probe result decisions:
-- `playwright` ✅ → Stage 4 UI verification uses MCP fully automatic execution
-- `playwright` ❌ → Degrade to `npx playwright test`, result labeled ⚠️, output installation instructions
 - Required tool ❌ and no fallback → ⛔ Stop, prompt to configure and retry
 
 ## Workflow (4 phases, sequential execution)
@@ -73,8 +70,7 @@ After all pre-flight passes, execute verification command, **only once**:
 | Lint | exit code 0 |
 | Build | exit code 0, output directory non-empty |
 | P0 unit tests | exit code 0 |
-| UI/E2E (MCP ✅) | MCP fully automatic, all P0 items pass |
-| UI/E2E (degraded ⚠️) | `npx playwright test` exit 0; screenshots need human confirmation |
+| UI/E2E | Equivalent scriptable automation executed, all P0 items pass |
 
 Execution failure: no retry → parse error output → give "one-time fix checklist" (root cause + operation + re-entry phase)
 
@@ -84,4 +80,4 @@ Execution failure: no retry → parse error output → give "one-time fix checkl
 - Verification command names must be taken from `package.json` scripts, no hard-coding
 - When command does not exist, output "script <name> does not exist, skipping"
 - Phase 4 failure does not auto-retry; give fix checklist for caller decision
-- playwright degradation must be labeled ⚠️, cannot present as full pass
+- automation degradation must be labeled ⚠️, cannot present as full pass

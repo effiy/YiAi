@@ -70,20 +70,28 @@ Merge follow-up planning + system self-improvement + project self-improvement. E
 
 #### 5.2 Workflow Standardization Review
 
-Mandatory questions every week (skip if none, prohibit fabrication):
+**Data source**: `self-improving` skill aggregated per-document reflection sections (`docs/weekly/<week>/self-improvement-aggregate.md`). `weekly-analyzer` must interpret and prioritize from this aggregate; fabrication is prohibited.
+
+Mandatory four-questions, synthesized from all feature documents delivered this week:
 
 1. **Repetitive labor identification**: Were there more than 2 manual repetitive operations this week? Can they be scripted or templated?
+   - Cite specific features from the aggregate as evidence.
 2. **Decision criteria missing**: Are there fuzzy decision points relying on personal experience? Can they be沉淀 as checklist or rules?
+   - Cite specific features from the aggregate as evidence.
 3. **Information silos**: Do multiple steps rely on oral transmission or temporary docs? Can they be unified into a single source?
+   - Cite specific features from the aggregate as evidence.
 4. **Feedback loop**: Do problems found this week have a clear follow-up owner and acceptance node?
+   - Cite specific features from the aggregate as evidence.
 
 #### 5.3 System Architecture Evolution Thinking
 
-Only fill when there is architecture-related delivery this week:
+**Data source**: `self-improving` skill aggregated per-document reflection sections (`docs/weekly/<week>/self-improvement-aggregate.md`). Only fill when the aggregate contains architecture-related entries.
 
-- What is the current architecture bottleneck? (performance / maintainability / scalability / security)
-- Where is the next natural evolution node?
-- What are the risks and rollback plans for evolution?
+Synthesize from all feature documents delivered this week:
+
+- **Current architecture bottleneck** (performance / maintainability / scalability / security): group features by bottleneck type found in the aggregate.
+- **Next natural evolution node**: highlight repeated architectural proposals across features.
+- **Risks and rollback plans for evolution**: summarize risk clusters that appear in ≥2 features.
 
 ### 6. AI Linkage Quality Statistics Table (Optional)
 

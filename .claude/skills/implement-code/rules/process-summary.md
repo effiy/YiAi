@@ -29,12 +29,16 @@
 | §5 | Status Write-Back Record | 01/02/03/04/05/07 write-back results |
 | §6 | Open Issues and Follow-Up Suggestions | P1/P2 + self-improvement + executable next steps |
 | §7 | Notification Record | wework-bot, import-docs |
+| §8 | Workflow Standardization Review | Four-question process retrospective for this implementation |
+| §9 | System Architecture Evolution Thinking | Architecture bottleneck / evolution node / risk & rollback |
 
 ---
 
 ## 3. Self-Improvement (Evidence-Driven)
 
 Must produce improvement suggestion table for `.claude/`: category / problem / evidence / suggested path / minimum change point / verification method. Can only reference evidence positions already appearing in this summary.
+
+Additionally, §8 and §9 must follow the standardized format defined in `skills/self-improving/rules/collection-contract.md` so that the `self-improving` skill can harvest them for weekly aggregation.
 
 ---
 

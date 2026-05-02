@@ -39,7 +39,7 @@
 ## 3. Gate B: Post-Code Smoke
 
 - Must cover all `05` P0 main-path items; non-main-path P0 must be labeled N/A + reason, silently skipping prohibited
-- Actually executed by AI (Playwright preferred; if not installed, equivalent scriptable path)
+- Actually executed by AI via equivalent scriptable path
 - Main path end-to-end runs through once; ≤2 fix rounds allowed (see [`verification-gate.md`](./verification-gate.md) §4)
 - Produces reviewable artifacts: terminal output, HTML report, `tests/traces/`, etc.
 - Failure blocks entry to stage 7, triggers gate-anomaly notification

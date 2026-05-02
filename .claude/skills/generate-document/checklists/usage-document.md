@@ -6,7 +6,10 @@
 
 - Feature introduction is complete (100–200 words, covering purpose, value, and target audience)
 - Quick start is complete (prerequisites + 3–5 step onboarding flow)
-- Operation scenarios are complete (at least 3, each with steps and expected results)
+- Operation scenarios are complete (6-8 total):
+  - 3-5 recommended scenarios covering primary success paths (✅)
+  - 2-3 anti-pattern / cautionary scenarios covering common misoperations (❌)
+  - Each scenario includes: applicable situation, operation steps, expected results, and notes
 - FAQ is complete (covering basic / advanced / troubleshooting categories)
 - Technical assertions align with code (commands, UI paths, feature names are traceable, no fabrication)
 

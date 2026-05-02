@@ -22,7 +22,7 @@ This skill defines test scheme methods and output format. For parallel expert ro
 ### Additional Constraints When Combined with implement-code
 
 - **Before coding (Gate A) — test first**: deliverables must support "main path MVP on real entry"—for example, actionable `tests/e2e/<feature>/…-checklist.md` steps, recommended `data-testid` list, and consistency with P0 scenarios in `02`/`05`. **Before code implementation begins, test scheme and acceptance criteria must be ready.**
-- **After coding (Gate B)**: case skeletons must be automatable by AI (prefer Playwright); if scenarios lack sufficient assertions, explicitly write "insufficient precondition information: …" rather than fabricating pass conditions.
+- **After coding (Gate B)**: case skeletons must be automatable by AI; if scenarios lack sufficient assertions, explicitly write "insufficient precondition information: …" rather than fabricating pass conditions.
 - **Source of truth**: admission baseline (what counts as evidence, what blocks) is defined by **`../implement-code/rules/implement-code-testing.md`**; this skill does not redefine Gate A/B.
 
 ## Input
@@ -45,11 +45,9 @@ This skill defines test scheme methods and output format. For parallel expert ro
 Scenario: <scenario name>
 Test type: UI interaction / data flow / permission / boundary
 Verification checklist:
-  test('<scenario name>', async ({ page }) => {
-    // preconditions
-    // operation steps
-    // assertions
-  });
+  // preconditions
+  // operation steps
+  // assertions
 Selector strategy: <description>
 Mock dependencies: <interfaces/modules to mock, or "none">
 Test data: <suggested test data construction method>

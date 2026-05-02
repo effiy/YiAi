@@ -13,7 +13,7 @@
 
 | MCP | Tool | Fallback Plan | Blocking |
 |-----|------|---------------|----------|
-| `playwright` | Browser operations | `npx playwright test` + human confirmation | No |
+| `browser` | Browser operations | Equivalent scriptable automation + human confirmation | No |
 | `code-analyzer-mcp` | `analyze_dependencies` | Grep search import/export + Read file headers | No |
 | `code-analyzer-mcp` | `find_usages` | Grep full-project identifier search | No |
 | `code-analyzer-mcp` | `check_architecture` | Read Store/component registration + human pattern matching | No |
@@ -26,6 +26,15 @@
 | `git-workflow-mcp` | `get_diff_summary` | Bash `git diff --stat` + `--name-status` | No |
 | `git-workflow-mcp` | `analyze_change_impact` | Revert to `impact-analyst` Grep approach | No |
 | `git-workflow-mcp` | `check_branch_status` | Bash `git status` + `git log` | No |
+| `effiy-api` | `read_file` | Local `fs.readFile` | No |
+| `effiy-api` | `write_file` | Local `fs.writeFile` | No |
+| `effiy-api` | `delete_file` | Local `fs.unlink` | No |
+| `effiy-api` | `delete_folder` | Local `fs.rmdir` / `fs.rm` | No |
+| `effiy-api` | `rename_file` | Local `fs.rename` | No |
+| `effiy-api` | `rename_folder` | Local `fs.rename` | No |
+| `effiy-api` | `execute_module_get` / `execute_module_post` | Node `child_process` or direct module import | No |
+| `effiy-api` | `send_wework_message` | `skills/wework-bot/scripts/send-message.js` | No |
+| `effiy-api` | `upload_file` / `upload_image_to_oss` | `skills/observer/scripts/observer-client.js` sandboxed write + manual sync | No |
 
 ## 3. Probe Checks
 
@@ -36,9 +45,19 @@ Stage 0 must execute a minimal viable probe for each MCP:
 | `code-analyzer-mcp` | Call `analyze_dependencies` with entry file | Returns non-empty dependency list |
 | `doc-index-mcp` | Call `search_docs` searching for `README` | Returns result or "not found" |
 | `git-workflow-mcp` | Call `check_branch_status` | Returns current branch info |
-| `playwright` | Open `about:blank` | Page loads successfully |
+| `browser` | Open `about:blank` | Page loads successfully |
+| `effiy-api` | `node skills/observer/scripts/observer-client.js --health` | Returns `connected: true` and `ping: ok` |
 
 If passed, use normally; if failed, record reason → activate fallback plan → declare degradation status in stage 0 output.
+
+### 3.1 Observer Fallback Behavior
+
+When `effiy-api` probe fails, scripts and agents must degrade through this priority chain:
+
+1. **Local filesystem** (`fs.readFile`, `fs.writeFile`, etc.) for `read_file`, `write_file`, `delete_file`, `rename_file`, `delete_folder`, `rename_folder`.
+2. **Direct Node require/spawn** for `execute_module_get` / `execute_module_post`.
+3. **`skills/wework-bot/scripts/send-message.js`** for `send_wework_message`.
+4. **Observer throttling still applies** even in fallback mode: use `skills/observer/scripts/observer-client.js` with `baseUrl` pointed to local stub, or apply TokenBucket manually.
 
 ## 4. Degradation Record
 

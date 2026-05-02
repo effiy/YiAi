@@ -21,4 +21,4 @@
 1. 探针有阻断项禁止进入阶段 1；阶段 1-3 有阻断项禁止进入阶段 4
 2. 命令名须取自 `package.json scripts`，不得硬编码
 3. 阶段 4 失败不自动重试，给出"一次性修复清单"
-4. playwright 降级须标注 ⚠️
+4. automation degradation 须标注 ⚠️

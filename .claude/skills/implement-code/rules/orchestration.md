@@ -15,8 +15,8 @@
 | 4 | Write project code | Implement module by module and verify module by module | Module implementation complete, lint/regression/impact-chain regression records complete |
 | 5 | Code review | Execute code-review and mock leak check | No P0 review issues |
 | 6 | Smoke test | AI automatically executes main-flow full-chain smoke and writes back status | AI automation main-flow smoke passed, all P0 passed and written back to `05` |
-| 7 | Process summary | Generate `06_process-summary.md` and write back feature document status | Summary write complete, status write-back complete, dynamic checklist final gate passed |
-| 8 | Document sync and notification | Sync `docs` and send notification | `import-docs` executed or skip reason recorded, wework-bot sent by end type |
+| 7 | Process summary | Generate `06_process-summary.md` (must include §8 Workflow Standardization Review + §9 System Architecture Evolution Thinking) and write back feature document status | Summary write complete, self-improvement sections present, status write-back complete, dynamic checklist final gate passed |
+| 8 | Document sync and notification | Sync `docs` and send notification; optional: trigger `self-improving collect` to harvest new reflection sections | `import-docs` executed or skip reason recorded, wework-bot sent by end type |
 
 ---
 
@@ -79,7 +79,7 @@ Before entering stage 1, must complete:
 
 | MCP Tool | Minimum Probe | Fallback Plan | Blocking |
 |---------|---------------|---------------|----------|
-| `playwright` | Open `about:blank` | `npx playwright test` + human confirmation | No |
+| `browser` | Open `about:blank` | Equivalent scriptable automation + human confirmation | No |
 | Filesystem capability | Reuse document read results | Use local read/write tools | No |
 | Necessary tool with no fallback | Minimum viable probe | None | Yes |
 

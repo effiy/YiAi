@@ -147,11 +147,24 @@ See `rules/from-weekly.md` for full specification.
 
 ### 1. Document postscript
 
-Every generated document must append a section:
+Every generated document must append three sections at the end, in this order:
 
 ```markdown
 ## Postscript: Future Planning & Improvements
+
+## Workflow Standardization Review
+1. **Repetitive labor identification**: ...
+2. **Decision criteria missing**: ...
+3. **Information silos**: ...
+4. **Feedback loop**: ...
+
+## System Architecture Evolution Thinking
+- **A1. Current architecture bottleneck**: ...
+- **A2. Next natural evolution node**: ...
+- **A3. Risks and rollback plans for evolution**: ...
 ```
+
+Format details: `skills/self-improving/rules/collection-contract.md`.
 
 ### 2. Update-mode shortcuts
 
@@ -166,7 +179,12 @@ Every generated document must append a section:
 
 ### 3. Weekly self-improvement trigger
 
-The `weekly` command automatically runs `self-improve.js` after Stage 6.
+The `weekly` command must trigger two self-improvement flows after Stage 6:
+
+1. **Execution-memory analysis** (legacy): `node scripts/self-improve.js --since <week-start> --output docs/weekly/<week>/self-improve-proposal.md`
+2. **Per-document reflection aggregation** (new): invoke `self-improving` skill to collect `Workflow Standardization Review` and `System Architecture Evolution Thinking` from all feature documents, producing `docs/weekly/<week>/self-improvement-aggregate.md`.
+
+`weekly-analyzer` consumes the aggregate when writing weekly report §5.2 and §5.3.
 
 ## Block / Abort Thresholds
 

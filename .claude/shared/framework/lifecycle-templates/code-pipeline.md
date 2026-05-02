@@ -59,3 +59,12 @@ Both analyses must be performed in Stage 1 (Pre-flight) and revisited in Stage 3
 ### 7. Knowledge Curation
 
 In the final stage, extract reusable patterns and pitfall records from the implementation. Consume `code-impl-reporter` output and write findings to the execution memory.
+
+### 8. Document Postscript (Self-Improvement)
+
+The `06_process-summary.md` produced by this pipeline must append two standardized reflection sections at the end:
+
+1. **Workflow Standardization Review** — four-question retrospective on the implementation process. See `skills/self-improving/rules/collection-contract.md` §3.
+2. **System Architecture Evolution Thinking** — architecture reflection for the implemented feature. See `skills/self-improving/rules/collection-contract.md` §4.
+
+These sections are consumed by the `self-improving` skill for weekly aggregation.

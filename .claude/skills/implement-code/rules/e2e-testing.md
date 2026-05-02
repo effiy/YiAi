@@ -27,7 +27,7 @@
 | Build verification | JS console no errors, components render normally |
 | AI auto smoke (mandatory, Gate B) | End-to-end main flow + pass/fail evidence |
 
-Playwright is preferred for Gate B; when not installed, equivalent automation must be completed via scriptable command + reviewable log, manual substitution is not allowed.
+For Gate B, equivalent automation must be completed via scriptable command + reviewable log; manual substitution is not allowed.
 
 ---
 
@@ -47,4 +47,4 @@ tests/e2e/<feature-name>/
 - Only testing success paths without covering failure branches
 - Using meaningless placeholders for mock data
 - Generating test files outside `tests/`
-- Assuming Playwright is available
+- Assuming automation infrastructure is available
