@@ -2,7 +2,7 @@
 - 包含所有 API 请求和响应的 Pydantic 模型
 - 按功能模块组织：Module, RSS, etc.
 """
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any, Union, List
 from pydantic import BaseModel, Field
 
 # --- Module Schemas ---
@@ -126,7 +126,7 @@ class SchedulerConfigRequest(BaseModel):
 class WeWorkWebhookRequest(BaseModel):
     """
     企业微信机器人 Webhook 请求模型
-    
+
     Example:
         {
             "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx",
@@ -135,3 +135,57 @@ class WeWorkWebhookRequest(BaseModel):
     """
     webhook_url: str = Field(..., description="企业微信机器人 Webhook URL")
     content: str = Field(..., description="要发送的消息内容")
+
+
+# --- State Store Schemas ---
+
+class StateRecord(BaseModel):
+    """通用状态记录模型"""
+    key: str = Field(default="", description="记录唯一标识")
+    record_type: str = Field(..., min_length=1, description="记录类型，如 conversation_summary")
+    title: str = Field(default="", description="记录标题，用于文本搜索")
+    payload: Dict[str, Any] = Field(default_factory=dict, description="灵活的业务负载")
+    tags: List[str] = Field(default_factory=list, description="标签列表")
+    created_time: str = Field(default="", description="创建时间 ISO 8601")
+    updated_time: str = Field(default="", description="更新时间 ISO 8601")
+
+
+class SessionState(BaseModel):
+    """结构化会话状态模型"""
+    key: str = Field(..., description="与 sessions 集合的 key 保持一致")
+    page_content: str = Field(default="", description="对应遗留 pageContent")
+    messages: List[Dict[str, Any]] = Field(default_factory=list, description="对应遗留 messages")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="扩展元数据")
+    created_time: str = Field(default="")
+    updated_time: str = Field(default="")
+
+
+class SkillExecutionRecord(BaseModel):
+    """技能执行结果记录模型"""
+    key: str = Field(default="", description="记录唯一标识")
+    skill_name: str = Field(..., min_length=1, description="技能名称")
+    status: str = Field(..., pattern=r"^(success|failed|timeout|cancelled)$", description="执行状态")
+    duration_ms: float = Field(..., ge=0, description="执行耗时毫秒")
+    input_summary: str = Field(default="", max_length=2000, description="输入摘要")
+    output_summary: str = Field(default="", max_length=2000, description="输出摘要")
+    error_message: str = Field(default="", max_length=4000, description="错误信息")
+    timestamp: str = Field(default="", description="记录时间 ISO 8601")
+    tags: List[str] = Field(default_factory=lambda: ["skill_execution"], description="标签")
+
+
+class StateQueryRequest(BaseModel):
+    """状态记录查询请求"""
+    record_type: Optional[str] = Field(None, description="按记录类型过滤")
+    tags: Optional[List[str]] = Field(None, description="按标签过滤")
+    title_contains: Optional[str] = Field(None, description="标题模糊搜索")
+    created_after: Optional[str] = Field(None, description="创建时间下限 ISO 8601")
+    created_before: Optional[str] = Field(None, description="创建时间上限 ISO 8601")
+    page_num: int = Field(default=1, ge=1, description="页码")
+    page_size: int = Field(default=2000, ge=1, le=8000, description="每页条数")
+
+
+class AdaptationResult(BaseModel):
+    """批量适配结果"""
+    success_count: int = Field(default=0, description="成功数量")
+    failure_count: int = Field(default=0, description="失败数量")
+    errors: List[Dict[str, Any]] = Field(default_factory=list, description="错误明细")

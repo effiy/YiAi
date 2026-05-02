@@ -22,7 +22,7 @@ from core.config import settings
 from core.middleware import header_verification_middleware
 from core.logger import setup_logging
 from core.exception_handler import register_exception_handlers
-from api.routes import upload, execution, wework, maintenance
+from api.routes import upload, execution, wework, maintenance, state, observer_health
 
 # 导入服务模块
 from services.rss.rss_scheduler import init_rss_system, shutdown_rss_system
@@ -88,11 +88,34 @@ def create_app(
     # 注册全局异常处理器
     register_exception_handlers(app)
 
+    # 注册 Observer 中间件（仅在启用时）
+    if settings.observer_enabled:
+        from core.observer import ThrottleMiddleware, SamplerMiddleware, TailSampler
+
+        if settings.observer_sampler_enabled:
+            sampler = TailSampler(
+                max_size=settings.observer_sampler_max_size,
+                slow_threshold_ms=settings.observer_sampler_slow_threshold_ms,
+            )
+            app.add_middleware(SamplerMiddleware, sampler=sampler)
+            logger.info("Observer Sampler middleware registered")
+
+        if settings.observer_throttle_enabled:
+            app.add_middleware(
+                ThrottleMiddleware,
+                max_requests=settings.observer_throttle_max_requests,
+                window_seconds=settings.observer_throttle_window_seconds,
+                whitelist=settings.get_throttle_whitelist(),
+            )
+            logger.info("Observer Throttle middleware registered")
+
     # 注册 API 路由
     app.include_router(upload.router, tags=["Upload"])
     app.include_router(execution.router, tags=["Execution"])
     app.include_router(wework.router, tags=["WeWork"])
     app.include_router(maintenance.router, tags=["Maintenance"])
+    app.include_router(state.router, tags=["State"])
+    app.include_router(observer_health.router, tags=["Observer"])
 
     origins = settings.get_cors_origins()
     app.add_middleware(

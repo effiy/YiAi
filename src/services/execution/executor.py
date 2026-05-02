@@ -1,5 +1,6 @@
 """受控模块执行器
 - 校验白名单，解析参数，按同步/异步调用目标函数
+- 集成 Observer 沙箱和重入守卫
 """
 import importlib
 import asyncio
@@ -7,6 +8,7 @@ import logging
 import json
 import inspect
 import subprocess
+import time
 from typing import Dict, Any, Union
 from fastapi import HTTPException
 from core.config import settings
@@ -17,6 +19,31 @@ allowlist = settings.module_allowlist
 if isinstance(allowlist, str):
     allowlist = [x.strip() for x in allowlist.split(',') if x.strip()]
 EXEC_ALLOWLIST = set(allowlist)
+
+# Lazy import to avoid circular dependency at module load time
+_recorder = None
+_guard = None
+
+def _get_recorder():
+    global _recorder
+    if _recorder is None and settings.state_store_enabled:
+        try:
+            from services.state.skill_recorder import get_recorder
+            _recorder = get_recorder()
+        except Exception as e:
+            logger.warning(f"SkillRecorder not available: {e}")
+    return _recorder
+
+
+def _get_guard():
+    global _guard
+    if _guard is None and settings.observer_guard_enabled:
+        try:
+            from core.observer import ReentrancyGuard
+            _guard = ReentrancyGuard(max_depth=settings.observer_guard_max_depth)
+        except Exception as e:
+            logger.warning(f"ReentrancyGuard not available: {e}")
+    return _guard
 
 def parse_parameters(parameters: Union[Dict[str, Any], str]) -> Dict[str, Any]:
     """
@@ -106,40 +133,104 @@ async def run_script(script_path: str, timeout: int = 300) -> Dict[str, Any]:
             'error': str(e)
         }
 
+async def _run_function(target_function, parameters_dict):
+    """在 Observer 沙箱上下文中执行目标函数"""
+    if settings.observer_sandbox_enabled:
+        from core.observer import sandbox_context
+        with sandbox_context(
+            fs_allowlist=settings.get_sandbox_fs_allowlist(),
+            network_allowlist=settings.get_sandbox_network_allowlist(),
+        ):
+            if asyncio.iscoroutinefunction(target_function):
+                return await target_function(parameters_dict)
+            return target_function(parameters_dict)
+    else:
+        if asyncio.iscoroutinefunction(target_function):
+            return await target_function(parameters_dict)
+        return target_function(parameters_dict)
+
+
 async def execute_module(module_path: str, function_name: str, parameters: Union[Dict[str, Any], str]) -> Any:
     """执行目标模块/函数
     - 验证执行白名单
     - 支持 dict 或 JSON 字符串参数
     - 自动区分异步/同步函数
+    - 可选：异步记录执行结果到 State Store
+    - 集成 Observer 沙箱和重入守卫
 
     Example:
         GET /?module_name=module.path&method_name=function_name&parameters={"key": "value"}
     """
-    if not module_path or not function_name:
-        raise HTTPException(status_code=400, detail="Module path and function name required")
-
-    allow_key = f"{module_path}:{function_name}"
-    if "*" not in EXEC_ALLOWLIST and allow_key not in EXEC_ALLOWLIST:
-        raise HTTPException(status_code=403, detail=f"Execution forbidden: {allow_key}")
-
-    parameters_dict = parse_parameters(parameters)
-
-    try:
-        module = importlib.import_module(module_path)
-        target_function = getattr(module, function_name)
-    except (ImportError, AttributeError) as e:
-        logger.error(f"Module import error: {str(e)}")
-        raise HTTPException(status_code=422, detail=f"Module or function not found: {str(e)}")
+    # Reentrancy Guard
+    guard = _get_guard()
+    token = None
+    if guard is not None:
+        from core.observer.guard import _reentrancy_depth
+        depth = _reentrancy_depth.get()
+        if depth >= guard.max_depth:
+            raise HTTPException(
+                status_code=508,
+                detail=f"Reentrancy depth {depth} exceeds limit {guard.max_depth}"
+            )
+        token = _reentrancy_depth.set(depth + 1)
 
     try:
-        if inspect.isasyncgenfunction(target_function):
-            return target_function(parameters_dict)
-        if inspect.isgeneratorfunction(target_function):
-            return target_function(parameters_dict)
-        if asyncio.iscoroutinefunction(target_function):
-            return await target_function(parameters_dict)
-        return target_function(parameters_dict)
-    except Exception as e:
-        logger.error(f"Execution error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
+        if not module_path or not function_name:
+            raise HTTPException(status_code=400, detail="Module path and function name required")
+
+        allow_key = f"{module_path}:{function_name}"
+        if "*" not in EXEC_ALLOWLIST and allow_key not in EXEC_ALLOWLIST:
+            raise HTTPException(status_code=403, detail=f"Execution forbidden: {allow_key}")
+
+        parameters_dict = parse_parameters(parameters)
+
+        try:
+            module = importlib.import_module(module_path)
+            target_function = getattr(module, function_name)
+        except (ImportError, AttributeError) as e:
+            logger.error(f"Module import error: {str(e)}")
+            raise HTTPException(status_code=422, detail=f"Module or function not found: {str(e)}")
+
+        start = time.perf_counter()
+        status = "success"
+        error_message = ""
+        result = None
+
+        try:
+            if inspect.isasyncgenfunction(target_function):
+                result = target_function(parameters_dict)
+            elif inspect.isgeneratorfunction(target_function):
+                result = target_function(parameters_dict)
+            elif asyncio.iscoroutinefunction(target_function):
+                result = await _run_function(target_function, parameters_dict)
+            else:
+                result = await _run_function(target_function, parameters_dict)
+        except HTTPException:
+            raise
+        except Exception as e:
+            status = "failed"
+            error_message = str(e)
+            logger.error(f"Execution error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
+        finally:
+            duration_ms = (time.perf_counter() - start) * 1000
+            recorder = _get_recorder()
+            if recorder is not None:
+                try:
+                    recorder.record_async(
+                        skill_name=f"{module_path}:{function_name}",
+                        status=status,
+                        duration_ms=duration_ms,
+                        input_summary=str(parameters)[:500],
+                        output_summary=str(result)[:500] if result else "",
+                        error_message=error_message,
+                    )
+                except Exception as rec_err:
+                    logger.error(f"SkillRecorder failed: {rec_err}")
+
+        return result
+    finally:
+        if token is not None:
+            from core.observer.guard import _reentrancy_depth
+            _reentrancy_depth.reset(token)
 

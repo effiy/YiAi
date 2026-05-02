@@ -48,6 +48,7 @@ X-Token: <your-token>
 - `/delete-file`
 - `/upload`
 - `/static/*`
+- `/mcp*`
 
 ## 错误处理
 

@@ -31,6 +31,7 @@ pip install -r requirements.txt
 - aiohttp>=3.9.0
 - feedparser>=6.0.10
 - apscheduler>=3.10.0
+- fastapi-mcp>=0.4.0
 
 ### 本地启动
 

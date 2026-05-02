@@ -59,7 +59,7 @@ flowchart TD
 
 | 层级 | 控制点 | 说明 |
 |------|--------|------|
-| 路由级 | `middleware.py` 白名单 | `/write-file`, `/read-file`, `/delete-file`, `/upload`, `/static/*` 跳过认证 |
+| 路由级 | `middleware.py` 白名单 | `/write-file`, `/read-file`, `/delete-file`, `/upload`, `/static/*`, `/mcp*` 跳过认证 |
 | API 级 | `module.allowlist` | 动态模块执行的白名单控制 |
 | 数据级 | 暂无 | 当前无用户级数据隔离 |
 

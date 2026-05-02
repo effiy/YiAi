@@ -107,6 +107,28 @@ class Settings(BaseSettings):
     # Module
     module_allowlist: Union[str, List[str]] = Field(["*"], validation_alias="module_allowlist")
 
+    # State Store
+    state_store_enabled: bool = Field(True, validation_alias="state_store_enabled")
+    state_store_default_ttl: int = Field(0, validation_alias="state_store_default_ttl")
+    state_store_query_max_limit: int = Field(8000, validation_alias="state_store_query_max_limit")
+    collection_state_records: str = Field("state_records", validation_alias="collection_state_records")
+
+    # Observer
+    observer_enabled: bool = Field(True, validation_alias="observer_enabled")
+    observer_throttle_enabled: bool = Field(True, validation_alias="observer_throttle_enabled")
+    observer_throttle_max_requests: int = Field(100, validation_alias="observer_throttle_max_requests")
+    observer_throttle_window_seconds: int = Field(60, validation_alias="observer_throttle_window_seconds")
+    observer_throttle_whitelist: Union[str, List[str]] = Field("", validation_alias="observer_throttle_whitelist")
+    observer_sampler_enabled: bool = Field(True, validation_alias="observer_sampler_enabled")
+    observer_sampler_max_size: int = Field(1000, validation_alias="observer_sampler_max_size")
+    observer_sampler_slow_threshold_ms: float = Field(5000.0, validation_alias="observer_sampler_slow_threshold_ms")
+    observer_sandbox_enabled: bool = Field(False, validation_alias="observer_sandbox_enabled")
+    observer_sandbox_fs_allowlist: Union[str, List[str]] = Field("", validation_alias="observer_sandbox_fs_allowlist")
+    observer_sandbox_network_allowlist: Union[str, List[str]] = Field("", validation_alias="observer_sandbox_network_allowlist")
+    observer_lazy_start: bool = Field(True, validation_alias="observer_lazy_start")
+    observer_guard_enabled: bool = Field(True, validation_alias="observer_guard_enabled")
+    observer_guard_max_depth: int = Field(3, validation_alias="observer_guard_max_depth")
+
     # Ollama
     ollama_url: str = Field("http://localhost:11434", validation_alias="ollama_url")
     ollama_auth: str = Field("", validation_alias="ollama_auth")
@@ -150,6 +172,20 @@ class Settings(BaseSettings):
         if isinstance(self.cors_origins, str):
              return [item.strip() for item in self.cors_origins.split(',') if item.strip()]
         return self.cors_origins
+
+    def _to_list(self, value: Union[str, List[str]]) -> List[str]:
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(',') if item.strip()]
+        return value
+
+    def get_throttle_whitelist(self) -> List[str]:
+        return self._to_list(self.observer_throttle_whitelist)
+
+    def get_sandbox_fs_allowlist(self) -> List[str]:
+        return self._to_list(self.observer_sandbox_fs_allowlist)
+
+    def get_sandbox_network_allowlist(self) -> List[str]:
+        return self._to_list(self.observer_sandbox_network_allowlist)
 
     # Compat methods
     def is_startup_init_database_enabled(self) -> bool: return self.startup_init_database

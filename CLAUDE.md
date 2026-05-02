@@ -188,6 +188,8 @@ main.py (FastAPI 入口，兼容性包装器)
 
 5. **双重存储策略**：文件上传功能支持 OSS 云存储和本地静态存储两种模式，自动 fallback。
 
+6. **MCP 服务器集成**：通过 `fastapi-mcp` 自动将 FastAPI 端点暴露为 Model Context Protocol 服务，`/mcp` 路径由 MCP 服务器接管。
+
 ## 配置
 
 - 主要配置：`config.yaml`
@@ -230,6 +232,7 @@ main.py (FastAPI 入口，兼容性包装器)
 | POST | `/rename-folder` | 重命名文件夹 |
 | POST | `/wework/send-message` | 发送消息到企业微信 |
 | POST | `/cleanup-unused-images` | 清理未引用的图片 |
+| GET/POST | `/mcp` | MCP 协议端点（由 fastapi-mcp 自动挂载） |
 
 详细的 API 端点文档请参考 docs/ 目录下的相关文档。
 

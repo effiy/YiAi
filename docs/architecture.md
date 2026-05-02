@@ -97,6 +97,23 @@ def create_app(
 
 文件上传优先 OSS，OSS 不可用时自动 fallback 到本地静态存储。
 
+### 6. MCP 服务器集成
+
+通过 `fastapi-mcp` 在 `src/main.py` 中创建并挂载 MCP 服务器，自动将 FastAPI 端点暴露为 Model Context Protocol 服务，`Maintenance` 标签的端点被排除。
+
+```python
+from fastapi_mcp import FastApiMCP
+
+mcp = FastApiMCP(
+    app,
+    name="YiAi MCP",
+    describe_all_responses=True,
+    describe_full_response_schema=True,
+    exclude_tags=["Maintenance"]
+)
+mcp.mount()
+```
+
 ## 模块结构
 
 | 模块 | 职责 | 关键文件 |
@@ -107,6 +124,7 @@ def create_app(
 | ai | Ollama AI 聊天 | `services/ai/chat_service.py` |
 | wework | 企业微信机器人 | `api/routes/wework.py` |
 | maintenance | 系统维护（清理等） | `api/routes/maintenance.py` |
+| mcp | MCP 协议服务 | `src/main.py` (FastApiMCP 挂载) |
 
 ## 编码规范
 

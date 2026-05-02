@@ -88,6 +88,29 @@ module:
   allowlist:
     - "*"
 
+# State Store Configuration
+state_store:
+  enabled: true
+  default_ttl: 0
+  query_max_limit: 8000
+
+# Observer Reliability Configuration
+observer:
+  enabled: true
+  throttle_enabled: true
+  throttle_max_requests: 100
+  throttle_window_seconds: 60
+  throttle_whitelist: ""
+  sampler_enabled: true
+  sampler_max_size: 1000
+  sampler_slow_threshold_ms: 5000.0
+  sandbox_enabled: false
+  sandbox_fs_allowlist: "/tmp,/var/www/YiAi/static"
+  sandbox_network_allowlist: ""
+  lazy_start: true
+  guard_enabled: true
+  guard_max_depth: 3
+
 # Ollama Configuration
 ollama:
   url: "http://localhost:11434"
