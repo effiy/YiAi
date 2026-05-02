@@ -1,84 +1,118 @@
 ---
 paths:
-  - "docs/*/01_需求文档.md"
-  - "docs/*/02_需求任务.md"
-  - "docs/*/03_设计文档.md"
-  - "docs/*/04_使用文档.md"
-  - "docs/*/05_动态检查清单.md"
-  - "docs/*/07_项目报告.md"
+  - "docs/*/01_requirement-document.md"
+  - "docs/*/02_requirement-tasks.md"
+  - "docs/*/03_design-document.md"
+  - "docs/*/04_usage-document.md"
+  - "docs/*/05_dynamic-checklist.md"
+  - "docs/*/07_project-report.md"
 ---
 
-# 功能文档 5 步工作流
+# Feature Document 5+1 Step Workflow
 
-> 适用于 `/generate-document <功能名>-<描述>`。`init`/`weekly`/`from-weekly` 差异见 `../SKILL.md`。
-> 核心原则、审查门禁以 `../SKILL.md` 为准；阶段状态机见 `orchestration.md`。
+> Applicable to `/generate-document <feature-name>-<description>`. Differences for `init`/`weekly`/`from-weekly` see `../SKILL.md`.
+> Core principles and review gates follow `../SKILL.md`; stage state machine see `orchestration.md`.
 
-## 步骤 1：解析 + 规范检索 + 既有文档探测
+## Step 0: Smart Planning (Optional but Recommended)
 
-- 提取 `{功能名}`
-- **探测既有文档**：`docs/{功能名}/` 是否存在有效 Markdown
-  - 不存在：新建模式
-  - 已存在：加载 01-03 → 对比用户输入 → 识别差异 → 产出更新影响表
-- **必须调用 `docs-retriever`**
-- 产出：功能名、规范集、上游清单、既有文档状态、更新影响表
+- **Trigger**: Before feature document generation, before Step 1
+- **Invoke `doc-planner`**: Pass feature name and description, read historical similar cases from `docs/.memory/execution-memory.jsonl`
+- **Output**: Adaptive execution plan, containing:
+  - Feature characteristic fingerprint (domain / module / change type)
+  - Historical similar case list and actual change levels
+  - **Suggested change level** (T1/T2/T3 tendency and basis)
+  - Agent invocation strategy (strengthen / trim / normal)
+  - Risk warning (high-frequency problem points from historical cases)
+  - Custom check items (special additions this round)
+- **Processing Rules**:
+  - When execution memory is empty: annotate "First execution, no historical reference", skip this step and directly enter Step 1
+  - Skill may adjust planner suggestion based on actual detection results, but must record adjustment reason in orchestration logs
+  - Planner suggestion is **reference input**, final change level determination is based on actual document differences in Step 1
 
-## 步骤 2：上游 Grounding + 影响分析
+## Step 1: Parsing + Specification Retrieval + Existing Document Detection + Change Grading
 
-- 按依赖顺序读取 01→02→03；设计文档同时读相关源码
-- **必须调用 `doc-impact-analyzer`**（仅02/03）：先读 `../../../shared/impact-analysis-contract.md`
-- 影响链写入02第6章/03第5章
-- 产出：事实-来源映射表、影响链闭合
+- Extract `{feature-name}`
+- **Detect existing documents**: Does `docs/{feature-name}/` contain valid Markdown?
+  - Does not exist: New mode
+  - Already exists: Load 01-03 → Compare with user input → Identify differences → Produce **change impact table**
+- **Change grading (mandatory)**:
+  - Reference Step 0 `doc-planner` output "suggested change level" as initial determination basis
+  - If planner suggestion conflicts with detection result, prioritize actual document differences, and record conflict reason in logs
 
-## 步骤 3：专家生成
+| Level | Criteria | Handling Strategy |
+|-------|----------|-------------------|
+| **T1 Minor** | Typos, formatting adjustments, added examples/descriptions, wording optimization, does not change facts and boundaries | Only rewrite changed chapters/paragraphs of target document, do not trigger any downstream updates |
+| **T2 Partial** | Supplement to a requirement point, interface parameter adjustment, new/modified check items, local process changes, does not touch feature boundaries | Rewrite target document changed chapters + sync update **downstream documents' corresponding entries that directly reference this chapter** (e.g. 01 requirement supplement → 02 sync corresponding entry; 03 interface parameter adjustment → 04 sync corresponding operation description) |
+| **T3 Scope** | Feature boundary changes, new/deleted modules, interface signature changes, architecture pattern adjustments | Trigger full cascade refresh: 01→02/03→04/05→07 |
 
-- **必须调用 `codes-builder`**（03生成前）
-- **必须调用 `doc-architect`**（03生成前）：5 必答问题须采纳到03架构章节
-- 产出：设计方案、模块划分、接口规范
+- **Must invoke `docs-retriever`** (In update mode, if document type is unchanged, may reuse last specification set)
+- Output: Feature name, specification set, upstream list, existing document status, **change impact table (including level determination and affected chapter list)**
 
-## 步骤 4：逐文档生成 + 自检
+## Step 2: Upstream Grounding + Impact Analysis
 
-### 生成策略
+- Read 01→02→03 in dependency order; design document simultaneously reads relevant source code
+- **Must invoke `doc-impact-analyzer`** (only 02/03): First read `../../../shared/impact-analysis-contract.md`
+- Impact chain written to chapter 6 of 02 / chapter 5 of 03
+- Output: Fact-source mapping table, impact chain closure
 
-新建：按 `rules/<类型>.md` 章节顺序完整产出。
+## Step 3: Expert Generation
 
-更新策略：
+- **Must invoke `codes-builder`** (before 03 generation)
+- **Must invoke `doc-architect`** (before 03 generation): 5 mandatory questions must be adopted into 03 architecture chapter
+- Output: Design plan, module division, interface specifications
 
-| 文件 | 更新策略 |
-|------|----------|
-| 01 | 重写变更章节，未变更保留原文 |
-| 02 | 01 变更则同步更新；影响分析必须重新调用 |
-| 03 | 01/02 scope 变更则重新调用 codes-builder + doc-architect |
-| 04 | 按03最新状态重建 |
-| 05 | 从最新02/03重新抽取 |
-| 07 | 追加更新记录与验证结论 |
+## Step 4: Per-Document Generation + Self-Check
 
-### 三层审查门禁
+### Generation Strategy
 
-1. **语法层**：含 Mermaid → `doc-mermaid-expert` 审查写回
-2. **质量层**：设计文档 → `doc-reviewer`（P0 修复后才保存）
-3. **测试层**：`doc-markdown-tester` 验证链接/代码/术语
+New: Complete output in chapter order according to `rules/<type>.md`.
 
-### 自检与质量统计
+Update strategy (execute according to change level determined in Step 1):
 
-- 加载 `checklists/<类型>.md`，P0 全通过才保存；最多自修复 1 轮
-- `doc-quality-tracker` 统计 P0/P1/P2
+| File | T1 Minor | T2 Partial | T3 Scope |
+|------|----------|------------|----------|
+| **01** | Rewrite changed chapters, unchanged retain original | Rewrite changed chapters + 02 sync corresponding entries (only affected entries) | Full rewrite → 02 full sync → trigger 03 rebuild |
+| **02** | Rewrite changed entries, unchanged retain original | Rewrite changed entries + 03 corresponding module/interface adjustment (only affected parts) | Full rewrite → trigger 03 rebuild |
+| **03** | Rewrite changed chapters, unchanged retain original | Rewrite changed chapters + 04 corresponding operation update (only affected operations) | Full rewrite → trigger 04 rebuild |
+| **04** | Rewrite changed paragraphs, unchanged retain original | Rewrite changed paragraphs + sync terminology and path changes | Full rebuild according to latest 03 status |
+| **05** | Rewrite changed check items, unchanged retain original | Extract new/modified check items from 02/03, append under corresponding scenarios | Full re-extract from latest 02/03 |
+| **07** | Append this change record | Append this change record + verification conclusion | Append this change record + verification conclusion |
 
-## 步骤 5：保存 + 知识策展
+**Update Principles**:
+- **Default minimum impact**: When no sufficient evidence, handle as T1, must not "just to be safe" upgrade change level
+- **Chapter-level retention**: Unchanged chapters must retain original text verbatim, rewriting is prohibited
+- **Reference tracking**: T2 changes must explicitly annotate "Synced due to chapter X change in 01/02/03"
+- **Impact analysis reuse**: For T1/T2 changes, if change scope does not exceed last round's impact analysis boundary, may reuse last round's impact analysis result, only supplement new impact points
 
-新建：创建 `docs/<功能名>/`，01-05, 07，版本 `v1.0`。
-更新：受影响文件覆盖写入；次版本 `+1`，破坏性变更允许主版本 `+1`。
+### Three-Layer Review Gate
 
-`docs-builder` 知识策展（更新模式优先追加「更新触发与级联影响」）。
+1. **Syntax layer**: Contains Mermaid → `doc-mermaid-expert` review and write back
+2. **Quality layer**: Design document → `doc-reviewer` (P0 fixed before saving)
+3. **Test layer**: `doc-markdown-tester` verify links/code/terminology
 
-## 步骤 6：文档同步与通知（强制）
+### Self-Check and Quality Statistics
 
-> SKILL.md 原则 #7。先 `import-docs`，再 `wework-bot`，禁止颠倒。
+- Load `checklists/<type>.md`, P0 all passed before saving; at most 1 round of self-repair
+- `doc-quality-tracker` statistics P0/P1/P2
+
+## Step 5: Save + Knowledge Curation
+
+New: Create `docs/<feature-name>/`, 01-05, 07, version `v1.0`.
+Update: Overwrite affected files; patch version `+1`, breaking changes allow major version `+1`.
+
+`docs-builder` knowledge curation:
+- New mode: Complete curation
+- Update mode: **Incremental curation**, only process knowledge extraction related to this change; historically curated content is not rewritten, only append "Update trigger and cascade impact" and new pitfalls/patterns
+
+## Step 6: Document Sync and Notification (Mandatory)
+
+> SKILL.md principle #7. `import-docs` first, then `wework-bot`, reversing is prohibited.
 
 ### import-docs
 
 `node .claude/skills/import-docs/scripts/import-docs.js --dir docs --exts md`
-记录真实结果供 wework-bot 使用。`API_X_TOKEN` 缺失时记录"本轮未执行同步"。
+Record real result for wework-bot use. When `API_X_TOKEN` is missing, record "Sync not executed this round".
 
 ### wework-bot
 
-按 `../wework-bot/SKILL.md` 生动总结格式。必填：`⏱️ 用时` / `🪙 会话用量` / `🤖 模型` / `🧰 工具` / `🕒 最后更新` / `☁️ 文档同步`（已执行时填真实结果）。更新模式：`🎯 结论` 体现「更新」，`📦 产物` 注明「更新 N / 保持 N」。
+Follow `../wework-bot/SKILL.md` vivid summary format. Required: `⏱️ Time` / `🪙 Session Usage` / `🤖 Model` / `🧰 Tools` / `🕒 Last Updated` / `☁️ Document Sync` (fill real result when executed). Update mode: `🎯 Conclusion` reflect "Update", `📦 Artifacts` note "Update N / Keep N".

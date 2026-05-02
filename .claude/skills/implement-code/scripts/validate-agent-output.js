@@ -3,16 +3,16 @@
 /**
  * validate-agent-output
  *
- * 目标：把 agent 的“必答问题覆盖、结构化产物存在性”等契约做成可执行门禁。
- * 约定：agent 输出末尾必须包含一个 ```json fenced code block，字段规范见 shared/agent-output-contract.md
+ * Goal: make agent "required answers coverage, structured artifact existence" contracts executable gates.
+ * Convention: agent output must contain a ```json fenced code block at the end, field spec see shared/agent-output-contract.md
  *
- * 用法：
+ * Usage:
  *   node scripts/validate-agent-output.js --agent <name> (--text "<raw>" | --file <path>)
  *
- * 退出码：
- *   0 通过
- *   1 未通过
- *   2 参数错误
+ * Exit codes:
+ *   0 passed
+ *   1 failed
+ *   2 argument error
  */
 
 const fs = require('fs');
@@ -20,10 +20,10 @@ const path = require('path');
 
 function printHelp(stream) {
   const out = stream || process.stdout;
-  out.write(`用法:
+  out.write(`Usage:
   node scripts/validate-agent-output.js --agent <agent-name> (--text "<raw>" | --file <path>)
 
-示例:
+Examples:
   node scripts/validate-agent-output.js --agent spec-retriever --file /tmp/out.txt
   node scripts/validate-agent-output.js --agent architect --text "$(cat /tmp/out.txt)"
 `);
@@ -109,36 +109,36 @@ function validateRequiredAnswers(arr) {
 }
 
 function validateByAgent(agentName, json) {
-  // 通用门禁
+  // Universal gate
   const agent = requireString(json, 'agent');
-  if (!agent) fail('JSON 附录缺少必填字段 agent');
+  if (!agent) fail('JSON appendix missing required field: agent');
   if (agent !== agentName) {
-    fail(`JSON 附录 agent 不匹配：期望 ${agentName}，实际 ${agent}`);
+    fail(`JSON appendix agent mismatch: expected ${agentName}, actual ${agent}`);
   }
 
   const cv = requireString(json, 'contract_version');
-  if (!cv) fail('JSON 附录缺少必填字段 contract_version');
-  if (cv !== '1.0') fail(`contract_version 不受支持：${cv}（期望 1.0）`);
+  if (!cv) fail('JSON appendix missing required field: contract_version');
+  if (cv !== '1.0') fail(`contract_version not supported: ${cv} (expected 1.0)`);
 
   const skill = requireString(json, 'task.skill');
   const stage = requireString(json, 'task.stage');
-  if (!skill) fail('JSON 附录缺少必填字段 task.skill');
-  if (!stage) fail('JSON 附录缺少必填字段 task.stage');
+  if (!skill) fail('JSON appendix missing required field: task.skill');
+  if (!stage) fail('JSON appendix missing required field: task.stage');
 
   const requiredAnswers = requireArray(json, 'required_answers');
-  if (!requiredAnswers) fail('JSON 附录缺少必填字段 required_answers（数组）');
-  if (requiredAnswers.length === 0) fail('required_answers 不能为空');
+  if (!requiredAnswers) fail('JSON appendix missing required field: required_answers (array)');
+  if (requiredAnswers.length === 0) fail('required_answers cannot be empty');
 
   const bad = validateRequiredAnswers(requiredAnswers);
   if (bad.length) {
-    fail('required_answers 未覆盖或未回答', JSON.stringify(bad, null, 2));
+    fail('required_answers not covered or not answered', JSON.stringify(bad, null, 2));
   }
 
-  // agent 特定门禁（仅校验”结构存在性”，不校验内容真伪）
+  // Agent-specific gates (only check "structural existence", not content authenticity)
   if (agentName === 'spec-retriever') {
     const rs = json?.artifacts?.required_specs;
     if (!Array.isArray(rs) || rs.length === 0) {
-      fail('spec-retriever 需在 artifacts.required_specs 提供至少一个必选规范路径');
+      fail('spec-retriever must provide at least one required spec path in artifacts.required_specs');
     }
   }
 
@@ -153,7 +153,7 @@ function validateByAgent(agentName, json) {
       parts.uncovered_risks === true;
     if (!ok) {
       fail(
-        'impact-analyst 需在 artifacts.parts 标注四部分存在性：search_terms/impact_chain/closure_summary/uncovered_risks 均为 true'
+        'impact-analyst must mark existence of four parts in artifacts.parts: search_terms/impact_chain/closure_summary/uncovered_risks all true'
       );
     }
   }
@@ -169,7 +169,7 @@ function validateByAgent(agentName, json) {
       json.artifacts.conformance.length > 0;
     if (!ok) {
       fail(
-        'architect 需在 artifacts 标注 modules/interface_spec/dataflow/architecture 为 true，且提供 conformance 字符串'
+        'architect must mark modules/interface_spec/dataflow/architecture as true in artifacts, and provide conformance string'
       );
     }
   }
@@ -183,7 +183,7 @@ function validateByAgent(agentName, json) {
       Array.isArray(issues.p1) &&
       Array.isArray(issues.p2);
     if (!ok) {
-      fail('code-reviewer 需在 artifacts.issues 提供 p0/p1/p2 数组');
+      fail('code-reviewer must provide p0/p1/p2 arrays in artifacts.issues');
     }
   }
 
@@ -191,7 +191,7 @@ function validateByAgent(agentName, json) {
     const blocks = json?.artifacts?.blocks;
     const ok = Array.isArray(blocks) && blocks.length > 0 && blocks.every((b) => typeof b?.path === 'string');
     if (!ok) {
-      fail('mermaid-expert 需在 artifacts.blocks 提供非空数组，且每项含 path 字段');
+      fail('mermaid-expert must provide non-empty array in artifacts.blocks, with each item containing path field');
     }
   }
 
@@ -203,7 +203,7 @@ function validateByAgent(agentName, json) {
       json.artifacts.strategy === true &&
       json.artifacts.dependencies === true;
     if (!ok) {
-      fail('planner 需在 artifacts 标注 scenarios/risks/strategy/dependencies 为 true');
+      fail('planner must mark scenarios/risks/strategy/dependencies as true in artifacts');
     }
   }
 }
@@ -215,7 +215,7 @@ function main() {
 
   if ((args.text == null || args.text === '') && !args.file) usage();
   if (args.text && args.file) {
-    fail('--text 与 --file 不可同时提供');
+    fail('--text and --file cannot be provided simultaneously');
   }
 
   let raw = args.text;
@@ -225,13 +225,13 @@ function main() {
   }
 
   const jsonText = extractLastJsonFence(raw);
-  if (!jsonText) fail('未找到 ```json fenced code block（JSON 契约附录）');
+  if (!jsonText) fail('No ```json fenced code block found (JSON contract appendix)');
 
   let parsed;
   try {
     parsed = JSON.parse(jsonText);
   } catch (e) {
-    fail('JSON 契约附录解析失败', e?.message);
+    fail('JSON contract appendix parsing failed', e?.message);
   }
 
   validateByAgent(agentName, parsed);
@@ -239,4 +239,3 @@ function main() {
 }
 
 main();
-

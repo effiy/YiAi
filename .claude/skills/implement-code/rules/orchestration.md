@@ -1,138 +1,138 @@
-# 编排与阶段契约规范
+# Orchestration and Stage Contract Spec
 
-> 阶段编号、名称、进出条件以本文件和 `../SKILL.md` 为准，其他规则文件不得重新定义阶段映射。
-
----
-
-## 1. 阶段状态机（权威定义）
-
-| 阶段 | 名称 | 目标 | 解锁条件 |
-|------|------|------|---------|
-| 0 | 文档驱动 | 解析功能名，预检文档，完成 Grounding 与探针检查 | P0 文档齐全，MCP 可用性已声明 |
-| 1 | 测试先行 | 在真实场景完成最小可用测试并补齐测试骨架 | 主场景 MVP 在真实入口已通过且留存证据，场景锚点完整，`data-testid` 覆盖齐全 |
-| 2 | 动态检查门禁 | 在原型页面上验证全部 P0 项 | P0 全部通过并回写 `05_动态检查清单.md` |
-| 3 | 模块预检 | 完成环境预检与全项目影响链闭合分析 | 预检清单全部通过，依赖已闭环 |
-| 4 | 写项目代码 | 逐模块实施并逐模块验证 | 模块实现完成，Lint/回归/影响链回归记录齐全 |
-| 5 | 代码评审 | 执行 code-review 与 Mock 泄漏检查 | 无 P0 评审问题 |
-| 6 | 冒烟测试 | 由 AI 自动执行主流程全链路冒烟并回写状态 | AI 自动化主流程冒烟通过，P0 全部通过并回写 `05` |
-| 7 | 过程总结 | 生成 `06_实施总结.md` 并回写功能文档状态 | 总结写入完成，状态回写完成，动态检查清单最终门禁通过 |
-| 8 | 文档同步与通知 | 同步 `docs` 并发送通知 | `import-docs` 已执行或记录跳过原因，wework-bot 已按结束类型发送 |
+> Stage numbers, names, and entry/exit conditions are authoritative in this file and `../SKILL.md`; other rule files must not redefine stage mappings.
 
 ---
 
-## 2. 输入前提
+## 1. Stage State Machine (Authoritative)
 
-### 2.1 默认输入
-
-- `{功能名}`：对应 `docs/<功能名>/`
-- `{文档集路径}`：默认 `docs/<功能名>/`
-
-无法解析时，先写入 `docs/99_agent-runs/<YYYYMMDD-HHMMSS>_implement-code.md` 记录原因和恢复步骤，再请求补充。
-
-### 2.2 最低文档要求
-
-| 文件 | 级别 | 用途 |
-|------|------|------|
-| `02_需求任务.md` | P0 | 用户故事、场景与前置条件 |
-| `03_设计文档.md` | P0 | 模块、接口、文件路径和实现约束 |
-| `05_动态检查清单.md` | P0 | 全部待验证检查项 |
-| `01_需求文档.md` | P1 | 背景与目标补充 |
-| `04_使用文档.md` | P2 | 辅助 UI 文案 |
-
-P0 文档缺失时：记录缺失 → 停止进入阶段 1 → 生成阻断总结 → 提示运行 `generate-document`。
-
-### 2.3 Git 功能分支（强制）
-
-仓库为 git 时必须使用 `feat/<功能名>` 分支，代码变更前先 `git switch`。禁止在错误分支上继续；无法切换时按阻断处理并通知。
-
-### 2.4 一次执行到底
-
-默认不频繁追问，缺失信息写"待确认"并继续。需人工介入时必须先落地兜底记录，再 `wework-bot` 推送。
+| Stage | Name | Goal | Unlock Condition |
+|-------|------|------|------------------|
+| 0 | Doc-driven | Parse feature name, pre-check documents, complete grounding and probe checks | P0 docs complete, MCP availability declared |
+| 1 | Test-first | Complete minimum viable test in real scenario and fill out test skeleton | Main scenario MVP passed on real entry with retained evidence, scene anchors complete, `data-testid` coverage complete |
+| 2 | Dynamic check gate | Verify all P0 items on prototype page | All P0 passed and written back to `05_dynamic-checklist.md` |
+| 3 | Module pre-check | Complete environment pre-check and full-project impact-chain closure analysis | Pre-check list fully passed, dependencies closed |
+| 4 | Write project code | Implement module by module and verify module by module | Module implementation complete, lint/regression/impact-chain regression records complete |
+| 5 | Code review | Execute code-review and mock leak check | No P0 review issues |
+| 6 | Smoke test | AI automatically executes main-flow full-chain smoke and writes back status | AI automation main-flow smoke passed, all P0 passed and written back to `05` |
+| 7 | Process summary | Generate `06_process-summary.md` and write back feature document status | Summary write complete, status write-back complete, dynamic checklist final gate passed |
+| 8 | Document sync and notification | Sync `docs` and send notification | `import-docs` executed or skip reason recorded, wework-bot sent by end type |
 
 ---
 
-## 3. 阶段 0 细则
+## 2. Input Prerequisites
 
-### 3.1 文档 Grounding 输出
+### 2.1 Default Input
 
-必须至少提取：用户故事（场景名+前置条件+操作步骤+预期结果）、实现约束（模块+接口+状态管理+已有代码路径+影响链）、检查项映射（场景→P0/P1/P2 列表）。
+- `{feature-name}`: corresponds to `docs/<feature-name>/`
+- `{document-set-path}`: default `docs/<feature-name>/`
 
-### 3.2 Skill / Agent 分派
+When unparseable, first write to `docs/99_agent-runs/<YYYYMMDD-HHMMSS>_implement-code.md` to record reason and recovery steps, then request supplementation.
 
-| 类型 | 名称 | 用途 |
-|------|------|------|
-| Skill | `find-skills` | 声明和发现要用到的 skill |
-| Skill | `find-agents` | 发现和分派代理 |
-| Skill | `e2e-testing` | 阶段 1 产出测试骨架 |
-| Skill | `verification-loop` | 阶段 3/5 静态预检与测试执行 |
-| Skill | `code-review` | 阶段 5 真实代码审查 |
-| Skill | `search-first` | 外部依赖选型（按需） |
-| Agent | `test-page-builder` | 阶段 1 生成测试原型页 |
-| Agent | `architect` | 架构不确定时咨询 |
-| Agent | `security-reviewer` | 安全相关场景 |
-| Agent | `docs-lookup` | 文档歧义定位 |
-| Agent | `impl-reporter` | 阶段 7 生成实施总结 |
+### 2.2 Minimum Document Requirements
 
-### 3.3 MCP 探针与降级
+| File | Level | Purpose |
+|------|-------|---------|
+| `02_requirement-tasks.md` | P0 | User stories, scenarios and preconditions |
+| `03_design-document.md` | P0 | Modules, interfaces, file paths and implementation constraints |
+| `05_dynamic-checklist.md` | P0 | All pending verification check items |
+| `01_requirement-document.md` | P1 | Background and goal supplement |
+| `04_usage-document.md` | P2 | Auxiliary UI copy |
 
-进入阶段 1 前必须完成：
+When P0 documents are missing: record missing → stop entering stage 1 → generate block summary → prompt to run `generate-document`.
 
-| MCP 工具 | 最小探针 | 降级方案 | 可阻断 |
-|---------|---------|---------|--------|
-| `playwright` | 打开 `about:blank` | `npx playwright test` + 人工确认 | 否 |
-| 文件系统能力 | 复用文档读取结果 | 改用本地读写工具 | 否 |
-| 无降级方案的必要工具 | 最小可行探针 | 无 | 是 |
+### 2.3 Git Feature Branch (Mandatory)
 
-禁止静默降级。所有降级记录到 `06_实施总结.md`。探针/降级/门禁证据缺失时按"门禁失效"处理。
+When the repository is git, must use `feat/<feature-name>` branch; `git switch` before code changes. Continuing on wrong branch is prohibited; when unable to switch, treat as block and notify.
 
-### 3.4 场景—检查项覆盖预检
+### 2.4 Execute to Completion in One Shot
 
-在写测试与过门禁前，显式核对 `02_需求任务.md` 的场景是否都有 `05_动态检查清单.md` 中可执行的 P0 检查项：
-
-1. 从 `02` 列出全部用户故事/场景
-2. 从 `05` 列出全部 P0 检查项
-3. 建表：场景 → 覆盖的 P0 项 → 缺口说明（"无"或"待补"+原因）
-4. 进入阶段 1：可存在"待补"但须在 `05` 或 `docs/99_agent-runs/` 记录原因
-5. 进入阶段 2：所有 P0 场景须有至少一项 `05` 映射，或已标为 N/A 并写原因
+By default do not frequently ask questions; missing information write "to be confirmed" and continue. When human intervention is needed, first land fallback record, then `wework-bot` push.
 
 ---
 
-## 4. 阶段进出条件
+## 3. Stage 0 Details
 
-| 阶段 | 进入 | 退出 |
-|------|------|------|
-| 1 | 阶段 0 完成 | MVP 在真实入口通过+证据留存+测试产物在 `tests/` 下 |
-| 2 | 阶段 1 完成 | 全部 P0 通过，状态已回写 `05` |
-| 3 | 阶段 2 完成 | 环境预检+影响链闭合+编码预检全部通过 |
-| 4 | 阶段 3 完成 | 模块实现+逐模块验证+基于真实 diff 的影响链回归完成 |
-| 5 | 阶段 4 完成 | 无 P0 评审问题，Mock 泄漏检查通过 |
-| 6 | 阶段 5 完成 | AI 自动主流程冒烟通过，P0 全部通过并回写 |
-| 7 | 阶段 6 完成 | 总结写入完成+状态回写完成+动态检查清单最终门禁通过 |
-| 8 | 阶段 7 完成 | import-docs 已执行+wework-bot 已按结束类型发送 |
+### 3.1 Document Grounding Output
 
-阶段 7 阻断版退出条件：只需满足总结写入+状态回写+门禁结论（即使未通过）。
+Must extract at least: user stories (scenario name + preconditions + operation steps + expected results), implementation constraints (modules + interfaces + state management + existing code paths + impact chain), check item mapping (scenario → P0/P1/P2 list).
+
+### 3.2 Skill / Agent Dispatch
+
+| Type | Name | Purpose |
+|------|------|---------|
+| Skill | `find-skills` | Declare and discover skills to use |
+| Skill | `find-agents` | Discover and dispatch agents |
+| Skill | `e2e-testing` | Stage 1 produces test skeleton |
+| Skill | `verification-loop` | Stage 3/5 static pre-check and test execution |
+| Skill | `code-review` | Stage 5 real code review |
+| Skill | `search-first` | External dependency selection (as needed) |
+| Agent | `test-page-builder` | Stage 1 generates test prototype page |
+| Agent | `codes-builder` | Architecture confirmation and implementation strategy validation |
+| Agent | `code-reviewer` | Security-related scenarios (security audit dimension) |
+| Agent | `codes-retriever` | Code context retrieval |
+| Agent | `code-impl-reporter` | Stage 7 generates implementation summary |
+
+### 3.3 MCP Probe and Degradation
+
+Before entering stage 1, must complete:
+
+| MCP Tool | Minimum Probe | Fallback Plan | Blocking |
+|---------|---------------|---------------|----------|
+| `playwright` | Open `about:blank` | `npx playwright test` + human confirmation | No |
+| Filesystem capability | Reuse document read results | Use local read/write tools | No |
+| Necessary tool with no fallback | Minimum viable probe | None | Yes |
+
+Silent degradation prohibited. All degradation recorded to `06_process-summary.md`. When probe/degradation/gate evidence is missing, treat as "gate failure".
+
+### 3.4 Scenario–Checklist Coverage Pre-Check
+
+Before writing tests and passing gates, explicitly verify whether scenarios in `02_requirement-tasks.md` all have executable P0 check items in `05_dynamic-checklist.md`:
+
+1. List all user stories/scenarios from `02`
+2. List all P0 check items from `05`
+3. Build table: scenario → covered P0 items → gap description ("none" or "to supplement" + reason)
+4. Enter stage 1: "to supplement" may exist but must record reason in `05` or `docs/99_agent-runs/`
+5. Enter stage 2: all P0 scenarios must have at least one `05` mapping, or be marked N/A with reason written
 
 ---
 
-## 5. 阻断点
+## 4. Stage Entry/Exit Conditions
 
-必须停止的情况：功能名/路径无法定位 / 无法在 `feat/<功能名>` 上就绪分支 / P0 文档缺失 / 无降级的必要 MCP 不可用 / 阶段 2 或 6 达到修复上限 / Gate A 未完成即写代码 / Gate B 未通过 / 门禁未执行/缺证据/被跳过 / 所有模块阻断。
+| Stage | Enter | Exit |
+|-------|-------|------|
+| 1 | Stage 0 complete | MVP passed on real entry + evidence retained + test artifacts under `tests/` |
+| 2 | Stage 1 complete | All P0 passed, status written back to `05` |
+| 3 | Stage 2 complete | Environment pre-check + impact chain closed + coding pre-check all passed |
+| 4 | Stage 3 complete | Module implementation + per-module verification + impact-chain regression based on real diff complete |
+| 5 | Stage 4 complete | No P0 review issues, mock leak check passed |
+| 6 | Stage 5 complete | AI auto main-flow smoke passed, all P0 passed and written back |
+| 7 | Stage 6 complete | Summary write complete + status write-back complete + dynamic checklist final gate passed |
+| 8 | Stage 7 complete | import-docs executed + wework-bot sent by end type |
 
-停止时：输出阻断原因 → 记录当前阶段和产物 → 生成阻断总结 → 回写状态 → `import-docs` → `wework-bot` 阻断通知。通知发送失败时写入 `06_实施总结.md` 或 `docs/99_agent-runs/`。
-
----
-
-## 6. 编排会话日志（强制）
-
-skill/agent/MCP/memory/shared 交互，完成后立即追加写入 `docs/周报/<YYYY-MM-DD>~<YYYY-MM-DD>/logs.md`：
-
-1. **触发时机**：每次完成一轮调用
-2. **工具**：`node .claude/skills/generate-document/scripts/log-orchestration.js`（参数见 `../SKILL.md`）
-3. **记录结构**：操作场景 + 对话摘要；可选 `--case good|bad`、`--tags`、`--lesson`。禁止空占位
-4. **阻断补齐**：中途阻断时仍须补齐已发生的交互日志
+Stage 7 block exit condition: only needs to satisfy summary write + status write-back + gate conclusion (even if not passed).
 
 ---
 
-## 7. 关键节点记录（推荐）
+## 5. Block Points
 
-阶段切换、门禁结论、通知结果等里程碑，推荐追加写入 `docs/周报/<YYYY-MM-DD>~<YYYY-MM-DD>/key-notes.md`：`node .claude/skills/generate-document/scripts/log-key-node.js`。与 §6 互补，不可替代 §6。
+Must stop when: feature name/path cannot be located / cannot ready branch on `feat/<feature-name>` / P0 documents missing / necessary MCP unavailable with no fallback / stage 2 or 6 reaches fix上限 / Gate A incomplete yet code is written / Gate B not passed / gate not executed/missing evidence/skipped / all modules blocked.
+
+On stop: output block reason → record current stage and artifacts → generate block summary → write back status → `import-docs` → `wework-bot` block notification. When notification send fails, write to `06_process-summary.md` or `docs/99_agent-runs/`.
+
+---
+
+## 6. Orchestration Session Logs (Mandatory)
+
+skill/agent/MCP/memory/shared interactions, append to `docs/weekly/<YYYY-MM-DD>~<YYYY-MM-DD>/logs.md` immediately after each round:
+
+1. **Trigger timing**: after each round of invocation completes
+2. **Tool**: `node .claude/skills/generate-document/scripts/log-orchestration.js` (parameters see `../SKILL.md`)
+3. **Record structure**: operation scenario + conversation summary; optional `--case good|bad`, `--tags`, `--lesson`. Empty placeholders prohibited
+4. **Block补齐**: when interrupted mid-way, still must补齐 already occurred interaction logs
+
+---
+
+## 7. Key Node Records (Recommended)
+
+Stage switches, gate conclusions, notification results and other milestones, recommended to append to `docs/weekly/<YYYY-MM-DD>~<YYYY-MM-DD>/key-notes.md`: `node .claude/skills/generate-document/scripts/log-key-node.js`. Complements §6, cannot replace §6.

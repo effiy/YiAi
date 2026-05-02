@@ -1,57 +1,63 @@
 ---
 name: code-review
-description: 审查代码示例和架构实现是否符合项目规范（入口初始化、状态管理模式、组件注册/导出、编码规范等）。当项目报告或动态检查清单中包含代码实现验证场景时使用。
+description: |
+  Review code examples and architecture implementations against project conventions
+  (entry initialization, state management patterns, component registration/export,
+  coding standards, etc.). Used when project reports or dynamic checklists contain
+  code implementation validation scenarios.
+user_invocable: true
+lifecycle: default-pipeline
 ---
 
 # code-review
 
-## 用途
+## Purpose
 
-对指定代码文件或代码片段进行规范性审查，输出 P0/P1/P2 分级问题列表。
+Perform normative review on specified code files or snippets, outputting a P0/P1/P2 graded issue list.
 
-本 skill 负责审查方法、维度和输出格式；若需要并行专家角色或必答问题，改用 `../../agents/code-reviewer.md`。统一边界见 `../../shared/agent-skill-boundaries.md`。
+This skill defines the review method, dimensions, and output format. For parallel expert roles or required questions, use `../../agents/code-reviewer.md`. Boundaries: `../../shared/agent-skill-boundaries.md`.
 
-## 输入
+## Input
 
-- **审查目标**：文件路径列表 或 代码片段（必填）
-- **上下文**：关联的设计文档章节或功能描述（可选）
-- **审查重点**：如 `架构一致性` / `安全` / `性能`（可选，默认全面审查）
+- **Review target**: file path list or code snippet (required)
+- **Context**: related design document chapter or feature description (optional)
+- **Focus area**: such as `architecture consistency` / `security` / `performance` (optional, defaults to full review)
 
-## 审查维度
+## Review Dimensions
 
-### 项目专项（按仓库现状适用）
+### Project-Specific (apply per repository status)
 
-- **入口初始化模式**：视图入口是否遵循项目既有初始化方式
-- **状态管理模式**：Store/状态层是否遵循项目既有组织方式
-- **共享组件注册/导出**：共享组件是否按项目约定集中管理并可被正确引用
-- **代码结构**：是否符合 `../generate-document/rules/代码结构.md` 约定
-- **编码规范**：是否符合 `../generate-document/rules/编码规范.md`（命名、注释、格式）
+- **Entry initialization pattern**: does the view entry follow the project's existing initialization method?
+- **State management pattern**: does the Store/state layer follow the project's existing organization?
+- **Shared component registration/export**: are shared components managed centrally per project convention and correctly referenceable?
+- **Code structure**: does it conform to `../generate-document/rules/code-structure.md`?
+- **Coding standards**: does it conform to `../generate-document/rules/coding-standard.md` (naming, comments, formatting)?
 
-### 通用质量
+### Universal Quality
 
-- **可读性**：函数/变量命名是否清晰，是否有必要注释
-- **边界处理**：空值、异常路径是否处理
-- **安全**：是否存在 XSS / CSRF / 敏感信息泄露风险
-- **性能**：是否有明显的不必要渲染 / 内存泄漏风险
+- **Readability**: are function/variable names clear, are necessary comments present?
+- **Boundary handling**: are null values and exception paths handled?
+- **Security**: are there XSS / CSRF / sensitive information leak risks?
+- **Performance**: are there obvious unnecessary renders / memory leak risks?
 
-## 输出格式
+## Output Format
 
 ```
-审查结果：
-P0（必须修复）：
-  - 文件:行号 — <问题描述> — <修复建议>
+Review Results:
+P0 (must fix):
+  - file:line — <issue description> — <fix suggestion>
 
-P1（建议修复）：
-  - 文件:行号 — <问题描述>
+P1 (suggested fix):
+  - file:line — <issue description>
 
-P2（可选优化）：
-  - 文件:行号 — <问题描述>
+P2 (optional optimization):
+  - file:line — <issue description>
 
-无问题项：<若某维度无问题，明确说明>
+No-issue items: <explicitly state if a dimension has no issues>
 ```
 
-## 使用规则
+## Usage Rules
 
-- 读取 `../generate-document/rules/代码结构.md` 和 `../generate-document/rules/编码规范.md` 作为判断依据。
-- 只审查**实际读取到的代码**，不推断未看到的文件内容。
-- 无法访问文件时，输出"无法读取文件 <路径>，跳过"。
+- Read `../generate-document/rules/code-structure.md` and `../generate-document/rules/coding-standard.md` as judgment basis.
+- Only review **actually read code**; do not infer unseen file content.
+- When files cannot be accessed, output "Cannot read file <path>, skipping."

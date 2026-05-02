@@ -12,7 +12,7 @@ function formatLocalDate(date = new Date()) {
 }
 
 /**
- * 自然周：周一 ~ 周日（基于本地时区）。
+ * Natural week: Monday ~ Sunday (based on local timezone).
  * @param {Date} [baseDate]
  * @returns {{ start: string, end: string, range: string }}
  */

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * 将 generate-document / implement-code 编排过程中与 .claude 内 skill、agent、MCP 等的交互
- * 以 Markdown 格式追加写入仓库根目录
- * `docs/周报/<YYYY-MM-DD~YYYY-MM-DD>/logs.md`。
- * 每条记录包含「操作场景」与「对话与交互摘要」；可选 --case / --tags / --lesson
- * 标注 good case / bad case，供 docs/logs/CASE-STANDARD.md 与后续改进 skills、rules、agents。
- * 用法见各技能 SKILL.md「编排会话日志」。
+ * Append generate-document / implement-code orchestration interactions with .claude skills, agents, MCP, etc.
+ * as Markdown to repo root `docs/weekly/<YYYY-MM-DD~YYYY-MM-DD>/logs.md`.
+ * Each record contains "operation scenario" and "dialogue and interaction summary"; optional --case / --tags / --lesson
+ * to mark good case / bad case, for docs/logs/CASE-STANDARD.md and subsequent improvements to skills, rules, agents.
+ * Usage see each skill's SKILL.md "orchestration session logs".
  */
 
 const fsp = require('fs').promises;
@@ -27,25 +26,25 @@ const CASE_VALUES = new Set(['good', 'bad', 'neutral']);
 
 function printHelp(stream) {
   const out = stream || process.stdout;
-  out.write(`用法:
+  out.write(`Usage:
   node .claude/scripts/log-orchestration.js --skill <generate-document|implement-code> \\
-    --kind <skill|agent|mcp|memory|shared|other> [--name <标识>] \\
-    [--scenario "<操作场景>"] \\
+    --kind <skill|agent|mcp|memory|shared|other> [--name <identifier>] \\
+    [--scenario "<operation scenario>"] \\
     [--case <good|bad|neutral>] \\
     [--tags "<tag1,tag2>"] \\
-    [--lesson "<后续改进要点一句>"] \\
-    [--text "<摘要；单行>"]
+    [--lesson "<one-sentence follow-up improvement>"] \\
+    [--text "<summary; single line>"]
 
-  未提供 --text 时从 stdin 读取正文（保留换行，用作对话与交互摘要）。
-  good/bad 标准见 docs/logs/CASE-STANDARD.md。
-  日志目录：<仓库根>/docs/周报/<自然周起止日期>/
-  文件名：logs.md（按周追加）
+  When --text is not provided, read body from stdin (newlines preserved, used as dialogue and interaction summary).
+  good/bad standards see docs/logs/CASE-STANDARD.md.
+  Log directory: <repo-root>/docs/weekly/<natural-week-start-end>/
+  Filename: logs.md (appended per week)
 
-示例:
+Examples:
   node .claude/scripts/log-orchestration.js --skill generate-document --kind agent --name spec-retriever \\
-    --scenario "用户发起 /generate-document Foo；本步检索适用规范" \\
+    --scenario "User initiated /generate-document Foo; this step retrieves applicable specs" \\
     --case good --tags "evidence-ok,stage-contract-met" \\
-    --text "返回适用规范列表：rules/需求文档.md ..."
+    --text "Returned applicable spec list: rules/requirement-document.md ..."
 `);
 }
 
@@ -84,7 +83,7 @@ function parseArgs(argv) {
   return out;
 }
 
-/** stdin：保留换行，避免对话摘录被压成一行 */
+/** stdin: preserve newlines to avoid dialogue excerpts being compressed into one line */
 function normalizeMultiline(s) {
   return String(s ?? '')
     .replace(/\r\n/g, '\n')
@@ -92,7 +91,7 @@ function normalizeMultiline(s) {
     .trim();
 }
 
-/** --text：单行摘要 */
+/** --text: single-line summary */
 function normalizeOneLine(s) {
   return String(s ?? '')
     .replace(/\r\n/g, '\n')
@@ -108,7 +107,7 @@ async function readStdin() {
 }
 
 /**
- * 摘要改为引用块，避免正文中的 # 破坏 Markdown 结构；仍保持可读。
+ * Convert summary to blockquote to avoid # in body breaking Markdown structure; remains readable.
  */
 function formatSummaryBody(body) {
   return body.split('\n').map((line) => `> ${line}`).join('\n');
@@ -126,7 +125,7 @@ function normalizeCaseArg(raw) {
   if (raw == null || String(raw).trim() === '') return null;
   const c = String(raw).trim().toLowerCase();
   if (!CASE_VALUES.has(c)) {
-    console.error(`log-orchestration: --case 须为 good | bad | neutral，收到：${raw}`);
+    console.error(`log-orchestration: --case must be good | bad | neutral, received: ${raw}`);
     process.exit(1);
   }
   return c;
@@ -141,14 +140,14 @@ function formatEvaluationBlock(caseNorm, tagsArr, lessonRaw) {
   const lesson = lessonRaw != null ? String(lessonRaw).trim() : '';
   if (!caseNorm && tagsArr.length === 0 && !lesson) return '';
 
-  const lines = ['', '**评测标注**'];
+  const lines = ['', '**Evaluation**'];
   const grade = caseNorm || 'neutral';
-  lines.push(`- **分级**：${grade}`);
+  lines.push(`- **Grade**: ${grade}`);
   if (tagsArr.length) {
-    lines.push(`- **标签**：${tagsArr.map((t) => `\`${t}\``).join(' · ')}`);
+    lines.push(`- **Tags**: ${tagsArr.map((t) => `\`${t}\``).join(' · ')}`);
   }
   if (lesson) {
-    lines.push(`- **后续改进**：${lesson}`);
+    lines.push(`- **Follow-up**: ${lesson}`);
   }
 
   return `${lines.join('\n')}\n`;
@@ -175,10 +174,10 @@ log_type: orchestration
 week: ${weekRange}
 ---
 
-# 编排会话日志 · ${weekRange}
+# Orchestration Session Logs · ${weekRange}
 
-本文件由 \`node .claude/scripts/log-orchestration.js\` 追加写入，记录本周编排交互摘要。
-每条记录含操作场景、交互摘要与可选评测标注（good/bad case 参考 \`docs/logs/CASE-STANDARD.md\`）。
+This file is appended by \`node .claude/scripts/log-orchestration.js\`, recording this week's orchestration interaction summaries.
+Each record contains operation scenario, interaction summary, and optional evaluation annotation (good/bad case reference \`docs/logs/CASE-STANDARD.md\`).
 
 ---
 
@@ -201,14 +200,13 @@ async function main() {
   }
 
   if (!body) {
-    console.error('log-orchestration: 正文为空（提供 --text 或 stdin）');
+    console.error('log-orchestration: body is empty (provide --text or stdin)');
     process.exit(1);
   }
 
-  // 本仓库中 scripts/ 位于仓库根目录下：<repo>/scripts
-  const repoRoot = path.resolve(__dirname, '..');
+  const repoRoot = path.resolve(__dirname, '../../..');
   const week = getNaturalWeekRange(new Date());
-  const logsDir = path.join(repoRoot, 'docs', '周报', week.range);
+  const logsDir = path.join(repoRoot, 'docs', 'weekly', week.range);
   await fsp.mkdir(logsDir, { recursive: true });
   const logFile = path.join(logsDir, 'logs.md');
 
@@ -220,7 +218,7 @@ async function main() {
 
   if (caseNorm === 'bad' && (!lessonRaw || !String(lessonRaw).trim())) {
     console.warn(
-      'log-orchestration: bad case 建议配合 --lesson 写明后续改进要点（见 docs/logs/CASE-STANDARD.md）'
+      'log-orchestration: bad case recommended with --lesson describing follow-up improvement points (see docs/logs/CASE-STANDARD.md)'
     );
   }
 
@@ -229,16 +227,16 @@ async function main() {
   const scenario =
     args.scenario != null && String(args.scenario).trim() !== ''
       ? String(args.scenario).trim()
-      : '（未标注操作场景；请在下轮调用时传入 `--scenario`，对照 eval 用户故事描述用法）';
+      : '(Operation scenario not annotated; please pass `--scenario` in next invocation, referencing eval user story description)';
 
   const evalBlock = formatEvaluationBlock(caseNorm, tagsArr, lessonRaw);
   const badge = headingCaseBadge(caseNorm);
 
   const block = `### \`${iso}\` · \`${category}\`${badge}
 
-**操作场景**：${scenario}
+**Scenario**: ${scenario}
 
-**对话与交互摘要**
+**Dialogue and Interaction Summary**
 
 ${formatSummaryBody(body)}
 ${evalBlock}

@@ -1,69 +1,69 @@
-# 验证门禁规范
+# Verification Gate Spec
 
-> 可交互入口的验证决策逻辑。Gate A/B 准入与证据标准以 [`implement-code-testing.md`](./implement-code-testing.md) 为真源；本文件补充门禁原则、修复循环和最终闭环。
-
----
-
-## 1. 门禁原则
-
-- P0 未全部通过，禁止交付
-- 失败时须修复代码，不得降级 P0 或修改预期结果
-- 自修复上限 2 轮，第 3 轮输出阻断报告
-- 人工确认类不计入 P0 通过/失败判定
-- 门禁未执行/被跳过/缺证据 = 门禁失效
-- Gate A 未完成禁止写项目代码（见 [`implement-code-testing.md`](./implement-code-testing.md) §2）
-- Gate B 未完成禁止进入阶段 7（见 [`implement-code-testing.md`](./implement-code-testing.md) §3）
+> Verifiable entry verification decision logic. Gate A/B admission and evidence standards are sourced from [`implement-code-testing.md`](./implement-code-testing.md); this file supplements gate principles, fix loops, and final closure.
 
 ---
 
-## 2. 检查项分类
+## 1. Gate Principles
 
-| 优先级 | 验证方式 | 通过条件 |
-|--------|---------|---------|
-| P0 | 手动浏览器 + 代码审查 | UI 可交互、data-testid 完整、入口初始化正确 |
-| P1 | 手动 + Jest | 错误状态展示、边界值、组件渲染 |
-| P2 | 人工 | 视觉一致性、响应式布局 |
-
----
-
-## 3. 验证执行
-
-启动真实入口 → 按检查清单操作 → 截图记录 → 检查 JS 控制台无错误 → 回写结果（✅/❌）
+- P0 not all passed, delivery prohibited
+- On failure, code must be fixed; degrading P0 or modifying expected results is prohibited
+- Self-fix上限 2 rounds, 3rd round outputs block report
+- Human-confirmation type does not count toward P0 pass/fail determination
+- Gate not executed / skipped / missing evidence = gate failure
+- Gate A incomplete prohibits writing project code (see [`implement-code-testing.md`](./implement-code-testing.md) §2)
+- Gate B incomplete prohibits entering stage 7 (see [`implement-code-testing.md`](./implement-code-testing.md) §3)
 
 ---
 
-## 4. 修复循环
+## 2. Check Item Classification
 
-轮次 1：根因分析 → 修复 → 重新验证
-轮次 2：同上
-轮次 3：阻断报告，停止执行
-
----
-
-## 5. 状态回写
-
-验证完成后回写 `05_动态检查清单.md`：P0 通过 → ✅ + 日期；P0 失败 → ❌ + 原因。
+| Priority | Verification Method | Pass Condition |
+|----------|---------------------|----------------|
+| P0 | Manual browser + code review | UI interactive, data-testid complete, entry initialization correct |
+| P1 | Manual + Jest | Error state display, boundary values, component rendering |
+| P2 | Human | Visual consistency, responsive layout |
 
 ---
 
-## 6. 动态检查清单最终闭环（阶段 7）
+## 3. Verification Execution
 
-阶段 7 写入总结前，针对 `05` 做最终闭环（必须按顺序）：
-
-1. 回写 `05` 最终状态列/备注（含日期或证据路径）
-2. 逐项复查 P0 是否为 ✅ 或可解释的 N/A
-3. 将结论写入 `06_实施总结.md`
-
-**硬门禁**：以下任一为假则动态检查清单最终完成门禁未通过，须改走阻断版总结：
-- `05` 已根据 Gate B 结果更新，无"未验证却标 ✅"
-- 复查记录可追溯（在 `06` 或 `05` 备注中可定位）
-- `06` 结论与 `05` 当前内容一致
+Start real entry → operate per checklist → screenshot record → check JS console no errors → write back results (✅/❌)
 
 ---
 
-## 7. 禁止事项
+## 4. Fix Loop
 
-- 降级 P0 为 P1 以"通过"门禁
-- 修改检查清单预期结果
-- 修复超过 2 轮后仍继续
-- 未实际验证就改状态为 ✅
+Round 1: root cause analysis → fix → re-verify
+Round 2: same as above
+Round 3: block report, stop execution
+
+---
+
+## 5. Status Write-Back
+
+After verification completes, write back to `05_dynamic-checklist.md`: P0 passed → ✅ + date; P0 failed → ❌ + reason.
+
+---
+
+## 6. Dynamic Checklist Final Closure (Stage 7)
+
+Before writing summary in stage 7, perform final closure on `05` (must follow order):
+
+1. Write back `05` final status column/remarks (including date or evidence path)
+2. Re-check item by item whether P0 is ✅ or explainable N/A
+3. Write conclusion into `06_process-summary.md`
+
+**Hard gate**: if any of the following is false, dynamic checklist final completion gate is not passed, must switch to block version summary:
+- `05` has been updated per Gate B result, no "unverified yet marked ✅"
+- Review record is traceable (locatable in `06` or `05` remarks)
+- `06` conclusion is consistent with `05` current content
+
+---
+
+## 7. Prohibitions
+
+- Degrading P0 to P1 to "pass" the gate
+- Modifying checklist expected results
+- Continuing after more than 2 fix rounds
+- Changing status to ✅ without actual verification

@@ -3,21 +3,21 @@
 /**
  * log-agent-run
  *
- * 目的：在 `.claude/agents/memory/` 下累计 agent 调用成功/失败记录，
- * 为后续编排优化提供可检索数据（失败原因、阶段分布、重试效果等）。
+ * Purpose: accumulate agent invocation success/failure records under `.claude/agents/memory/`,
+ * providing retrievable data for subsequent orchestration optimization (failure reasons, stage distribution, retry effectiveness, etc.).
  *
- * 输出文件：
+ * Output file:
  *   .claude/agents/memory/<agent>.runs.md
  *
- * 用法：
+ * Usage:
  *   node scripts/log-agent-run.js --agent <name> --status <success|failure>
  *     --skill <generate-document|implement-code|other> --stage <stage-id>
- *     [--doc_type <文档类型>] [--feature <功能名或摘要>]
- *     [--notes "<一行摘要>"] [--error "<失败原因>"] [--evidence "<证据路径或命令>"]
+ *     [--doc_type <doc type>] [--feature <feature name or summary>]
+ *     [--notes "<one-line summary>"] [--error "<failure reason>"] [--evidence "<evidence path or command>"]
  *
- * 退出码：
- *   0 成功
- *   2 参数错误
+ * Exit codes:
+ *   0 success
+ *   2 argument error
  */
 
 const fs = require('fs');
@@ -28,11 +28,11 @@ const STATUS_VALUES = new Set(['success', 'failure']);
 
 function printHelp(stream) {
   const out = stream || process.stdout;
-  out.write(`用法:
+  out.write(`Usage:
   node scripts/log-agent-run.js --agent <agent-name> --status <success|failure> \\
     --skill <skill-name> --stage <stage-id> \\
-    [--doc_type <文档类型>] [--feature <功能名或摘要>] \\
-    [--notes "<一行摘要>"] [--error "<失败原因>"] [--evidence "<证据路径或命令>"]
+    [--doc_type <doc type>] [--feature <feature name or summary>] \\
+    [--notes "<one-line summary>"] [--error "<failure reason>"] [--evidence "<evidence path or command>"]
 `);
 }
 
@@ -115,18 +115,18 @@ function buildEntry(args) {
   const statusBadge = args.status === 'success' ? '✅ success' : '❌ failure';
   const lines = [];
   lines.push(`### \`${iso}\` · ${statusBadge}`);
-  lines.push(`- **skill**：\`${normalizeOneLine(args.skill)}\``);
-  lines.push(`- **stage**：\`${normalizeOneLine(args.stage)}\``);
-  lines.push(`- **doc_type**：${normalizeOneLine(args.doc_type) || 'N/A'}`);
-  lines.push(`- **feature**：${normalizeOneLine(args.feature) || 'N/A'}`);
+  lines.push(`- **skill**: \`${normalizeOneLine(args.skill)}\``);
+  lines.push(`- **stage**: \`${normalizeOneLine(args.stage)}\``);
+  lines.push(`- **doc_type**: ${normalizeOneLine(args.doc_type) || 'N/A'}`);
+  lines.push(`- **feature**: ${normalizeOneLine(args.feature) || 'N/A'}`);
   if (args.notes && normalizeOneLine(args.notes)) {
-    lines.push(`- **notes**：${normalizeOneLine(args.notes)}`);
+    lines.push(`- **notes**: ${normalizeOneLine(args.notes)}`);
   }
   if (args.status === 'failure') {
-    lines.push(`- **error**：${normalizeOneLine(args.error) || '（未提供）'}`);
+    lines.push(`- **error**: ${normalizeOneLine(args.error) || '(not provided)'}`);
   }
   if (args.evidence && normalizeOneLine(args.evidence)) {
-    lines.push(`- **evidence**：${normalizeOneLine(args.evidence)}`);
+    lines.push(`- **evidence**: ${normalizeOneLine(args.evidence)}`);
   }
   lines.push('');
   return `${lines.join('\n')}\n`;
@@ -147,7 +147,7 @@ async function ensureFile(filePath, agent) {
     entry_count: 0,
   });
 
-  const body = `## 运行记录\n\n（暂无记录，等待首次调用）\n\n`;
+  const body = `## Run Log\n\n(No records yet, waiting for first invocation)\n\n`;
   await fsp.writeFile(filePath, init + body, 'utf8');
 }
 
@@ -163,8 +163,8 @@ async function main() {
   if (!skill) usage();
   if (!stage) usage();
 
-  // 写入位置：<repo>/.claude/agents/memory/<agent>.runs.md
-  const repoRoot = path.resolve(__dirname, '..');
+  // Write location: <repo>/.claude/agents/memory/<agent>.runs.md
+  const repoRoot = path.resolve(__dirname, '../../..');
   const memDir = path.join(repoRoot, '.claude', 'agents', 'memory');
   ensureDirSync(memDir);
   const filePath = path.join(memDir, `${agent}.runs.md`);
@@ -187,14 +187,14 @@ async function main() {
   stats.entry_count += 1;
 
   const cleanedBody = String(body || '')
-    // 兼容半角与全角括号占位
-    .replace(/\(暂无记录，等待首次调用\)\s*/g, '')
+    // Compatible with half-width and full-width placeholder text
+    .replace(/\(No records yet, waiting for first invocation\)\s*/g, '')
     .replace(/（暂无记录，等待首次调用）\s*/g, '');
   const entry = buildEntry({ ...args, status, skill, stage });
 
   const next =
     buildFrontmatter(agent, stats) +
-    (cleanedBody.trim() ? cleanedBody.trimEnd() + '\n\n' : '## 运行记录\n\n') +
+    (cleanedBody.trim() ? cleanedBody.trimEnd() + '\n\n' : '## Run Log\n\n') +
     entry;
 
   await fsp.writeFile(filePath, next, 'utf8');
@@ -204,4 +204,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

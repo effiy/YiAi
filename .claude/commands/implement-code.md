@@ -1,8 +1,8 @@
-调用 `implement-code` 技能实施代码。
+Invoke the `implement-code` skill to implement code.
 
-参数：`$ARGUMENTS`
+Arguments: `$ARGUMENTS`
 
-执行要求：
-- 必须基于 `docs/<功能名>/02_需求任务.md` 和 `03_设计文档.md` 实施，不得脱离文档凭空编码
-- 完成后必须写入 `06_实施总结.md`，并执行 `import-docs` → `wework-bot` 收尾
-- 找不到上游文档时须说明缺失路径并中断
+Execution requirements:
+- Must implement based on `docs/<feature-name>/02_requirement-tasks.md` and `03_design-document.md`; do not code in a vacuum without upstream documents.
+- After completion, must write `06_process-summary.md`, then execute `import-docs` → `wework-bot` to close out.
+- When upstream documents are missing, state the missing path and abort.

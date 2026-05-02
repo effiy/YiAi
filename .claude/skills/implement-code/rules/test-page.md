@@ -1,42 +1,42 @@
-# 测试原型页面规范
+# Test Prototype Page Spec
 
-> implement-code 阶段 2 中生成的原型页面结构与内容要求。
-
----
-
-## 1. 核心约束
-
-| 编号 | 约束 |
-|------|------|
-| T0-1 | 每个场景独立原型页：`tests/e2e/<功能名>/pages/<场景名>/index.html` |
-| T0-2 | 页面包含动态检查清单该场景所有 P0 操作步骤的 UI 元素 |
-| T0-3 | 所有可交互元素带 `data-testid="<功能名>-<元素描述>"` |
-| T0-4 | 页面可通过 `file://` 或 localhost 访问（不依赖登录/路由守卫） |
-| T0-5 | 页面顶部注释说明用户故事编号和检查清单章节 |
+> Prototype page structure and content requirements generated in implement-code stage 2.
 
 ---
 
-## 2. data-testid 命名
+## 1. Core Constraints
 
-| 元素类型 | 命名模式 | 示例 |
-|---------|---------|------|
-| 容器 | `<功能名>-container` | `toolbar-container` |
-| 按钮 | `<功能名>-<动词>-btn` | `toolbar-download-btn` |
-| 输入框 | `<功能名>-<字段名>-input` | `toolbar-filename-input` |
-| 结果区域 | `<功能名>-result` | `toolbar-result` |
-| 错误提示 | `<功能名>-error-msg` | `toolbar-error-msg` |
-
----
-
-## 3. 桩行为约束
-
-**允许**：classList.add/remove、textContent 设置、disabled 切换、aria 属性设置
-**禁止**：fetch/XMLHttpRequest、引入框架、超过 10 行的领域逻辑函数
+| ID | Constraint |
+|----|------------|
+| T0-1 | One prototype page per scenario: `tests/e2e/<feature-name>/pages/<scenario-name>/index.html` |
+| T0-2 | Page contains all P0 operation step UI elements for that scenario in the dynamic checklist |
+| T0-3 | All interactive elements carry `data-testid="<feature-name>-<element-description>"` |
+| T0-4 | Page is accessible via `file://` or localhost (no login/route guard dependency) |
+| T0-5 | Top-of-page comment explains user story number and checklist chapter |
 
 ---
 
-## 4. 可访问性
+## 2. data-testid Naming
 
-- 对话框使用 `role="dialog"` + `aria-modal="true"`
-- 错误提示使用 `role="alert"`
-- 图标按钮必须有 `aria-label`
+| Element Type | Naming Pattern | Example |
+|-------------|----------------|---------|
+| Container | `<feature-name>-container` | `toolbar-container` |
+| Button | `<feature-name>-<verb>-btn` | `toolbar-download-btn` |
+| Input | `<feature-name>-<field>-input` | `toolbar-filename-input` |
+| Result area | `<feature-name>-result` | `toolbar-result` |
+| Error message | `<feature-name>-error-msg` | `toolbar-error-msg` |
+
+---
+
+## 3. Stub Behavior Constraints
+
+**Allowed**: classList.add/remove, textContent set, disabled toggle, aria attribute set
+**Prohibited**: fetch/XMLHttpRequest, framework import, domain logic functions exceeding 10 lines
+
+---
+
+## 4. Accessibility
+
+- Dialog uses `role="dialog"` + `aria-modal="true"`
+- Error hint uses `role="alert"`
+- Icon buttons must have `aria-label`

@@ -1,9 +1,9 @@
-调用 `search-first` 技能在技术决策前搜索评估候选方案。
+Invoke the `search-first` skill to evaluate candidate solutions before making a technical decision.
 
-参数：`$ARGUMENTS`
+Arguments: `$ARGUMENTS`
 
-执行要求：
-- 必须基于真实搜索数据，推荐须有可验证来源（URL / 包名@版本）
-- 评估矩阵覆盖功能覆盖、维护活跃度、社区规模、许可证
-- 结果与需求不符时输出"未找到满足约束的方案"，不编造
-- 无网络权限时须说明"无法搜索，以下为训练数据参考（可能过时）"
+Execution requirements:
+- Must base recommendations on real search data with verifiable sources (URL / package@version).
+- Evaluation matrix must cover functional coverage, maintenance activity, community size, and license.
+- When results do not match requirements, output "no solution meeting constraints found" — do not fabricate.
+- When there is no network access, state "cannot execute search; below is reference based on training data (may be outdated)".

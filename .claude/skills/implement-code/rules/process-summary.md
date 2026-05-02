@@ -1,58 +1,58 @@
-# 过程总结规范
+# Process Summary Spec
 
-> `06_实施总结.md` 的内容与格式。
-
----
-
-## 1. 核心约束
-
-| # | 约束 |
-|---|------|
-| S0-1 | 保存到 `docs/<功能名>/06_实施总结.md` |
-| S0-2 | 必须含 AI 调用流程图和时序图（实际路径，不画理想路径） |
-| S0-3 | 必须含变更文件清单（路径 + 类型 + 关联模块） |
-| S0-4 | 阻断时须生成阻断版总结 |
-| S0-5 | 必须回写 `01/02/03/04/05/07` 的实施状态 |
-| S0-6 | 正常完成时须含动态检查清单最终复查（P0/P1/P2 统计） |
+> Content and format of `06_process-summary.md`.
 
 ---
 
-## 2. 文档结构
+## 1. Core Constraints
 
-| § | 标题 | 说明 |
-|---|------|------|
-| §0 | 任务概览 | 时间、模型、分支、最终状态 |
-| §1 | AI 调用流程图 | Mermaid flowchart |
-| §2 | AI 调用时序图 | Mermaid sequenceDiagram |
-| §3 | 变更文件清单 | 路径、类型（新增/修改/删除）、模块、是否在 tests/ |
-| §4 | 验证结果 | 门禁报告 + 动态检查清单复查 |
-| §5 | 状态回写记录 | 01/02/03/04/05/07 回写结果 |
-| §6 | 未解决问题与后续建议 | P1/P2 + 自我改进 + 可执行下一步 |
-| §7 | 通知记录 | wework-bot、import-docs |
+| # | Constraint |
+|---|------------|
+| S0-1 | Save to `docs/<feature-name>/06_process-summary.md` |
+| S0-2 | Must contain AI call flowchart and sequence diagram (actual path, not ideal path) |
+| S0-3 | Must contain changed file list (path + type + associated module) |
+| S0-4 | Must generate block version summary when blocked |
+| S0-5 | Must write back implementation status to `01/02/03/04/05/07` |
+| S0-6 | Normal completion must contain dynamic checklist final review (P0/P1/P2 statistics) |
 
 ---
 
-## 3. 自我改进（证据驱动）
+## 2. Document Structure
 
-须产出改进 `.claude/` 的建议表：分类 / 问题 / 证据 / 建议路径 / 最小改动点 / 验证方式。只能引用本总结中已出现的证据位置。
-
----
-
-## 4. 可执行下一步
-
-每条须含：依据（引用 §/文件/检查项）+ 验证方式（命令/清单号/锚点），缺一不可。
-
----
-
-## 5. 阻断版总结
-
-简化结构：阻断概要 + 已产生产物 + 阻断详情 + 建议恢复操作。保存到同一路径，恢复成功时由完整版覆盖。
+| § | Title | Description |
+|---|-------|-------------|
+| §0 | Task Overview | Time, model, branch, final status |
+| §1 | AI Call Flowchart | Mermaid flowchart |
+| §2 | AI Call Sequence Diagram | Mermaid sequenceDiagram |
+| §3 | Changed File List | Path, type (add/modify/delete), module, whether in tests/ |
+| §4 | Verification Results | Gate report + dynamic checklist review |
+| §5 | Status Write-Back Record | 01/02/03/04/05/07 write-back results |
+| §6 | Open Issues and Follow-Up Suggestions | P1/P2 + self-improvement + executable next steps |
+| §7 | Notification Record | wework-bot, import-docs |
 
 ---
 
-## 6. 禁止事项
+## 3. Self-Improvement (Evidence-Driven)
 
-- 流程图添加未实际调用的节点
-- 变更清单遗漏文件
-- 动态检查清单有未完成项时写成"已完成"
-- 阻断时未生成总结直接终止
+Must produce improvement suggestion table for `.claude/`: category / problem / evidence / suggested path / minimum change point / verification method. Can only reference evidence positions already appearing in this summary.
+
+---
+
+## 4. Executable Next Steps
+
+Each must contain: basis (reference §/file/check item) + verification method (command/checklist number/anchor); both are mandatory.
+
+---
+
+## 5. Block Version Summary
+
+Simplified structure: block summary + already produced artifacts + block details + suggested recovery operations. Save to same path; overwritten by full version when recovery succeeds.
+
+---
+
+## 6. Prohibitions
+
+- Adding nodes not actually called to the flowchart
+- Omitting files from the change list
+- Writing "completed" when dynamic checklist has unfinished items
+- Terminating directly without generating summary when blocked

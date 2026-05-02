@@ -1,9 +1,9 @@
-调用 `find-agents` 技能发现可用代理。
+Invoke the `find-agents` skill to discover available agents.
 
-参数：`$ARGUMENTS`
+Arguments: `$ARGUMENTS`
 
-执行要求：
-- 只返回 `.claude/agents/` 下真实存在的 `.md` 文件名，禁止编造
-- 代理列表默认可同时调用，不得隐含顺序依赖
-- 为每个代理生成"必答问题"，明确输入和输出期望
-- 代理仅作候选，是否写入由调用方决定
+Execution requirements:
+- Return only `.md` file names that actually exist under `.claude/agents/`; do not fabricate.
+- Agent list defaults to concurrently invocable; do not imply hidden ordering dependencies.
+- Generate "required answers" for each agent, clarifying input and output expectations.
+- Agents are candidates only; whether to write them is up to the caller.

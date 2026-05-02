@@ -1,50 +1,56 @@
 ---
 name: search-first
-description: 在做技术决策（选库、选方案）前先并行搜索 npm / PyPI / MCP / GitHub / Web，评估候选方案后给出有依据的推荐。当设计文档需要引入外部依赖或选型时使用。
+description: |
+  Before making technical decisions (library selection, solution selection),
+  parallel-search npm / PyPI / MCP / GitHub / Web, evaluate candidates, and
+  give evidence-based recommendations. Used when design documents need to
+  introduce external dependencies or make technology choices.
+user_invocable: true
+lifecycle: default-pipeline
 ---
 
 # search-first
 
-## 用途
+## Purpose
 
-在写入任何技术选型之前先搜索，用真实数据支撑决策，避免凭记忆推荐过时或不存在的库。
+Before writing any technology selection, search first. Use real data to support decisions, avoiding recommendations of outdated or non-existent libraries from memory.
 
-## 输入
+## Input
 
-- **需求描述**：要解决的技术问题（必填）
-- **约束条件**：如语言/框架/许可证要求（可选）
-- **搜索范围**：`npm` / `PyPI` / `MCP` / `GitHub` / `Web`（默认全部并行）
+- **Requirement description**: technical problem to solve (required)
+- **Constraints**: such as language/framework/license requirements (optional)
+- **Search scope**: `npm` / `PyPI` / `MCP` / `GitHub` / `Web` (defaults to all parallel)
 
-## 工作步骤
+## Workflow
 
-1. **需求拆解**：从描述中提取功能关键词、约束条件
-2. **并行搜索**（同时发起）：
-   - npm / PyPI：搜索包名、周下载量、最后更新
-   - GitHub：搜索 stars、open issues、最后 commit
-   - MCP：搜索可用 MCP 工具
-   - Web：搜索最新文档、已知问题、社区评价
-3. **评估矩阵**：为每个候选方案打分
+1. **Requirement decomposition**: extract functional keywords and constraints from description
+2. **Parallel search** (launch simultaneously):
+   - npm / PyPI: search package names, weekly downloads, last update
+   - GitHub: search stars, open issues, last commit
+   - MCP: search available MCP tools
+   - Web: search latest docs, known issues, community reviews
+3. **Evaluation matrix**: score each candidate
 
-| 候选 | 功能覆盖 | 维护活跃度 | 社区规模 | 许可证 | 综合 |
-|------|---------|-----------|---------|--------|------|
-| A    | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | MIT | ⭐⭐⭐⭐ |
+| Candidate | Function Coverage | Maintenance Activity | Community Size | License | Overall |
+|-----------|-------------------|----------------------|----------------|---------|---------|
+| A         | ⭐⭐⭐⭐⭐          | ⭐⭐⭐⭐               | ⭐⭐⭐           | MIT     | ⭐⭐⭐⭐  |
 
-4. **决策**：采用 / 扩展现有 / 组合 / 自建
+4. **Decision**: adopt / extend existing / combine / build in-house
 
-## 输出格式
+## Output Format
 
 ```
-推荐方案：<方案名>
-理由：<基于搜索数据的 2-3 句说明>
-来源：<URL 或包名@版本>
+Recommended solution: <solution name>
+Rationale: <2-3 sentences based on search data>
+Source: <URL or package@version>
 
-备选：<方案名>（适用场景：<何时用备选>）
+Alternative: <solution name> (applicable scenario: <when to use alternative>)
 
-搜索未覆盖：<无法通过搜索验证的部分，需人工确认>
+Uncovered by search: <parts that cannot be verified through search, needs human confirmation>
 ```
 
-## 使用规则
+## Usage Rules
 
-- 所有推荐必须有可验证来源（URL / 包名@版本）。
-- 搜索结果与需求不符时，输出"未找到满足约束的方案"，**不猜测**。
-- 若无网络访问权限，明确说明"无法执行搜索，以下为基于训练数据的参考（可能过时）"。
+- All recommendations must have verifiable sources (URL / package@version).
+- When search results do not match requirements, output "no solution meeting constraints found," **do not guess**.
+- If no network access, explicitly state "cannot execute search, below is reference based on training data (may be outdated)."

@@ -1,62 +1,62 @@
-# implement-code 测试门禁（真源）
+# implement-code Testing Gates (Source of Truth)
 
-> Gate A/B 的准入、证据与阻断条件。UI 细节见 [`e2e-testing.md`](./e2e-testing.md)、[`test-page.md`](./test-page.md)。
-
----
-
-## 1. 两道门禁（必须）
-
-| 门禁 | 阶段 | 含义 |
-|------|------|------|
-| **Gate A** | 阶段 1 | 真实入口主路径 MVP 验证 + 可追溯证据，通过后方可写代码 |
-| **Gate B** | 阶段 6 | AI 自动执行 P0 主流程冒烟，失败即阻断，不得进入阶段 7 |
+> Gate A/B admission, evidence, and block conditions. UI details see [`e2e-testing.md`](./e2e-testing.md), [`test-page.md`](./test-page.md).
 
 ---
 
-## 2. Gate A：编码前 MVP
+## 1. Two Mandatory Gates
 
-- 必须贴合 `02` 主用户故事/P0 场景 + `05` P0 验收表述
-- 入口真实：使用项目约定启动方式，禁止仅口头推演或伪页面
-- MVP 只覆盖一条主路径（最短闭环）：核心行为可触发、核心结果可观测
-- 证据类型（缺一不可）：命令+退出码 / 日志摘录 / 截图存放于 `tests/screenshots/` / checklist 勾选
-- 禁止以"曾经试过""应该可以"作为通过依据
-
-### 与 TDD/自动化关系
-
-- 有自动化基建时：先写失败用例/最小复现脚本，再进入实现
-- 零构建/无 runner 时：固化最小复现步骤到 `tests/` 下 checklist 或一键脚本
-
-### 按形态指引
-
-| 形态 | Gate A 做法 |
-|------|------------|
-| 前端页面 | 本地起服务 → 主流程走通 → checklist + 截图 |
-| 浏览器扩展 | 加载扩展 → 可见路径走通 → 证据路径写明 |
-| Node/CLI | 约定命令跑通主参数 → 日志落 `tests/` |
+| Gate | Stage | Meaning |
+|------|-------|---------|
+| **Gate A** | Stage 1 | Real entry main-path MVP verification + traceable evidence; passing required before writing code |
+| **Gate B** | Stage 6 | AI automatically executes P0 main-flow smoke; failure blocks entry to stage 7 |
 
 ---
 
-## 3. Gate B：编码后冒烟
+## 2. Gate A: Pre-Code MVP
 
-- 必须覆盖 `05` 全部 P0 主路径条目；非主路径 P0 须标注 N/A + 原因，不得静默跳过
-- 由 AI 实际运行（Playwright 优先；未安装则等价可脚本化链路）
-- 主路径端到端一次跑通；允许 ≤2 轮修复循环（见 [`verification-gate.md`](./verification-gate.md) §4）
-- 产出可复核产物：终端输出、HTML 报告、`tests/traces/` 等
-- 失败阻断进入阶段 7，触发门禁异常通知
+- Must align with `02` main user story / P0 scenario + `05` P0 acceptance statement
+- Entry is real: use project-convention startup method; verbal deduction or pseudo-pages prohibited
+- MVP covers only one main path (shortest closed loop): core behavior triggerable, core result observable
+- Evidence types (all required): command + exit code / log excerpt / screenshot stored in `tests/screenshots/` / checklist tick
+- "Tried before" / "should work" prohibited as pass basis
+
+### Relationship with TDD/Automation
+
+- When automation infrastructure exists: write failing case / minimum reproduction script first, then enter implementation
+- When zero build / no runner: solidify minimum reproduction steps into `tests/` checklist or one-click script
+
+### Guidance by Form
+
+| Form | Gate A Approach |
+|------|-----------------|
+| Frontend page | Local service up → main flow walked through → checklist + screenshot |
+| Browser extension | Extension loaded → visible path walked through → evidence path stated |
+| Node/CLI | Conventional command runs with main parameters → log landed in `tests/` |
 
 ---
 
-## 4. 与 e2e-testing 的分工
+## 3. Gate B: Post-Code Smoke
 
-| 角色 | 职责 |
-|------|------|
-| [`../../e2e-testing/SKILL.md`](../../e2e-testing/SKILL.md) | 场景策略、用例骨架、选择器与 mock 建议 |
-| **本文件** | 将上述产出钉死在 Gate A/B 的准入与证据标准上 |
+- Must cover all `05` P0 main-path items; non-main-path P0 must be labeled N/A + reason, silently skipping prohibited
+- Actually executed by AI (Playwright preferred; if not installed, equivalent scriptable path)
+- Main path end-to-end runs through once; ≤2 fix rounds allowed (see [`verification-gate.md`](./verification-gate.md) §4)
+- Produces reviewable artifacts: terminal output, HTML report, `tests/traces/`, etc.
+- Failure blocks entry to stage 7, triggers gate-anomaly notification
 
 ---
 
-## 5. 禁止事项
+## 4. Division with e2e-testing
 
-- 未完成 Gate A 即修改项目源码（测试骨架与原型页除外）
-- Gate B 以代码审查代替执行或编造结果
-- 测试产物放在 `tests/` 外却宣称满足门禁
+| Role | Responsibility |
+|------|----------------|
+| [`../../e2e-testing/SKILL.md`](../../e2e-testing/SKILL.md) | Scenario strategy, case skeleton, selectors and mock suggestions |
+| **This file** | Pins the above outputs to Gate A/B admission and evidence standards |
+
+---
+
+## 5. Prohibitions
+
+- Modifying project source code before Gate A completes (test skeleton and prototype pages excluded)
+- Substituting code review for Gate B execution or fabricating results
+- Placing test artifacts outside `tests/` while claiming gate satisfaction

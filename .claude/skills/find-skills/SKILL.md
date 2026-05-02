@@ -1,46 +1,51 @@
 ---
 name: find-skills
-description: 根据任务描述和关键词在 .claude/skills/ 目录下发现并推荐可用技能。当需要为某个任务找到合适的技能组合时使用。
+description: |
+  Discover and recommend available skills in .claude/skills/ based on task
+  description and keywords. Used when finding suitable skill combinations for
+  a given task.
+user_invocable: true
+lifecycle: default-pipeline
 ---
 
 # find-skills
 
-## 用途
+## Purpose
 
-在当前项目的 `.claude/skills/` 目录中发现可用技能，并根据任务类型推荐最佳组合。
+Discover available skills in the current project's `.claude/skills/` directory, and recommend optimal combinations by task type.
 
-目录约定和真源说明见 `../../README.md`；若调用方需要区分 Skill 与 Agent 职责，参考 `../../shared/agent-skill-boundaries.md`。
+Directory conventions and source of truth: `../../README.md`; for Skill vs Agent boundaries, see `../../shared/agent-skill-boundaries.md`.
 
-## 输入
+## Input
 
-- **任务描述**：≤ 100 字的摘要（必填）
-- **关键词列表**：如 `["E2E", "安全审查", "文档生成"]`（可选，有助于精准匹配）
+- **Task description**: ≤ 100 word summary (required)
+- **Keyword list**: such as `["E2E", "security review", "document generation"]` (optional, helps precise matching)
 
-## 工作步骤
+## Workflow
 
-1. 列出 `.claude/skills/` 下所有子目录
-2. 读取每个子目录的 `SKILL.md` frontmatter 中的 `description` 字段
-3. 将任务描述与关键词和各 skill 的 description 做语义匹配，打分排序
-4. 返回推荐结果
+1. List all subdirectories under `.claude/skills/`
+2. Read each subdirectory's `SKILL.md` frontmatter `description` field
+3. Perform semantic matching between task description, keywords, and each skill's description, score and sort
+4. Return recommendation results
 
-## 输出格式
+## Output Format
 
 ```
-推荐技能：
-- <技能名>：<适用原因>（置信度：高 / 中 / 低）
+Recommended skills:
+- <skill name>: <applicability reason> (confidence: high / medium / low)
 
-备选技能：
-- <技能名>：<适用原因>
+Alternative skills:
+- <skill name>: <applicability reason>
 
-未找到匹配：
-- 任务关键词 "<X>" 在现有技能中无对应，建议人工复核
+No match found:
+- Task keyword "<X>" has no corresponding skill in existing skills, suggest manual review
 ```
 
-## 使用规则
+## Usage Rules
 
-- **禁止编造**：只返回 `.claude/skills/` 下真实存在的技能目录名；若找不到匹配，输出"未找到合适技能"。
-- **名称一致**：返回的技能名必须与目录名完全一致，不得做大小写或别名变换。
-- **置信度标准**：
-  - 高：description 与任务高度重叠（≥ 2 个关键词命中）
-  - 中：description 与任务部分重叠（1 个关键词命中）
-  - 低：无直接关键词命中，但领域相关
+- **No fabrication**: only return skill directory names that truly exist under `.claude/skills/`; if no match is found, output "no suitable skill found."
+- **Name consistency**: returned skill names must exactly match directory names, no case or alias changes.
+- **Confidence standards**:
+  - High: description and task highly overlap (≥ 2 keyword hits)
+  - Medium: description and task partially overlap (1 keyword hit)
+  - Low: no direct keyword hit, but domain-related

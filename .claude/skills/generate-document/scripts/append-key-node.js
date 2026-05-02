@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * 将「关键节点」以 Markdown 追加写入 `docs/周报/<自然周范围>/key-notes.md`。
- * 供 `log-key-node.js` CLI 与需程序化落盘的脚本（如 send-message）复用。
+ * Append "key nodes" as Markdown to `docs/weekly/<natural-week-range>/key-notes.md`.
+ * Reused by `log-key-node.js` CLI and scripts that need programmatic disk writes (e.g. send-message).
  */
 
 const fsp = require('fs').promises;
@@ -36,16 +36,16 @@ async function ensurePreamble(filePath, weekRange) {
     const st = await fsp.stat(filePath);
     if (st.size > 0) return;
   } catch {
-    // 新建
+    // new file
   }
   const preamble = `---
 log_type: key-node
 week: ${weekRange}
 ---
 
-# 关键节点 · ${weekRange}
+# Key Nodes · ${weekRange}
 
-本文件由 \`node .claude/scripts/log-key-node.js\` 或编排脚本追加写入，记录里程碑 / 门禁 / 对外通知等可扫描节点。
+This file is appended by \`node .claude/scripts/log-key-node.js\` or orchestration scripts, recording milestones / gates / external notifications and other scannable nodes.
 
 ---
 
@@ -54,7 +54,7 @@ week: ${weekRange}
 }
 
 /**
- * @param {string} repoRoot 项目根（仓库根）
+ * @param {string} repoRoot project root (repo root)
  * @param {{
  *   title: string,
  *   body: string,
@@ -74,7 +74,7 @@ async function appendKeyNodeRecord(repoRoot, opts) {
   }
 
   const week = getNaturalWeekRange(new Date());
-  const dir = path.join(repoRoot, 'docs', '周报', week.range);
+  const dir = path.join(repoRoot, 'docs', 'weekly', week.range);
   await fsp.mkdir(dir, { recursive: true });
   const filePath = path.join(dir, 'key-notes.md');
 
@@ -82,14 +82,14 @@ async function appendKeyNodeRecord(repoRoot, opts) {
 
   const iso = new Date().toISOString();
   const categoryRaw = opts.category != null && String(opts.category).trim() !== '' ? String(opts.category).trim() : 'general';
-  const cat = categoryRaw.replace(/[^\w\u4e00-\u9fff./-]/g, '_');
+  const cat = categoryRaw.replace(/[^\w一-鿿./-]/g, '_');
   const skillRaw = opts.skill != null ? String(opts.skill).trim() : '';
-  const skillLine = skillRaw !== '' ? `**关联技能**：\`${skillRaw}\`\n\n` : '';
+  const skillLine = skillRaw !== '' ? `**Related Skill**: \`${skillRaw}\`\n\n` : '';
 
   const safeTitle = escapeHeadingFragment(title);
   const block = `### \`${iso}\` · \`${cat}\` · ${safeTitle}
 
-${skillLine}**说明**
+${skillLine}**Description**
 
 ${formatSummaryBody(body)}
 

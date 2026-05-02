@@ -1,53 +1,53 @@
-# MCP 降级契约
+# MCP Fallback Contract
 
-> `generate-document` 与 `implement-code` 的 MCP 降级策略。
+> MCP fallback strategy for `generate-document` and `implement-code`.
 
-## 1. 总原则
+## 1. General Principles
 
-- MCP 不可用不得阻断流程：所有 MCP 都须有降级方案
-- 禁止静默降级：所有降级须记录到 `06_实施总结.md` 或 `docs/99_agent-runs/`
-- 探针先行：阶段 0 须检测 MCP 可用性，提前声明降级状态
-- 降级记录格式：`MCP 降级：<名称> — <工具> — 原因：<原因> — 降级方案：<方案> — 影响：<影响>`
+- MCP unavailability must not block the flow: every MCP must have a fallback plan.
+- Silent degradation is prohibited: all degradation must be recorded in `06_process-summary.md` or `docs/99_agent-runs/`.
+- Probe first: stage 0 must detect MCP availability and declare degradation status in advance.
+- Degradation record format: `MCP degraded: <name> — <tool> — reason: <reason> — fallback: <plan> — impact: <impact>`
 
-## 2. 降级映射
+## 2. Fallback Mapping
 
-| MCP | 工具 | 降级方案 | 可阻断 |
-|-----|------|---------|--------|
-| `playwright` | 浏览器操作 | `npx playwright test` + 人工确认 | 否 |
-| `code-analyzer-mcp` | `analyze_dependencies` | Grep 搜索 import/export + Read 文件头 | 否 |
-| `code-analyzer-mcp` | `find_usages` | Grep 全项目搜索标识符 | 否 |
-| `code-analyzer-mcp` | `check_architecture` | Read Store/组件注册 + 人工模式匹配 | 否 |
-| `code-analyzer-mcp` | `detect_dead_code` | Grep 导出名 + Grep 引用次数 | 否 |
-| `doc-index-mcp` | `search_docs` | Grep 搜索 `docs/` 内容 | 否 |
-| `doc-index-mcp` | `get_doc_structure` | Read 文件 + 提取 `##` 标题 | 否 |
-| `doc-index-mcp` | `find_cross_refs` | Grep 搜索 `[` 和 `](` 模式 | 否 |
-| `doc-index-mcp` | `validate_links` | Read + Glob 验证路径存在性 | 否 |
-| `git-workflow-mcp` | `create_feature_branch` | Bash `git checkout -b feat/<name>` | 否 |
-| `git-workflow-mcp` | `get_diff_summary` | Bash `git diff --stat` + `--name-status` | 否 |
-| `git-workflow-mcp` | `analyze_change_impact` | 退回 `impact-analyst` 的 Grep 方案 | 否 |
-| `git-workflow-mcp` | `check_branch_status` | Bash `git status` + `git log` | 否 |
+| MCP | Tool | Fallback Plan | Blocking |
+|-----|------|---------------|----------|
+| `playwright` | Browser operations | `npx playwright test` + human confirmation | No |
+| `code-analyzer-mcp` | `analyze_dependencies` | Grep search import/export + Read file headers | No |
+| `code-analyzer-mcp` | `find_usages` | Grep full-project identifier search | No |
+| `code-analyzer-mcp` | `check_architecture` | Read Store/component registration + human pattern matching | No |
+| `code-analyzer-mcp` | `detect_dead_code` | Grep export name + Grep reference count | No |
+| `doc-index-mcp` | `search_docs` | Grep search `docs/` contents | No |
+| `doc-index-mcp` | `get_doc_structure` | Read file + extract `##` headings | No |
+| `doc-index-mcp` | `find_cross_refs` | Grep search `[` and `](` patterns | No |
+| `doc-index-mcp` | `validate_links` | Read + Glob verify path existence | No |
+| `git-workflow-mcp` | `create_feature_branch` | Bash `git checkout -b feat/<name>` | No |
+| `git-workflow-mcp` | `get_diff_summary` | Bash `git diff --stat` + `--name-status` | No |
+| `git-workflow-mcp` | `analyze_change_impact` | Revert to `impact-analyst` Grep approach | No |
+| `git-workflow-mcp` | `check_branch_status` | Bash `git status` + `git log` | No |
 
-## 3. 探针检查
+## 3. Probe Checks
 
-阶段 0 须对每个 MCP 执行最小可行探针：
+Stage 0 must execute a minimal viable probe for each MCP:
 
-| MCP | 探针方法 | 通过条件 |
-|-----|---------|---------|
-| `code-analyzer-mcp` | 调用 `analyze_dependencies` 传入入口文件 | 返回非空依赖列表 |
-| `doc-index-mcp` | 调用 `search_docs` 搜索 `README` | 返回结果或"未找到" |
-| `git-workflow-mcp` | 调用 `check_branch_status` | 返回当前分支信息 |
-| `playwright` | 打开 `about:blank` | 页面成功加载 |
+| MCP | Probe Method | Pass Condition |
+|-----|-------------|----------------|
+| `code-analyzer-mcp` | Call `analyze_dependencies` with entry file | Returns non-empty dependency list |
+| `doc-index-mcp` | Call `search_docs` searching for `README` | Returns result or "not found" |
+| `git-workflow-mcp` | Call `check_branch_status` | Returns current branch info |
+| `playwright` | Open `about:blank` | Page loads successfully |
 
-通过则正常使用；失败则记录原因 → 激活降级方案 → 在阶段 0 产出中声明降级状态。
+If passed, use normally; if failed, record reason → activate fallback plan → declare degradation status in stage 0 output.
 
-## 4. 降级记录
+## 4. Degradation Record
 
-**记录位置**：`06_实施总结.md` 的「MCP 明细」章节；未到阶段 7 时写入 `docs/99_agent-runs/`
+**Record location**: `06_process-summary.md` "MCP Details" chapter; if stage 7 not reached, write to `docs/99_agent-runs/`
 
-**wework-bot 通知**：正常 `🧩 MCP 明细：<MCP1> ✅ / <MCP2> ✅`；降级 `🧩 MCP 明细：<MCP1> ⚠️ 降级(<方案>)`
+**wework-bot notification**: Normal `🧩 MCP details: <MCP1> ✅ / <MCP2> ✅`; degraded `🧩 MCP details: <MCP1> ⚠️ degraded(<plan>)`
 
-## 5. 与其他共享规范的关系
+## 5. Relationship with Other Shared Standards
 
-- 降级记录须遵守 `evidence-and-uncertainty.md` 真值层级（降级效果为 C 类）
-- `impact-analyst` 使用降级方案时须在产物中标注降级状态
-- `impl-reporter` 生成总结时须在 Mermaid 图中用虚线框标注降级节点
+- Degradation records must comply with `evidence-and-uncertainty.md` truth levels (degradation effect is Class C).
+- `impact-analyst` must label degradation status in artifacts when using fallback plans.
+- `impl-reporter` must mark degraded nodes with dashed boxes in Mermaid diagrams when generating summaries.

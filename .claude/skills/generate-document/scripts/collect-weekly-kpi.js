@@ -3,24 +3,26 @@
 /**
  * collect-weekly-kpi
  *
- * 目标：自动扫描 docs/<功能名>/ 目录，从 05_动态检查清单.md、06_实施总结.md、07_项目报告.md
- * 中提取五个 KPI 维度数据，并汇总 Git 统计，输出结构化 KPI 汇总。
+ * Goal: automatically scan docs/<feature>/ directories, extracting five KPI dimensions
+ * from 05_dynamic-checklist.md, 06_process-summary.md, 07_project-report.md,
+ * plus Git statistics, producing a structured KPI summary.
  *
- * 用法：
+ * Usage:
  *   node scripts/collect-weekly-kpi.js [--week <YYYY-MM-DD>] [--json] [--output <path>]
  *
- * 选项：
- *   --week <date>   指定日期，自动归到其所在自然周（默认今天）
- *   --json          输出 JSON 格式（默认 Markdown）
- *   --output <path> 保存到文件（默认 stdout）
- *   --git-only      仅输出 Git 统计，跳过 docs/ 扫描
- *   --docs-only     仅输出 docs/ KPI 汇总，跳过 Git 统计
- *   --with-logs     同时输出关键节点与编排日志汇总（调用 collect-weekly-logs.js）
+ * Options:
+ *   --week <date>   Specify a date, automatically mapped to its natural week (default: today)
+ *   --json          Output JSON format (default: Markdown)
+ *   --output <path> Save to file (default: stdout)
+ *   --git-only      Output Git stats only, skip docs/ scan
+ *   --docs-only     Output docs/ KPI summary only, skip Git stats
+ *   --with-logs     Also output key nodes and orchestration log summary (calls collect-weekly-logs.js)
+ *   --with-memory   Also output execution memory stats (new records this week, top 3 issue patterns)
  *
- * 退出码：
- *   0 成功
- *   1 运行错误
- *   2 参数错误
+ * Exit codes:
+ *   0 success
+ *   1 runtime error
+ *   2 argument error
  */
 
 const fs = require('fs');
@@ -28,23 +30,25 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { getNaturalWeekRange } = require('./natural-week.js');
 
-const DOCS_DIR = path.resolve('docs');
-const KPI_FILES = ['05_动态检查清单.md', '06_实施总结.md', '07_项目报告.md'];
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+const DOCS_DIR = path.join(REPO_ROOT, 'docs');
+const KPI_FILES = ['05_dynamic-checklist.md', '06_process-summary.md', '07_project-report.md'];
 
 function printHelp(stream) {
   const out = stream || process.stdout;
-  out.write(`用法:
+  out.write(`Usage:
   node scripts/collect-weekly-kpi.js [--week <YYYY-MM-DD>] [--json] [--output <path>]
 
-选项:
-  --week <date>   指定日期，自动归到其所在自然周（默认今天）
-  --json          输出 JSON 格式（默认 Markdown）
-  --output <path> 保存到文件（默认 stdout）
-  --git-only      仅输出 Git 统计
-  --docs-only     仅输出 docs/ KPI 汇总
-  --with-logs     同时输出关键节点与编排日志汇总
+Options:
+  --week <date>   Specify a date, automatically mapped to its natural week (default: today)
+  --json          Output JSON format (default: Markdown)
+  --output <path> Save to file (default: stdout)
+  --git-only      Output Git stats only
+  --docs-only     Output docs/ KPI summary only
+  --with-logs     Also output key nodes and orchestration log summary
+  --with-memory   Also output execution memory stats
 
-示例:
+Examples:
   node scripts/collect-weekly-kpi.js
   node scripts/collect-weekly-kpi.js --week 2026-04-29 --json --output /tmp/kpi.json
 `);
@@ -56,7 +60,7 @@ function usage() {
 }
 
 function parseArgs(argv) {
-  const out = { week: null, json: false, output: null, gitOnly: false, docsOnly: false, withLogs: false };
+  const out = { week: null, json: false, output: null, gitOnly: false, docsOnly: false, withLogs: false, withMemory: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') {
@@ -69,6 +73,7 @@ function parseArgs(argv) {
     else if (a === '--git-only') out.gitOnly = true;
     else if (a === '--docs-only') out.docsOnly = true;
     else if (a === '--with-logs') out.withLogs = true;
+    else if (a === '--with-memory') out.withMemory = true;
     else usage();
   }
   return out;
@@ -90,7 +95,7 @@ function safeExec(cmd, defaultVal = '') {
   }
 }
 
-// ---------- 文本提取器 ----------
+// ---------- Text extractors ----------
 
 function extractPercent(text, keywords) {
   for (const kw of keywords) {
@@ -111,8 +116,8 @@ function extractNumber(text, keywords) {
 }
 
 function countChecklistItems(text) {
-  const total = (text.match(/^\s*[-*]\s+/gm) || []).length;
-  const passed = (text.match(/^\s*[-*]\s*.*[✅√]/gm) || []).length;
+  const total = (text.match(/^\\s*[-*]\\s+/gm) || []).length;
+  const passed = (text.match(/^\\s*[-*]\\s*.*[✅√]/gm) || []).length;
   return { total: Math.max(total, 0), passed: Math.max(passed, 0) };
 }
 
@@ -122,17 +127,17 @@ function countP0Items(text) {
   let total = 0;
   let passed = 0;
   for (const line of lines) {
-    const h = line.match(/^#{2,4}\s*P0/i);
+    const h = line.match(/^#{2,4}\\s*P0/i);
     if (h) {
       inP0 = true;
       continue;
     }
-    const nextH = line.match(/^#{2,4}\s/);
-    if (nextH && !line.match(/^#{2,4}\s*P0/i)) {
+    const nextH = line.match(/^#{2,4}\\s/);
+    if (nextH && !line.match(/^#{2,4}\\s*P0/i)) {
       inP0 = false;
       continue;
     }
-    if (inP0 && line.match(/^\s*[-*]\s+/)) {
+    if (inP0 && line.match(/^\\s*[-*]\\s+/)) {
       total++;
       if (line.match(/[✅√]/)) passed++;
     }
@@ -140,7 +145,7 @@ function countP0Items(text) {
   return { total, passed };
 }
 
-// ---------- KPI 扫描 ----------
+// ---------- KPI scan ----------
 
 function scanFeatureKPI(featureDir) {
   const featureName = path.basename(featureDir);
@@ -150,33 +155,42 @@ function scanFeatureKPI(featureDir) {
     files[f] = readFileUtf8(p);
   });
 
-  const checklistText = files['05_动态检查清单.md'] || '';
-  const summaryText = files['06_实施总结.md'] || '';
-  const reportText = files['07_项目报告.md'] || '';
+  const checklistText = files['05_dynamic-checklist.md'] || '';
+  const summaryText = files['06_process-summary.md'] || '';
+  const reportText = files['07_project-report.md'] || '';
   const allText = [checklistText, summaryText, reportText].join('\n');
 
-  // P0 通过率
+  // P0 pass rate
   const p0 = countP0Items(checklistText);
   let p0Rate = p0.total > 0 ? Math.round((p0.passed / p0.total) * 100) : null;
 
-  // 交付完成率
-  let deliveryRate = extractPercent(allText, ['交付完成率', '完成率', '交付率']);
+  // Delivery completion rate (bilingual for backward compatibility)
+  let deliveryRate = extractPercent(allText, [
+    'delivery completion rate', 'completion rate', 'delivery rate',
+    '交付完成率', '完成率', '交付率'
+  ]);
 
-  // 防幻觉率
-  let antiHallucinationRate = extractPercent(allText, ['防幻觉率', '防幻觉', '幻觉率']);
+  // Anti-hallucination rate (bilingual)
+  let antiHallucinationRate = extractPercent(allText, [
+    'anti-hallucination rate', 'hallucination prevention rate', 'hallucination rate',
+    '防幻觉率', '防幻觉', '幻觉率'
+  ]);
 
-  // 修复轮次
-  let fixRounds = extractNumber(allText, ['修复轮次', '迭代轮次', '修改轮次', '轮次']);
+  // Fix rounds (bilingual)
+  let fixRounds = extractNumber(allText, [
+    'fix rounds', 'revision rounds', 'iterations',
+    '修复轮次', '迭代轮次', '修改轮次', '轮次'
+  ]);
 
-  // 规则覆盖率：从检查清单统计
+  // Rule coverage: from checklist statistics
   const checklistTotal = (checklistText.match(/^\s*[-*]\s+/gm) || []).length;
   let ruleCoverage = null;
   if (checklistTotal > 0) {
-    const ruleItems = (checklistText.match(/^\s*[-*]\s*.*规则/gm) || []).length;
+    const ruleItems = (checklistText.match(/^\s*[-*]\s*.*(?:rule|规则)/gm) || []).length;
     ruleCoverage = Math.round((ruleItems / checklistTotal) * 100);
   }
 
-  // 证据路径（取存在的文件）
+  // Evidence paths (existing files)
   const evidencePaths = KPI_FILES.filter((f) => files[f] !== null).map((f) => `docs/${featureName}/${f}`);
 
   return {
@@ -194,25 +208,25 @@ function scanFeatureKPI(featureDir) {
 
 function scanAllFeatures() {
   if (!fs.existsSync(DOCS_DIR)) {
-    return { features: [], note: 'docs/ 目录不存在' };
+    return { features: [], note: 'docs/ directory does not exist' };
   }
   const entries = fs.readdirSync(DOCS_DIR, { withFileTypes: true });
   const featureDirs = entries
-    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('周报') && !e.name.startsWith('99_'))
+    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('weekly') && !e.name.startsWith('99_'))
     .map((e) => path.join(DOCS_DIR, e.name));
 
   if (featureDirs.length === 0) {
-    return { features: [], note: 'docs/ 下无功能目录' };
+    return { features: [], note: 'No feature directories under docs/' };
   }
 
   const features = featureDirs.map(scanFeatureKPI).filter((f) => f.hasData);
   if (features.length === 0) {
-    return { features: [], note: 'docs/ 下无含 KPI 数据的功能目录（05/06/07 文件均不存在）' };
+    return { features: [], note: 'No feature directories with KPI data under docs/ (05/06/07 files all missing)' };
   }
-  return { features, note: `扫描到 ${features.length} 个含 KPI 数据的功能目录` };
+  return { features, note: `Scanned ${features.length} feature directories with KPI data` };
 }
 
-// ---------- Git 统计 ----------
+// ---------- Git statistics ----------
 
 function collectGitStats(weekRange) {
   const since = weekRange.start;
@@ -220,13 +234,13 @@ function collectGitStats(weekRange) {
   const sinceIso = `${since}T00:00:00`;
   const untilIso = `${until}T23:59:59`;
 
-  // 提交数
+  // Commit count
   const commitCount = safeExec(
     `git log --since="${sinceIso}" --until="${untilIso}" --oneline | wc -l`,
     '0'
   );
 
-  // 使用 --shortstat 累加本周每个提交的 diff 统计，避免包含本周之前的变更
+  // Use --shortstat to accumulate diff stats per commit this week, avoiding changes from before this week
   let filesChanged = 0;
   let insertions = 0;
   let deletions = 0;
@@ -247,7 +261,7 @@ function collectGitStats(weekRange) {
     }
   }
 
-  // 作者统计
+  // Author stats
   const authorLines = safeExec(
     `git log --since="${sinceIso}" --until="${untilIso}" --format='%an' | sort | uniq -c | sort -rn`,
     ''
@@ -272,42 +286,56 @@ function collectGitStats(weekRange) {
   };
 }
 
-// ---------- 输出格式化 ----------
+function collectMemoryStats(weekRange) {
+  const memoryScript = path.join(__dirname, 'execution-memory.js');
+  const weekArg = `--week ${weekRange.start}`;
+  try {
+    const out = execSync(`node "${memoryScript}" stats ${weekArg} --json`, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore'],
+    }).trim();
+    return JSON.parse(out);
+  } catch {
+    return null;
+  }
+}
 
-function formatMarkdown(featureResult, gitResult) {
+// ---------- Output formatting ----------
+
+function formatMarkdown(featureResult, gitResult, memoryResult) {
   const { features, note } = featureResult;
   const lines = [];
 
-  lines.push(`# KPI 自动汇总（${gitResult.weekRange.range}）`);
+  lines.push(`# KPI Auto-Summary (${gitResult.weekRange.range})`);
   lines.push('');
-  lines.push(`> **生成时间**: ${new Date().toISOString()}`);
-  lines.push(`> **数据来源**: docs/<功能名>/ 下 05/06/07 文件 + git log`);
+  lines.push(`> **Generated at**: ${new Date().toISOString()}`);
+  lines.push(`> **Data sources**: docs/<feature>/ 05/06/07 files + git log`);
   lines.push('');
 
-  // Git 统计
-  lines.push('## Git 统计');
+  // Git stats
+  lines.push('## Git Statistics');
   lines.push('');
-  lines.push(`| 指标 | 数值 |`);
-  lines.push(`|------|------|`);
-  lines.push(`| 提交数 | ${gitResult.commitCount} |`);
-  lines.push(`| 变更文件数 | ${gitResult.filesChanged} |`);
-  lines.push(`| 新增行数 | ${gitResult.insertions} |`);
-  lines.push(`| 删除行数 | ${gitResult.deletions} |`);
+  lines.push(`| Metric | Value |`);
+  lines.push(`|--------|-------|`);
+  lines.push(`| Commits | ${gitResult.commitCount} |`);
+  lines.push(`| Files changed | ${gitResult.filesChanged} |`);
+  lines.push(`| Insertions | ${gitResult.insertions} |`);
+  lines.push(`| Deletions | ${gitResult.deletions} |`);
   lines.push('');
   if (gitResult.authors.length > 0) {
-    lines.push('**提交者分布**: ' + gitResult.authors.map((a) => `${a.name}(${a.commits})`).join(', '));
+    lines.push('**Contributor distribution**: ' + gitResult.authors.map((a) => `${a.name}(${a.commits})`).join(', '));
     lines.push('');
   }
 
-  // 功能 KPI
-  lines.push('## 功能维度 KPI');
+  // Feature KPI
+  lines.push('## Feature Dimension KPI');
   lines.push('');
   if (features.length === 0) {
     lines.push(`> ${note}`);
     lines.push('');
   } else {
-    lines.push(`| 功能/案例 | 交付完成率 | P0 通过率 | 防幻觉率 | 修复轮次 | 规则覆盖率 | 维度综合 |`);
-    lines.push(`|-----------|-----------|----------|----------|----------|------------|----------|`);
+    lines.push(`| Feature / Case | Delivery Rate | P0 Pass Rate | Anti-Hallucination | Fix Rounds | Rule Coverage | Overall |`);
+    lines.push(`|----------------|---------------|--------------|--------------------|------------|---------------|---------|`);
     for (const f of features) {
       const dr = f.deliveryRate !== null ? `${f.deliveryRate}%` : '—';
       const p0 = f.p0Rate !== null ? `${f.p0Rate}%` : '—';
@@ -327,31 +355,47 @@ function formatMarkdown(featureResult, gitResult) {
       lines.push(`| **${f.featureName}** | ${dr} | ${p0} | ${ah} | ${fr} | ${rc} | ${overall} |`);
     }
     lines.push('');
-    lines.push('**维度判定**: ✅ ≥80%交付/≥90%P0/≤2轮修复 | 🟡 中等区间 | ❌ 未达标');
+    lines.push('**Dimension criteria**: ✅ ≥80% delivery / ≥90% P0 / ≤2 fix rounds | 🟡 medium range | ❌ below threshold');
     lines.push('');
 
-    // 逐功能明细
-    lines.push('## 功能明细与证据');
+    // Per-feature details
+    lines.push('## Feature Details and Evidence');
     lines.push('');
     for (const f of features) {
       lines.push(`### ${f.featureName}`);
       lines.push('');
       if (f.evidencePaths.length === 0) {
-        lines.push('- 无文档证据（05/06/07 文件不存在）');
+        lines.push('- No document evidence (05/06/07 files do not exist)');
       } else {
         f.evidencePaths.forEach((p) => lines.push(`- ${p}`));
       }
       if (f.p0Details.total > 0) {
-        lines.push(`- P0 检查项: ${f.p0Details.passed}/${f.p0Details.total} 通过`);
+        lines.push(`- P0 checklist items: ${f.p0Details.passed}/${f.p0Details.total} passed`);
       }
       lines.push('');
     }
   }
 
+  // Execution memory stats
+  if (memoryResult) {
+    lines.push('## Execution Memory Statistics');
+    lines.push('');
+    lines.push(`- **New records this week**: ${memoryResult.total || 0}`);
+    lines.push(`- **Blocked count**: ${memoryResult.blocked || 0}`);
+    lines.push(`- **Change level distribution**: T1=${memoryResult.changeLevels?.T1 || 0}, T2=${memoryResult.changeLevels?.T2 || 0}, T3=${memoryResult.changeLevels?.T3 || 0}`);
+    if (memoryResult.topDocTypeIssues && memoryResult.topDocTypeIssues.length > 0) {
+      lines.push('- **Top 3 issue patterns**:');
+      memoryResult.topDocTypeIssues.slice(0, 3).forEach(([k, v]) => {
+        lines.push(`  - ${k}: ${v} times`);
+      });
+    }
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
 
-function formatJson(featureResult, gitResult) {
+function formatJson(featureResult, gitResult, memoryResult) {
   return JSON.stringify(
     {
       weekRange: gitResult.weekRange,
@@ -365,13 +409,14 @@ function formatJson(featureResult, gitResult) {
       },
       features: featureResult.features,
       note: featureResult.note,
+      memory: memoryResult,
     },
     null,
     2
   );
 }
 
-// ---------- 主流程 ----------
+// ---------- Main flow ----------
 
 function main() {
   const args = parseArgs(process.argv);
@@ -380,7 +425,7 @@ function main() {
   if (args.week) {
     const d = new Date(args.week);
     if (isNaN(d.getTime())) {
-      console.error(`错误: 无效日期 "${args.week}"`);
+      console.error(`Error: invalid date "${args.week}"`);
       process.exit(2);
     }
     baseDate = d;
@@ -388,8 +433,9 @@ function main() {
 
   const weekRange = getNaturalWeekRange(baseDate);
 
-  let featureResult = { features: [], note: '跳过 docs/ 扫描' };
+  let featureResult = { features: [], note: 'Skipped docs/ scan' };
   let gitResult = { weekRange, commitCount: 0, filesChanged: 0, insertions: 0, deletions: 0, authors: [] };
+  let memoryResult = null;
 
   if (!args.gitOnly) {
     featureResult = scanAllFeatures();
@@ -397,8 +443,11 @@ function main() {
   if (!args.docsOnly) {
     gitResult = collectGitStats(weekRange);
   }
+  if (args.withMemory) {
+    memoryResult = collectMemoryStats(weekRange);
+  }
 
-  let output = args.json ? formatJson(featureResult, gitResult) : formatMarkdown(featureResult, gitResult);
+  let output = args.json ? formatJson(featureResult, gitResult, memoryResult) : formatMarkdown(featureResult, gitResult, memoryResult);
 
   if (args.withLogs) {
     const logsScript = path.join(__dirname, 'collect-weekly-logs.js');
@@ -407,11 +456,11 @@ function main() {
     try {
       logsOutput = execSync(`node "${logsScript}" ${weekArg}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
     } catch (err) {
-      console.error(`警告: collect-weekly-logs.js 执行失败: ${err.message}`);
+      console.error(`Warning: collect-weekly-logs.js execution failed: ${err.message}`);
       logsOutput = '';
     }
     if (!logsOutput) {
-      console.error('警告: collect-weekly-logs.js 输出为空，可能本周日志文件不存在或解析失败');
+      console.error('Warning: collect-weekly-logs.js output is empty; weekly log file may not exist or parsing failed');
     }
     if (args.json) {
       try {
@@ -422,13 +471,13 @@ function main() {
         output = output + '\n\n/* --- logs --- */\n\n' + (logsOutput || '{}');
       }
     } else {
-      output = output + '\n\n---\n\n' + (logsOutput || '> 本周无编排日志数据');
+      output = output + '\n\n---\n\n' + (logsOutput || '> No orchestration log data this week');
     }
   }
 
   if (args.output) {
     fs.writeFileSync(args.output, output, 'utf8');
-    console.error(`已保存至: ${args.output}`);
+    console.error(`Saved to: ${args.output}`);
   } else {
     console.log(output);
   }

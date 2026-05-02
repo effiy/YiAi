@@ -1,42 +1,42 @@
-# 证据、不确定性与反幻觉（共享规范）
+# Evidence, Uncertainty, and Anti-Hallucination (Shared Standard)
 
-> 本文件为 `generate-document` 与 `implement-code` 的共享解释层，约束：**任何写入 `docs/` 或影响实施决策的陈述，必须可验证或可标注为未知**；禁止用流畅叙事掩盖缺失证据。
+> This file is the shared interpretation layer for `generate-document` and `implement-code`, constraining: **any statement written to `docs/` or influencing implementation decisions must be verifiable or explicitly labeled as unknown**; smooth narrative must not mask missing evidence.
 
-## 1. 真值层级
+## 1. Truth Levels
 
-| 层级 | 含义 | 在文档中的写法 |
-|------|------|----------------|
-| A 已证 | 在本仓库中通过 Read / Grep / Glob 或已读 `docs/` 锚点可核对 | 直接陈述，并给出 `路径` 或 `文档§章节` |
-| B 可推导 | 仅由 A 在本文档内经明确规则推出一步 | 写「由 … 可知」，并链回 A |
-| C 未证 | 用户口头说明、外网未抓取、或工具未执行 | 必须用 `> 待补充（原因：…）` 或 `待读者确认` |
-| D 禁止 | 无 A/B 支撑也不落入 C 的说明 | **不得出现**（视为幻觉） |
+| Level | Meaning | How to Write in Documents |
+|-------|---------|---------------------------|
+| A Verified | Verifiable in this repository via Read / Grep / Glob or already-read `docs/` anchor | State directly, give `path` or `document§section` |
+| B Derivable | Derived one step from A in this document via an explicit rule | Write "from … it follows", and chain back to A |
+| C Unverified | User verbal statement, un-crawled external web, or unexecuted tool | Must use `> To be supplemented (reason: …)` or `awaiting reader confirmation` |
+| D Prohibited | Unsupported by A/B and not falling under C | **Must not appear** (treated as hallucination) |
 
-**规则**：从 A 跳到结论若跳过 B 中写明的规则，该结论属于 D。
+**Rule**: Jumping from A to a conclusion while skipping a stated rule in B makes that conclusion D.
 
-## 2. 禁止类陈述（D 类，一律不允许）
+## 2. Prohibited Statements (Class D, strictly forbidden)
 
-- 未执行 Grep / Glob / Read 却写「项目中已有某某模块 / 某 API」。
-- 写具体文件路径、导出名、版本号、环境变量名，而仓库内不存在或未读取。
-- 为凑全「影响分析 / 设计章节」而虚构依赖关系、测试文件或配置项。
-- 将 `find-skills` / `find-agents` **未返回**的能力写成已选技能或已调用代理名（名称必须与返回值一致或标注「未匹配」）。
+- Writing "the project already has module X / API Y" without executing Grep / Glob / Read.
+- Writing specific file paths, export names, version numbers, or environment variable names that do not exist in the repository or were not read.
+- Fabricating dependency relationships, test files, or configuration items to pad out "impact analysis / design chapters".
+- Writing capability names returned by `find-skills` / `find-agents` as already-selected skills or already-invoked agent names when they were **not** returned (names must match return values or be labeled "no match").
 
-## 3. 可采纳性（面向人类的实用标准）
+## 3. Admissibility (Practical Standard for Humans)
 
-**采纳率**依赖读者能否快速**核对**与**补全**，而非篇幅。须同时满足：
+**Adoption rate** depends on whether the reader can quickly **verify** and **complete**, not on length. Must satisfy all three:
 
-1. **可核对**：技术句旁有来源（`路径` 或 `docs/...md` 标题/锚点）；图表节点能对应到真实模块或已标注「规划中」。
-2. **可补全**：所有 C 类项集中列出（开放问题、缺失输入、建议用户提供的材料）。
-3. **可执行**：「下一步」若是动作，须绑定**验证方式**（命令、打开的文件、或检查的清单项号）；禁止只写「优化性能」「完善体验」等无法验收的套话。
+1. **Verifiable**: Technical sentences have sources (`path` or `docs/...md` heading/anchor); diagram nodes map to real modules or are labeled "planned".
+2. **Completable**: All Class-C items are listed centrally (open questions, missing inputs, materials suggested for the user to provide).
+3. **Actionable**: If "next step" is an action, it must bind to a **verification method** (command, file to open, or checklist item number to check); do not write vacuous slogans like "optimize performance" or "improve experience".
 
-## 4. 与 `implement-code` 的衔接
+## 4. Integration with `implement-code`
 
-- `02_需求任务` 中的场景与 `05_动态检查清单` 的检查项应可追溯对应；`generate-document` 全文档模式产出后，实施方能在阶段 0 做**场景—检查项覆盖表**（见 `implement-code/rules/orchestration.md`）。
-- `06_实施总结` 中「后续建议」与「自我改进」须遵守本文 **§1～§3**，与 §9 结构见 `implement-code/rules/process-summary.md`。
+- Scenarios in `02_requirement-tasks` and checklist items in `05_dynamic-checklist` should be traceably mapped; after `generate-document` full-set output, the implementer should be able to produce a **scenario–checklist coverage table** at stage 0 (see `implement-code/rules/orchestration.md`).
+- "Follow-up recommendations" and "self-improvement" in `06_process-summary` must comply with **§1–§3** of this file; structure for §9 see `implement-code/rules/process-summary.md`.
 
-## 5. 修订原则
+## 5. Revision Principle
 
-- 当发现历史文档存在 D 类陈述时：**不**在无证据情况下「顺手改正」领域结论；应改为 C 类并指出需人类确认或需代码核对。
+- When historical documents are found to contain Class-D statements: **do not** "conveniently fix" domain conclusions without evidence; convert to Class-C and point out the need for human confirmation or code verification.
 
 ---
 
-**真源优先级**：`skills/.../SKILL.md` > `shared/evidence-and-uncertainty.md` 与本文件引用的 `rules/*.md` > 其他说明性 README。
+**Source-of-truth priority**: `skills/.../SKILL.md` > `shared/evidence-and-uncertainty.md` and `rules/*.md` referenced by this file > other explanatory READMEs.

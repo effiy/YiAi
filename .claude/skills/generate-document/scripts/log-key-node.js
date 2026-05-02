@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * 关键节点记录：Markdown 追加写入仓库根目录
- * `docs/周报/<YYYY-MM-DD~YYYY-MM-DD>/key-notes.md`。
- * 与 logs.md 互补：此处侧重里程碑 / 门禁 / 对外通知等可一眼扫描的节点。
+ * Key node recorder: Markdown append to repo root
+ * `docs/weekly/<YYYY-MM-DD~YYYY-MM-DD>/key-notes.md`.
+ * Complements logs.md: focuses on milestones / gates / external notifications and other at-a-glance nodes.
  */
 
 const path = require('path');
@@ -32,24 +32,24 @@ function normalizeOneLine(s) {
 
 function printHelp(stream) {
   const out = stream || process.stdout;
-  out.write(`用法:
-  node .claude/scripts/log-key-node.js --title "<节点标题>" \\
-    [--category <分类，默认 general>] \\
-    [--skill <关联技能名>] \\
-    [--text "<说明；单行>"]
+  out.write(`Usage:
+  node .claude/scripts/log-key-node.js --title "<node title>" \\
+    [--category <category, default general>] \\
+    [--skill <related skill name>] \\
+    [--text "<description; single line>"]
 
-  未提供 --text 时从 stdin 读取说明（保留换行）。
+  When --text is not provided, read description from stdin (newlines preserved).
 
-  日志目录：<仓库根>/docs/周报/<自然周起止日期>/
-  文件名：key-notes.md（按周追加）
+  Log directory: <repo-root>/docs/weekly/<natural-week-start-end>/
+  Filename: key-notes.md (appended per week)
 
-示例:
-  node .claude/scripts/log-key-node.js --title "阶段 4 审查通过" \\
+Examples:
+  node .claude/scripts/log-key-node.js --title "Stage 4 review passed" \\
     --category stage --skill generate-document \\
-    --text "code-reviewer：阻断项已清零"
+    --text "code-reviewer: blockers cleared"
 
-  echo "门禁：pnpm test 通过" | node .claude/scripts/log-key-node.js \\
-    --title "冒烟门禁通过" --category gate --skill implement-code
+  echo "Gate: pnpm test passed" | node .claude/scripts/log-key-node.js \\
+    --title "Smoke gate passed" --category gate --skill implement-code
 `);
 }
 
@@ -85,7 +85,7 @@ async function main() {
     process.exit(0);
   }
   if (!args.title || String(args.title).trim() === '') {
-    console.error('log-key-node: 缺少 --title');
+    console.error('log-key-node: missing --title');
     usage();
   }
 
@@ -98,12 +98,11 @@ async function main() {
   }
 
   if (!body) {
-    console.error('log-key-node: 说明为空（提供 --text 或 stdin）');
+    console.error('log-key-node: description is empty (provide --text or stdin)');
     process.exit(1);
   }
 
-  // 本仓库中 scripts/ 位于仓库根目录下：<repo>/scripts
-  const repoRoot = path.resolve(__dirname, '..');
+  const repoRoot = path.resolve(__dirname, '../../..');
 
   await appendKeyNodeRecord(repoRoot, {
     title: args.title,

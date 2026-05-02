@@ -1,25 +1,25 @@
-# 文档质量检查清单入口
+# Document Quality Checklist Entry
 
-> **关联规范**: [通用文档规范](./rules/通用文档.md) | [证据与不确定性](../../shared/evidence-and-uncertainty.md)
+> **Related specs**: [General Document Spec](./rules/general-document.md) | [Evidence and Uncertainty](../../shared/evidence-and-uncertainty.md)
 >
-> 专项检查项以 `checklists/` 子目录为准，本文件只负责导航。
+> Specialized check items are in the `checklists/` subdirectory; this file only serves as navigation.
 
-## 专项检查清单索引
+## Specialized Checklist Index
 
-| 文档类型 | 检查清单位置 | 说明 |
-|----------|--------------|------|
-| 通用文档 | [checklists/通用文档.md](./checklists/通用文档.md) | 所有文档类型的通用项 |
-| 需求文档 | [checklists/需求文档.md](./checklists/需求文档.md) | 需求文档专项 |
-| 需求任务 | [checklists/需求任务.md](./checklists/需求任务.md) | 含影响分析 P0 项 |
-| 设计文档 | [checklists/设计文档.md](./checklists/设计文档.md) | 规范驱动，不使用模板 |
-| 使用文档 | [checklists/使用文档.md](./checklists/使用文档.md) | 含技术断言与代码对齐 P0 项 |
-| 项目报告 | [checklists/项目报告.md](./checklists/项目报告.md) | 含步骤 6 验证 P1 项 |
-| 动态检查清单 | [checklists/动态检查清单.md](./checklists/动态检查清单.md) | 规范驱动，不使用模板 |
-| 项目基础文件 | [checklists/项目基础文件.md](./checklists/项目基础文件.md) | init 命令专用 |
-| 周报 | [checklists/周报.md](./checklists/周报.md) | 含 Mermaid 与步骤 6 验证 P1 项 |
+| Document Type | Checklist Location | Notes |
+|---------------|-------------------|-------|
+| General Document | [checklists/general-document.md](./checklists/general-document.md) | Universal items for all document types |
+| Requirement Document | [checklists/requirement-document.md](./checklists/requirement-document.md) | Requirement document specific |
+| Requirement Tasks | [checklists/requirement-tasks.md](./checklists/requirement-tasks.md) | Contains impact-analysis P0 items |
+| Design Document | [checklists/design-document.md](./checklists/design-document.md) | Spec-driven, no template |
+| Usage Document | [checklists/usage-document.md](./checklists/usage-document.md) | Contains technical assertion and code alignment P0 items |
+| Project Report | [checklists/project-report.md](./checklists/project-report.md) | Contains step-6 verification P1 items |
+| Dynamic Checklist | [checklists/dynamic-checklist.md](./checklists/dynamic-checklist.md) | Spec-driven, no template |
+| Project Basics | [checklists/project-basics.md](./checklists/project-basics.md) | For the `init` command |
+| Weekly Report | [checklists/weekly-report.md](./checklists/weekly-report.md) | Contains Mermaid and step-6 verification P1 items |
 
-## 使用方式
+## Usage
 
-1. 根据文档类型定位对应专项清单
-2. 补充通用文档清单的共性要求
-3. 若 `SKILL.md` 与某份清单内容冲突，以 `SKILL.md` 和 `rules/` 为准
+1. Locate the corresponding specialized checklist by document type.
+2. Supplement with universal requirements from the general-document checklist.
+3. If `SKILL.md` conflicts with a checklist, `SKILL.md` and `rules/` take precedence.

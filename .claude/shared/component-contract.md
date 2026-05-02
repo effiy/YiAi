@@ -1,58 +1,58 @@
-# 共享组件开发契约
+# Shared Component Development Contract
 
-> 共享组件开发规范，作为 `architect`、`code-reviewer` 和 `implement-code` 的共享解释层。
+> Shared component development standards, serving as the shared interpretation layer for `doc-architect`, `code-reviewer`, and `implement-code`.
 
-## 1. 什么放共享层，什么放应用层
+## 1. What Belongs in Shared Layer vs. Application Layer
 
-| 类型 | 位置 | 判断标准 |
-|------|------|---------|
-| 跨应用共享组件 | `<shared>/components/` | 至少 2 个应用需要 |
-| 应用特有组件 | `<app>/components/` | 只在单个应用中使用 |
-| 通用工具函数 | `<shared>/utils/` | 不依赖特定应用 Store |
-| 应用特有工具 | `<app>/utils/` | 依赖特定应用状态/上下文 |
+| Type | Location | Criterion |
+|------|----------|-----------|
+| Cross-application shared components | `<shared>/components/` | Needed by at least 2 applications |
+| Application-specific components | `<app>/components/` | Used only in a single application |
+| General utility functions | `<shared>/utils/` | Do not depend on a specific application Store |
+| Application-specific utilities | `<app>/utils/` | Depend on specific application state / context |
 
-## 2. 三文件结构
+## 2. Three-File Structure
 
 ```
-<shared>/components/<分类>/<组件名>/
-├── index.js       # 组件逻辑（必须）
-├── template.html  # 组件模板（必须）
-└── index.css      # 组件样式（可选）
+<shared>/components/<category>/<component-name>/
+├── index.js       # Component logic (required)
+├── template.html  # Component template (required)
+└── index.css      # Component styles (optional)
 ```
 
-- **index.js**：使用项目既有的组件注册/导出方式（如 `registerGlobalComponent`），Props 使用对象语法（含 type 和 default），Events 通过 `$emit` 发送
-- **template.html**：标准 HTML + Vue 模板语法绑定
-- **index.css**：BEM 命名，前缀按项目约定（如 `app-btn--primary`）
+- **index.js**: Use the project's existing component registration/export pattern (e.g. `registerGlobalComponent`). Props use object syntax (with type and default). Events emit via `$emit`.
+- **template.html**: Standard HTML + Vue template syntax bindings.
+- **index.css**: BEM naming with project prefix convention (e.g. `app-btn--primary`).
 
 ## 3. Barrel Export
 
-若项目使用 barrel export，共享组件须在统一入口文件中导出，避免遗漏已开发的组件。
+If the project uses barrel export, shared components must be exported in a unified entry file to avoid omitting already-developed components.
 
-## 4. 组件分类
+## 4. Component Categories
 
-| 分类 | 路径 | 说明 |
-|------|------|------|
-| 通用按钮 | `<shared>/components/common/buttons/` | Button, IconButton |
-| 通用表单 | `<shared>/components/common/forms/` | Input, Select, Checkbox |
-| 通用弹窗 | `<shared>/components/common/modals/` | Modal, Dialog |
-| 通用数据展示 | `<shared>/components/common/data-display/` | Table, Tooltip |
-| 通用反馈 | `<shared>/components/common/feedback/` | Loading, EmptyState |
-| 领域组件 | `<shared>/components/domain/` | 领域特有（若需共享） |
+| Category | Path | Description |
+|----------|------|-------------|
+| Common buttons | `<shared>/components/common/buttons/` | Button, IconButton |
+| Common forms | `<shared>/components/common/forms/` | Input, Select, Checkbox |
+| Common modals | `<shared>/components/common/modals/` | Modal, Dialog |
+| Common data display | `<shared>/components/common/data-display/` | Table, Tooltip |
+| Common feedback | `<shared>/components/common/feedback/` | Loading, EmptyState |
+| Domain components | `<shared>/components/domain/` | Domain-specific (if shared) |
 
-## 5. 与应用入口的衔接
+## 5. Integration with Application Entry
 
-应用入口应在初始化阶段显式声明/注册需要用到的共享组件（方式按项目约定）。
+Application entry should explicitly declare/register required shared components during initialization (method per project convention).
 
-## 6. 安全执行
+## 6. Safe Execution
 
-共享组件内部异步操作建议使用项目统一的错误处理封装（如 `safeExecute`）。
+Async operations inside shared components should use the project's unified error-handling wrapper (e.g. `safeExecute`).
 
-## 7. 检查清单
+## 7. Checklist
 
-- 组件位于共享层路径下，不与应用层混放
-- 三文件结构完整
-- Barrel export 已在统一入口导出（若使用）
-- 类名遵循项目 BEM/前缀约定
-- 异步操作使用 `safeExecute` 包装
-- Props 使用对象语法
-- Events 通过 `$emit` 发送，不直接修改父级状态
+- Component is placed under the shared layer path, not mixed with application layer.
+- Three-file structure is complete.
+- Barrel export is registered in unified entry (if used).
+- Class names follow project BEM/prefix convention.
+- Async operations use `safeExecute` wrapper.
+- Props use object syntax.
+- Events emit via `$emit`, do not directly mutate parent state.

@@ -1,54 +1,54 @@
-# 产物与回写契约
+# Artifact and Write-Back Contract
 
-> 统一各阶段的文件路径、命名方式和状态字段。
+> Unifies file paths, naming conventions, and status fields across stages.
 
 ---
 
-## 1. 文档集路径
+## 1. Document Set Path
 
 ```text
-docs/<功能名>/
-├── 01_需求文档.md
-├── 02_需求任务.md
-├── 03_设计文档.md
-├── 04_使用文档.md
-├── 05_动态检查清单.md
-├── 06_实施总结.md
-└── 07_项目报告.md
+docs/<feature-name>/
+├── 01_requirement-document.md
+├── 02_requirement-tasks.md
+├── 03_design-document.md
+├── 04_usage-document.md
+├── 05_dynamic-checklist.md
+├── 06_process-summary.md
+└── 07_project-report.md
 ```
 
-- `06`：正常完成或阻断时都必须生成
-- `05`：验证后回写状态列/备注/检查总结
-- `01/02/03/04/07`：总结后回写 `## 实施状态`
+- `06`: must be generated on normal completion or block
+- `05`: write back status column / remarks / check summary after verification
+- `01/02/03/04/07`: write back `## Implementation Status` after summary
 
-无法定位时兜底：`docs/99_agent-runs/<YYYYMMDD-HHMMSS>_implement-code.md`
-
----
-
-## 2. 测试产物路径
-
-所有测试文件必须在 `tests/` 目录，禁止落地到 `src/`、`docs/` 或项目根目录。子目录结构见 [`e2e-testing.md`](./e2e-testing.md) §3。
+When unable to locate: fallback `docs/99_agent-runs/<YYYYMMDD-HHMMSS>_implement-code.md`
 
 ---
 
-## 3. 状态回写
+## 2. Test Artifact Paths
 
-**05 状态值**：⏳ 未验证 | 🏃 原型验证通过 | ✅ 冒烟通过 | ❌ 失败 | ⚠️ 需人工确认
-
-**01/02/03/04/07 实施状态**：新增 `## 实施状态`，含：状态（✅/🟡/⛔）、更新时间、阶段、验证结果、关联总结、下一步。
+All test files must be under `tests/` directory; landing in `src/`, `docs/`, or project root is prohibited. Subdirectory structure see [`e2e-testing.md`](./e2e-testing.md) §3.
 
 ---
 
-## 4. 命名约定
+## 3. Status Write-Back
 
-- `<功能名>`：与 `docs/<功能名>/` 一致
-- `<场景名>`：来自 `02_需求任务.md`
-- 禁止混用简称
+**05 status values**: ⏳ unverified | 🏃 prototype verified | ✅ smoke passed | ❌ failed | ⚠️ needs human confirmation
+
+**01/02/03/04/07 implementation status**: add `## Implementation Status`, containing: status (✅/🟡/⛔), update time, stage, verification result, associated summary, next step.
 
 ---
 
-## 5. 禁止事项
+## 4. Naming Conventions
 
-- 未实际验证就改状态
-- 在 `tests/` 外生成或保留测试文件
-- 同一文件重复新增 `## 实施状态`
+- `<feature-name>`: consistent with `docs/<feature-name>/`
+- `<scenario-name>`: from `02_requirement-tasks.md`
+- Abbreviation mixing prohibited
+
+---
+
+## 5. Prohibitions
+
+- Changing status without actual verification
+- Generating or retaining test files outside `tests/`
+- Adding `## Implementation Status` to the same file repeatedly

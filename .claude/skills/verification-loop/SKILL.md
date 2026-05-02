@@ -1,82 +1,87 @@
 ---
 name: verification-loop
-description: 对构建、集成、部署等非 UI 场景执行全面验证。执行前充分预检确保一次通过，而非失败后反复重试。
+description: |
+  Execute comprehensive verification for build, integration, deployment, and other
+  non-UI scenarios. Pre-flight checks ensure one-shot pass rather than retrying
+  after failure.
+user_invocable: true
+lifecycle: default-pipeline
 ---
 
 # verification-loop
 
-## 核心理念
+## Core Philosophy
 
-**不依赖重试，依赖准备。** 执行验证命令前先把所有可能导致失败的问题找出来并修复；执行只是最终确认，不是调试入口。
+**Rely on preparation, not retries.** Before executing verification commands, identify all issues that could cause failure and fix them; execution is final confirmation, not a debugging entry.
 
-## 输入
+## Input
 
-- **验证目标**：如 `npm run build`、`Vite 打包`（必填）
-- **上下文文档**：设计文档/需求任务路径（可选）
-- **环境信息**：Node 版本、包管理器（可选，自动读取）
+- **Verification target**: such as `npm run build`, `Vite bundling` (required)
+- **Context documents**: design document/requirement task paths (optional)
+- **Environment info**: Node version, package manager (optional, auto-read)
 
-## 前置：MCP 可用性探针
+## Pre-flight: MCP Availability Probe
 
-执行任何阶段前须检查 MCP 可用性，**禁止静默降级**：
+Before executing any stage, check MCP availability. **Silent degradation is prohibited:**
 
-| 验证场景 | 所需 MCP |
-|---------|---------|
-| UI 交互/E2E 冒烟 | `playwright` |
-| 本地文件读写/下载验证 | `filesystem` |
-| 纯构建/Lint/类型检查 | 无需 MCP |
+| Verification Scenario | Required MCP |
+|-----------------------|-------------|
+| UI interaction/E2E smoke | `playwright` |
+| Local file read/write/download verification | `filesystem` |
+| Pure build/lint/type check | No MCP needed |
 
-探针结果决策：
-- `playwright` ✅ → 阶段 4 UI 验证使用 MCP 全自动执行
-- `playwright` ❌ → 降级为 `npx playwright test`，结果标注 ⚠️，输出安装指引
-- 必要工具 ❌ 且无降级 → ⛔ 停止，提示配置后重试
+Probe result decisions:
+- `playwright` ✅ → Stage 4 UI verification uses MCP fully automatic execution
+- `playwright` ❌ → Degrade to `npx playwright test`, result labeled ⚠️, output installation instructions
+- Required tool ❌ and no fallback → ⛔ Stop, prompt to configure and retry
 
-## 工作流程（4 阶段，顺序执行）
+## Workflow (4 phases, sequential execution)
 
-### 阶段 1：环境快照（不执行命令）
+### Phase 1: Environment Snapshot (no command execution)
 
-静态读取 `package.json`（脚本名、依赖版本）、构建配置（vite/tsconfig/eslint）、`.nvmrc`、设计文档约束。
+Statically read `package.json` (script names, dependency versions), build configs (vite/tsconfig/eslint), `.nvmrc`, design document constraints.
 
-**阻断**：`package.json` 不存在或目标脚本不存在 → 停止
+**Block**: `package.json` does not exist or target script does not exist → stop
 
-### 阶段 2：静态预检（不执行构建）
+### Phase 2: Static Pre-flight (no build execution)
 
-| 预检项 | 常见失败原因 |
-|--------|------------|
-| 依赖完整性 | 缺包、版本不匹配 |
-| TypeScript 类型 | 类型不兼容、缺声明文件 |
-| Import 路径 | 路径拼写错误、文件被删除 |
-| 环境变量 | 缺少必要变量 |
-| Lint 规则 | 格式错误、未使用变量 |
-| 已知约束 | 设计文档约定未落实 |
+| Pre-flight Item | Common Failure Causes |
+|-----------------|----------------------|
+| Dependency integrity | Missing packages, version mismatch |
+| TypeScript types | Type incompatibility, missing declaration files |
+| Import paths | Path spelling errors, deleted files |
+| Environment variables | Missing required variables |
+| Lint rules | Format errors, unused variables |
+| Known constraints | Design document conventions not implemented |
 
-**阻断**：发现阻断项（如 import 路径不存在）→ 先修复再进入阶段 3
+**Block**: blocking items found (e.g., import path does not exist) → fix first, then enter Phase 3
 
-### 阶段 3：环境对齐确认
+### Phase 3: Environment Alignment Confirmation
 
-当前 Node 版本是否满足 `engines.node` / `.nvmrc`；包管理器是否一致。
+Current Node version satisfies `engines.node` / `.nvmrc`; package manager is consistent.
 
-**阻断**：不对齐 → 给出对齐命令，等待执行后再继续
+**Block**: misaligned → give alignment command, wait for execution before continuing
 
-### 阶段 4：一次执行 + 结果断言
+### Phase 4: One-shot Execution + Result Assertion
 
-全部预检通过后执行验证命令，**只执行一次**：
+After all pre-flight passes, execute verification command, **only once**:
 
-| 验证项 | 通过条件 |
-|--------|---------|
-| 依赖安装 | exit code 0，无 peer dep 错误 |
-| 类型检查 | exit code 0 |
+| Verification Item | Pass Condition |
+|-------------------|---------------|
+| Dependency install | exit code 0, no peer dep errors |
+| Type check | exit code 0 |
 | Lint | exit code 0 |
-| 构建 | exit code 0，产物目录非空 |
-| P0 单元测试 | exit code 0 |
-| UI/E2E（MCP ✅） | MCP 全自动，所有 P0 项通过 |
-| UI/E2E（降级 ⚠️） | `npx playwright test` exit 0；截图需人工确认 |
+| Build | exit code 0, output directory non-empty |
+| P0 unit tests | exit code 0 |
+| UI/E2E (MCP ✅) | MCP fully automatic, all P0 items pass |
+| UI/E2E (degraded ⚠️) | `npx playwright test` exit 0; screenshots need human confirmation |
 
-执行失败：不重试 → 解析错误输出 → 给出"一次性修复清单"（根因+操作+重入阶段）
+Execution failure: no retry → parse error output → give "one-time fix checklist" (root cause + operation + re-entry phase)
 
-## 使用规则
+## Usage Rules
 
-- 前置探针有阻断项禁止进入阶段 1；阶段 1-3 有阻断项禁止进入阶段 4
-- 验证命令名称须取自 `package.json scripts`，不得硬编码
-- 命令不存在时输出"脚本 <名称> 不存在，跳过"
-- 阶段 4 失败不自动重试，给出修复清单交由调用方决策
-- playwright 降级须标注 ⚠️，不得以全通过呈现
+- Pre-flight probe with blocking items prohibits entering Phase 1; Phase 1-3 with blocking items prohibits entering Phase 4
+- Verification command names must be taken from `package.json` scripts, no hard-coding
+- When command does not exist, output "script <name> does not exist, skipping"
+- Phase 4 failure does not auto-retry; give fix checklist for caller decision
+- playwright degradation must be labeled ⚠️, cannot present as full pass

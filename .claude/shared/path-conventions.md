@@ -1,52 +1,52 @@
-# 路径与链接约定
+# Path and Link Conventions
 
-本文档统一 `.claude` 体系中的路径写法，避免出现旧目录模型和失效链接。
+This document unifies path notation in the `.claude` system to avoid obsolete directory models and broken links.
 
-## 稳定入口
+## Stable Entry Points
 
-- 技能目录：`.claude/skills/<skill-name>/`
-- 技能真源：`.claude/skills/<skill-name>/SKILL.md`
-- 代理目录：`.claude/agents/<agent-name>.md`
-- 命令目录：`.claude/commands/<command-name>.md`
-- 评测示例：`.claude/eval/skills/<skill>.md`、`eval/agents/<agent>.md`（用户故事与示例输入；首期 `skills/wework-bot.md`、`agents/message-pusher.md`，非技能真源）
+- Skills directory: `.claude/skills/<skill-name>/`
+- Skills source of truth: `.claude/skills/<skill-name>/SKILL.md`
+- Agents directory: `.claude/agents/<agent-name>.md`
+- Commands directory: `.claude/commands/<command-name>.md`
+- Evaluation examples: `.claude/eval/skills/<skill>.md`, `eval/agents/<agent>.md` (user stories and sample inputs; first phase `skills/wework-bot.md`, `agents/message-pusher.md`, not skill source of truth)
 
-## 禁止使用的旧路径
+## Obsolete Paths (Prohibited)
 
-以下写法已废弃，不应再出现在任何规则、模板或 README 中：
+The following notations are deprecated and must not appear in any rules, templates, or READMEs:
 
 - `.claude/skills/generate-document.md`
 - `.claude/rules/...`
 - `.claude/templates/...`
 - `.claude/skills/checklist/...`
 
-## 推荐写法
+## Recommended Notation
 
-### 在 `docs/` 文档中引用 `.claude`
+### Referencing `.claude` from `docs/` documents
 
-从 `docs/` 下不同深度的文档回链到 `.claude` 时，使用从当前位置到仓库根目录的相对路径：
+When back-linking from documents at different depths under `docs/` to `.claude`, use a relative path from the current file to the repository root:
 
-- **2 级深度**（如 `docs/<功能名>/`）：`../../.claude/skills/generate-document/SKILL.md`
-- **3 级深度**（如 `docs/周报/<自然周>/`）：`../../../.claude/skills/generate-document/SKILL.md`
-- **4 级深度**（如更深嵌套）：逐级增加 `../`
+- **2 levels deep** (e.g. `docs/<feature-name>/`): `../../.claude/skills/generate-document/SKILL.md`
+- **3 levels deep** (e.g. `docs/weekly/<natural-week>/`): `../../../.claude/skills/generate-document/SKILL.md`
+- **4 levels deep** (e.g. deeper nesting): add `../` per level
 
-示例：
+Examples:
 
-- `../../.claude/skills/generate-document/SKILL.md`（2 级）
-- `../../.claude/skills/generate-document/rules/需求文档.md`（2 级）
-- `../../../.claude/skills/generate-document/SKILL.md`（3 级，周报目录内）
+- `../../.claude/skills/generate-document/SKILL.md` (2 levels)
+- `../../.claude/skills/generate-document/rules/requirement-document.md` (2 levels)
+- `../../../.claude/skills/generate-document/SKILL.md` (3 levels, inside weekly directory)
 
-### 兜底路径
+### Fallback Path
 
-当 skill 因缺少参数、目标目录不可定位或前置材料缺失而无法写入目标产物时，仍必须写入：
+When a skill cannot write the target artifact due to missing parameters, undeterminable target directory, or missing prerequisite materials, it must still write to:
 
 - `docs/99_agent-runs/<YYYYMMDD-HHMMSS>_<skill-name>.md`
 
-### 在 `.claude` 内部互相引用
+### Internal Cross-References Within `.claude`
 
-优先使用基于当前文件位置可直接解析的相对路径，不额外制造别名目录。
+Prefer relative paths based on the current file's location that can be directly resolved, without creating alias directories.
 
-## 链接治理规则
+## Link Governance Rules
 
-- 只链接到仓库里真实存在的 skill、agent、rule、template、checklist、eval 示例文档。
-- 若某能力没有对应 skill 或 agent，应明确写“未提供专用入口”，而不是编造名字。
-- 目录结构调整后，必须做一次全仓 `.claude/` 链接回归搜索。
+- Only link to skill, agent, rule, template, checklist, and eval example documents that actually exist in the repository.
+- If a capability has no dedicated skill or agent entry, explicitly write "no dedicated entry provided" instead of fabricating a name.
+- After directory structure changes, perform a full-repository `.claude/` link regression search.

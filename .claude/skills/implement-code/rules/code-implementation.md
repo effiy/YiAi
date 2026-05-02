@@ -1,71 +1,71 @@
-# 代码实施规范
+# Code Implementation Spec
 
-> 约束 implement-code 阶段 4（写项目代码）的全部编码行为。与 `../../generate-document/rules/` 共同约束，**本规范优先级更高**。
-
----
-
-## 1. 核心约束（P0）
-
-| # | 约束 |
-|---|------|
-| C0-1 | 动态检查门禁通过前不得写项目代码（Gate A 见 [`implement-code-testing.md`](./implement-code-testing.md)） |
-| C0-2 | 每行代码须可追溯到设计文档的模块、接口或影响链记录 |
-| C0-3 | 不得新增设计文档未提及的文件/目录（新增须标注原因） |
-| C0-4 | 实施后必须消除 P0 语法错误 |
-| C0-5 | 实施后必须补充 `data-testid` 到真实组件（与测试页面一致） |
-| C0-6 | 必须通过阶段 6 冒烟测试才可进入阶段 7 |
-| C0-7 | 删除/重命名/修改公共接口前须完成全项目影响链闭合分析 |
-| C0-8 | 共享组件与应用组件分层须遵循项目约定；无约定时须在设计文档明确 |
+> Constrains all coding behavior in implement-code stage 4 (writing project code). Co-constrained with `../../generate-document/rules/`, **this spec takes precedence**.
 
 ---
 
-## 2. 项目专项约束
+## 1. Core Constraints (P0)
 
-- **入口初始化**：遵循项目既有 `initApp` 方式，不引入新模式
-- **Hooks 工厂**：`store.js`（Vue.ref）→ `useComputed.js`（Vue.computed）→ `useMethods.js`（领域方法）；禁止直接使用 Vue.reactive
-- **共享组件注册**：按项目约定导出/注册，保持统一入口
-- **代码结构**：遵循 `../../generate-document/rules/代码结构.md`
-
----
-
-## 3. 实施顺序
-
-1. Hooks/状态层 → store → useComputed → useMethods
-2. 共享组件 → 组件文件 + 导出入口
-3. 应用组件 → 组件文件 + data-testid
-4. 视图入口 → 按项目约定初始化/挂载
-5. 入口确认 → index.html 引用正确
+| # | Constraint |
+|---|------------|
+| C0-1 | No project code may be written before dynamic check gates pass (Gate A see [`implement-code-testing.md`](./implement-code-testing.md)) |
+| C0-2 | Every line of code must be traceable to a design-document module, interface, or impact-chain record |
+| C0-3 | No new files/directories not mentioned in the design document (new additions must be annotated with reason) |
+| C0-4 | P0 syntax errors must be eliminated after implementation |
+| C0-5 | `data-testid` must be added to real components after implementation (consistent with test page) |
+| C0-6 | Must pass stage 6 smoke test before entering stage 7 |
+| C0-7 | Before deleting/renaming/modifying public interfaces, full-project impact-chain closure analysis must be completed |
+| C0-8 | Shared vs. application component layering must follow project conventions; when no convention exists, it must be explicit in the design document |
 
 ---
 
-## 4. data-testid 移植
+## 2. Project-Specific Constraints
 
-测试页面中所有 `data-testid` 必须原样出现在真实组件中，不得更名或缺省。完成后对照原型页元素列表逐一确认。
-
----
-
-## 5. 实施检查清单
-
-**实施前（全部通过方可编码）**：
-- 设计文档中所有模块路径已确认
-- 共享/应用组件放置路径已按项目约定确认
-- hooks 三文件模式完整（store / useComputed / useMethods）
-- 已读取 `../../../shared/impact-analysis-contract.md`
-- 每个改动点已完成全项目影响链闭合分析
-
-**每模块完成后**：
-- P0 语法错误已消除
-- data-testid 完整
-- 共享组件导出与注册一致
-- 入口初始化/挂载完整
-- 全项目影响链回归验证（基于真实 diff 重建搜索词）
+- **Entry initialization**: Follow the project's existing `initApp` pattern; do not introduce new patterns
+- **Hooks factory**: `store.js` (Vue.ref) → `useComputed.js` (Vue.computed) → `useMethods.js` (domain methods);禁止使用 Vue.reactive directly
+- **Shared component registration**: Export/register per project convention, maintain unified entry
+- **Code structure**: Follow `../../generate-document/rules/code-structure.md`
 
 ---
 
-## 6. 禁止事项
+## 3. Implementation Order
 
-- 未确认项目结构就引入新目录/路径约定
-- 未读取现有代码就写新代码
-- 跳过 hooks 工厂模式直接写 reactive
-- 跳过 data-testid 移植
-- P0 语法错误未消除就进入下一阶段
+1. Hooks/state layer → store → useComputed → useMethods
+2. Shared components → component files + export entry
+3. Application components → component files + data-testid
+4. View entry → initialize/mount per project convention
+5. Entry confirmation → index.html references correct
+
+---
+
+## 4. data-testid Porting
+
+All `data-testid` in the test page must appear verbatim in real components, without renaming or omission. After completion, confirm against the prototype page element list one by one.
+
+---
+
+## 5. Implementation Checklist
+
+**Before implementation (all must pass before coding)**:
+- All module paths in design document are confirmed
+- Shared/application component placement paths are confirmed per project convention
+- Hooks three-file pattern is complete (store / useComputed / useMethods)
+- `../../../shared/impact-analysis-contract.md` has been read
+- Full-project impact-chain closure analysis is completed for every change point
+
+**After each module completes**:
+- P0 syntax errors are eliminated
+- data-testid is complete
+- Shared component exports and registration are consistent
+- Entry initialization/mount is complete
+- Full-project impact-chain regression verification (rebuild search terms based on real diff)
+
+---
+
+## 6. Prohibitions
+
+- Introducing new directories/path conventions without confirming project structure
+- Writing new code without reading existing code
+- Skipping hooks factory pattern and writing reactive directly
+- Skipping data-testid porting
+- Entering next stage with P0 syntax errors unaddressed

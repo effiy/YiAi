@@ -1,50 +1,50 @@
-# E2E 测试规范
+# E2E Testing Spec
 
-> 目录结构、data-testid、Mock 与自动化偏好。Gate A/B 准入与证据标准以 [`implement-code-testing.md`](./implement-code-testing.md) 为真源。
-
----
-
-## 1. 核心约束
-
-| # | 约束 |
-|---|------|
-| E0-1 | 每个场景有明确验证步骤和预期结果（来自 `05`） |
-| E0-2 | 可交互 UI 元素须标记 `data-testid`，格式 `<功能名>-<元素名>` |
-| E0-3 | 断言须来自 `05` 预期结果 |
-| E0-4 | API mock 通过 hooks/store 层隔离 |
-| E0-5 | 测试文件路径：`tests/e2e/<功能名>/` |
-| E0-6 | Mock 仅限 `tests/` 目录，生产代码禁止 mock |
+> Directory structure, data-testid, mock and automation preferences. Gate A/B admission and evidence standards are sourced from [`implement-code-testing.md`](./implement-code-testing.md).
 
 ---
 
-## 2. 验证方式
+## 1. Core Constraints
 
-| 方式 | 用途 |
-|------|------|
-| 真实入口 MVP（强制，Gate A） | 主流程最小可用路径 + 证据 |
-| 手动浏览器 | 按检查清单操作 + 截图 |
-| 代码审查 | data-testid、入口初始化、组件注册 |
-| 构建验证 | JS 控制台无错误、组件正常渲染 |
-| AI 自动冒烟（强制，Gate B） | 端到端主流程 + 通过/失败证据 |
-
-Playwright 优先用于 Gate B；未安装时须通过可脚本化命令+可复核日志完成等价自动化，不得以手工替代。
+| # | Constraint |
+|---|------------|
+| E0-1 | Every scenario has explicit verification steps and expected results (from `05`) |
+| E0-2 | Interactive UI elements must be marked with `data-testid`, format `<feature-name>-<element-name>` |
+| E0-3 | Assertions must come from `05` expected results |
+| E0-4 | API mock is isolated through hooks/store layer |
+| E0-5 | Test file path: `tests/e2e/<feature-name>/` |
+| E0-6 | Mock is limited to `tests/` directory; production code prohibits mock |
 
 ---
 
-## 3. 文件结构
+## 2. Verification Methods
+
+| Method | Purpose |
+|--------|---------|
+| Real entry MVP (mandatory, Gate A) | Main flow minimum viable path + evidence |
+| Manual browser | Operate per checklist + screenshot |
+| Code review | data-testid, entry initialization, component registration |
+| Build verification | JS console no errors, components render normally |
+| AI auto smoke (mandatory, Gate B) | End-to-end main flow + pass/fail evidence |
+
+Playwright is preferred for Gate B; when not installed, equivalent automation must be completed via scriptable command + reviewable log, manual substitution is not allowed.
+
+---
+
+## 3. File Structure
 
 ```text
-tests/e2e/<功能名>/
-├── <场景名>-checklist.md    # 验证清单 + 截图
-└── fixtures/                 # mock 数据（可选）
+tests/e2e/<feature-name>/
+├── <scenario-name>-checklist.md    # Verification checklist + screenshots
+└── fixtures/                 # Mock data (optional)
 ```
 
 ---
 
-## 4. 禁止事项
+## 4. Prohibitions
 
-- E2E 测试中 import 项目源码
-- 只测成功路径不覆盖失败分支
-- Mock 数据使用无意义占位符
-- 在 `tests/` 外生成测试文件
-- 假设 Playwright 可用
+- Importing project source code in E2E tests
+- Only testing success paths without covering failure branches
+- Using meaningless placeholders for mock data
+- Generating test files outside `tests/`
+- Assuming Playwright is available

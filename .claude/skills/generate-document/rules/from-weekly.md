@@ -1,38 +1,38 @@
 ---
 paths:
   - "docs/99_agent-runs/*_from-weekly.md"
-  - "docs/周报/**/*.md"
+  - "docs/weekly/**/*.md"
 ---
 
-# 从周报拆解全文档（from-weekly）命令规范
+# Full-Document Breakdown from Weekly (from-weekly) Command Specification
 
-> 核心原则、审查门禁、通知要求以 `../SKILL.md` 为准；本文件只承载 from-weekly 专属行为细节。
+> Core principles, review gates, and notification requirements follow `../SKILL.md`; this file only carries from-weekly-specific behavior details.
 
-## 调用方式
+## Invocation
 
 ```bash
-/generate-document from-weekly docs/周报/2026-04-27~2026-05-03/周报.md
+/generate-document from-weekly docs/weekly/2026-04-27~2026-05-03/weekly-report.md
 ```
 
-可选意图（由用户在对话中说明，未说明则按默认策略）：
-- **筛选类型**：仅处理周报表格中类型为规划/项目/系统的行
-- **合并**：指定多行合并为一个功能目录；高度重合的改进项允许自动合并（须在映射表中写明理由）
+Optional intents (stated by the user in conversation; if not stated, use default strategy):
+- **Filter type**: Only process rows in the weekly table whose type is planning / project / system
+- **Merge**: Specify multiple rows to merge into a single feature directory; highly overlapping improvements may be auto-merged (reason must be stated in the mapping table)
 
-## 工作流
+## Workflow
 
-### 步骤 0：拆解与映射（先于步骤 1）
+### Step 0: Breakdown and Mapping (before Step 1)
 
-1. 解析表格：逐行提取可执行条目
-2. 梳理为需求：为每条生成 `{功能名}` 与一句话用户故事
-3. 产出映射表（强制落盘）：`docs/99_agent-runs/<YYYYMMDD-HHMMSS>_from-weekly.md`
-4. 零条目：无法解析时按 SKILL.md 原则 #9 H4 处理
+1. Parse table: extract actionable items row by row
+2. Organize into requirements: generate `{feature-name}` and a one-sentence user story for each
+3. Produce mapping table (mandatory disk write): `docs/99_agent-runs/<YYYYMMDD-HHMMSS>_from-weekly.md`
+4. Zero items: when unable to parse, handle per SKILL.md principle #9 H4
 
-### 步骤 1-5：对每个 `{功能名}` 依次
+### Steps 1-5: For each `{feature-name}` in sequence
 
-对每个映射得到的功能名执行标准 5 步工作流（详见 `workflow.md`）。步骤 1 中 `docs-retriever` 需为每个功能目录单独调用。
+Execute the standard 5-step workflow for each mapped feature name (see `workflow.md`). In Step 1, `docs-retriever` must be invoked separately for each feature directory.
 
-### 步骤 6：文档同步与通知（本轮一次）
+### Step 6: Document Sync and Notification (once per round)
 
-全部功能目录均完成后，本轮只执行一次步骤 6：
-- **import-docs**：同步整个 `docs/`
-- **wework-bot**：发送一条汇总通知，正文包含来源周报路径、功能目录列表
+After all feature directories are completed, execute Step 6 only once this round:
+- **import-docs**: Sync the entire `docs/`
+- **wework-bot**: Send a summary notification whose body contains the source weekly report path and the feature directory list

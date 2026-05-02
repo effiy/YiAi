@@ -10,51 +10,61 @@ paths:
   - "docs/FAQ.md"
   - "docs/auth.md"
   - "docs/security.md"
-  - "docs/项目初始化/**/*.md"
+  - "docs/project-init/**/*.md"
 ---
 
-# 项目初始化（init）命令规范
+# Project Initialization (init) Command Specification
 
-> 核心原则、中断门槛、通知要求以 `../SKILL.md` 为准；本文件只承载 init 专属行为细节。
+> Core principles, interruption thresholds, and notification requirements follow `../SKILL.md`; this file only carries init-specific behavior details.
 
-## 调用方式
+## Invocation
 
 ```bash
 /generate-document init
 ```
 
-## 产出清单
+## Output List
 
-| 类别 | 产出 | 说明 |
-|------|------|------|
-| 项目基础文件（10 个） | `CLAUDE.md`、`README.md`、`docs/architecture.md` 等 | 仓库根目录或 `docs/` |
-| 全文档编号集（7 个） | `docs/项目初始化/01-07` | 含 `06_实施总结.md`（由 init 自行写入） |
+| Category | Output | Description |
+|----------|--------|-------------|
+| Project basics (10 files) | `CLAUDE.md`, `README.md`, `docs/architecture.md`, etc. | Repository root or `docs/` |
+| Full document numbered set (7 files) | `docs/project-init/01-07` | Contains `06_process-summary.md` (written by init itself) |
 
-## 工作流
+## Workflow
 
-1. 扫描仓库结构：读取 `package.json` / 构建配置 / 源码目录 / git 历史等
-2. 阶段 1：调用 `docs-retriever` 检索适用规范
-3. 阶段 2：扫描项目代码和配置（init 无影响分析需求，跳过 `doc-impact-analyzer`）
-4. 阶段 3：调用 `codes-builder` + `doc-architect` 推断项目架构模式
-5. 阶段 4：生成 10 个基础文件 + `docs/项目初始化/` 01-07；三层审查门禁 + `doc-quality-tracker` 统计
-6. 阶段 5：保存文档，调用 `docs-builder` 策展知识
-7. 阶段 6：先 `import-docs`，再 `wework-bot`
+1. Scan repository structure: read `package.json` / build config / source directories / git history, etc.
+2. Stage 1: Invoke `docs-retriever` to retrieve applicable specifications
+3. Stage 2: Scan project code and configuration (init has no impact analysis requirement, skip `doc-impact-analyzer`)
+4. Stage 3: Invoke `codes-builder` + `doc-architect` to infer project architecture patterns
+5. Stage 4: Generate 10 basic files + `docs/project-init/` 01-07; three-layer review gate + `doc-quality-tracker` statistics
+6. Stage 5: Save documents, invoke `docs-builder` to curate knowledge
+7. Stage 6: `import-docs` first, then `wework-bot`
 
-## 再次执行（re-init）更新策略
+## Re-execution (re-init) Update Strategy
 
-| 策略 | 说明 |
-|------|------|
-| 优先更新事实 | 技术栈、目录结构、命令、入口等必须刷新 |
-| 保留人工补充 | 团队约定/经验沉淀若已存在且未与事实冲突，默认保留 |
-| 冲突标注 | 陈述与代码事实冲突时标注 `> 待确认（原因：…）` |
-| 哨兵块安全重写 | `<!-- AUTO-GENERATED:BEGIN/END -->` 包裹的段落可重写，保留块外内容 |
-| 可观测更新 | 在 `06_实施总结.md` 记录本轮更新摘要 |
+### Change Levels (consistent with feature documents)
 
-## init 与功能文档的区别
+| Level | Criteria | Handling Strategy |
+|-------|----------|-------------------|
+| **T1 Minor** | Version bump, dependency update, config tweak, README wording optimization | Rewrite only changed paragraphs, retain manual additions and team conventions |
+| **T2 Partial** | New/deleted directories, tech stack component changes, new command entry | Rewrite changed chapters + sync update all associated documents that reference this chapter |
+| **T3 Scope** | Architecture pattern changes, project type changes (e.g. frontend → full-stack), build tool replacement | Full cascade refresh |
 
-| 维度 | `init` | `<功能名>-描述` |
-|------|--------|----------------|
-| 功能名 | 固定为 `项目初始化` | 用户指定 |
-| 06_实施总结 | 由 init 自行写入 | 由 implement-code 写入 |
-| 产出位置 | 根目录 10 个文件 + `docs/项目初始化/` | `docs/<功能名>/` |
-| 更新策略 | re-init：刷新事实、保留约定、冲突标待确认 | 差异对比、级联更新、版本递增 |
+### re-init General Strategy
+
+| Strategy | Description |
+|----------|-------------|
+| Prioritize factual updates | Tech stack, directory structure, commands, entries, etc. must be refreshed |
+| Retain manual additions | Team conventions / accumulated experience, if already present and not conflicting with facts, retain by default |
+| Conflict annotation | When statements conflict with code facts, annotate `> Pending confirmation (reason: …)` |
+| Sentinel-block safe rewrite | Paragraphs wrapped in `<!-- AUTO-GENERATED:BEGIN/END -->` may be rewritten; content outside the block is retained |
+| Observable update | Record this round's update summary in `06_process-summary.md` (including change level and affected file list) |
+
+## Differences Between init and Feature Documents
+
+| Dimension | `init` | `<feature-name>-description` |
+|-----------|--------|------------------------------|
+| Feature name | Fixed as "Project Initialization" | User-specified |
+| 06_process-summary | Written by init itself | Written by implement-code |
+| Output location | 10 files in root + `docs/project-init/` | `docs/<feature-name>/` |
+| Update strategy | re-init: refresh facts, retain conventions, mark conflicts as pending | Diff comparison, cascade update, version increment |

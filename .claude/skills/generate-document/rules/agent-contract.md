@@ -3,60 +3,69 @@ paths:
   - "skills/generate-document/rules/agent-contract.md"
 ---
 
-# Agent 调用契约
+# Agent Invocation Contract
 
-> 核心原则见 `../SKILL.md` #3/#4；阶段绑定见 `orchestration.md §6`；输出 JSON 格式见 `../../shared/agent-output-contract.md`。
+> See `../SKILL.md` #3/#4 for core principles; see `orchestration.md` §6 for stage binding; see `../../shared/agent-output-contract.md` for the output JSON format.
 
-## 1. 命令适用矩阵
+## 1. Command Applicability Matrix
 
-| Agent | 功能文档 | init | weekly | from-weekly |
-|-------|---------|------|--------|-------------|
-| `docs-retriever` | ✅步骤1 | ✅步骤1 | — | ✅步骤1 |
-| `doc-impact-analyzer` | ✅步骤2 | — | — | ✅步骤2 |
-| `codes-builder` | ✅步骤3 | ✅步骤3 | — | ✅步骤3 |
-| `doc-architect` | ✅步骤3 | ✅步骤3 | — | ✅步骤3 |
-| `doc-mermaid-expert` | ✅步骤4 | ✅步骤4 | ✅步骤4 | ✅步骤4 |
-| `doc-reviewer` | ✅步骤4(仅设计) | — | — | ✅步骤4 |
-| `doc-markdown-tester` | ✅步骤4 | ✅步骤4 | ✅步骤4 | ✅步骤4 |
-| `doc-quality-tracker` | ✅步骤4 | ✅步骤4 | ✅步骤4 | ✅步骤4 |
-| `docs-builder` | ✅步骤5 | ✅步骤5 | ✅步骤5 | ✅步骤5 |
+| Agent | Feature Document | init | weekly | from-weekly |
+|-------|-----------------|------|--------|-------------|
+| `doc-planner` | ✅ Step 0 | — | — | ✅ Step 0 |
+| `docs-retriever` | ✅ Step 1 | ✅ Step 1 | — | ✅ Step 1 |
+| `doc-impact-analyzer` | ✅ Step 2 | — | — | ✅ Step 2 |
+| `codes-builder` | ✅ Step 3 | ✅ Step 3 | — | ✅ Step 3 |
+| `doc-architect` | ✅ Step 3 | ✅ Step 3 | — | ✅ Step 3 |
+| `doc-mermaid-expert` | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 |
+| `doc-reviewer` | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 |
+| `doc-markdown-tester` | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 |
+| `doc-quality-tracker` | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 | ✅ Step 4 |
+| `docs-builder` | ✅ Step 5 | ✅ Step 5 | ✅ Step 5 | ✅ Step 5 |
+| `execution-memory`* | ✅ After stage 5 | ✅ After stage 5 | — | ✅ After stage 5 |
 
-## 2. 逐 Agent 契约
+> `execution-memory` is a "pseudo agent" (script invocation), with no JSON contract requirement, but must write structured data according to the specification.
 
-| Agent | 阶段 | 职责 | 采纳规则 | 跳过条件 |
-|-------|------|------|----------|----------|
-| `docs-retriever` | 1 | 检索 rules/shared/checklists 规范 | 返回列表必须用于后续加载 | 空列表可继续（标注"未返回"），但不得跳过调用 |
-| `doc-impact-analyzer` | 2(仅02/03) | 全项目影响链闭合 | 结果写入02第6章/03第5章 | 不闭合时写「未覆盖风险」标注"待人工确认" |
-| `codes-builder` | 3(仅03) | 架构设计与代码结构分析 | 结论须采纳到设计文档 | **不得跳过**；失败走阻断流程 |
-| `doc-architect` | 3(仅03) | 5必答问题(Q1模块Q2接口Q3数据流Q4架构图Q5约定兼容) | 模块划分/接口规范须采纳 | **不得跳过**；失败走阻断流程 |
-| `doc-mermaid-expert` | 4(含Mermaid文档定稿前) | Mermaid语法审查修复 | 修复后写回同一文件 | 无Mermaid块可跳过 |
-| `doc-reviewer` | 4(设计文档后) | 结构与表达质量审查 | P0必须修复后才可保存 | 非设计文档可跳过 |
-| `doc-markdown-tester` | 4 | Markdown质量测试 | — | **不得跳过** |
-| `doc-quality-tracker` | 4 | P0/P1/P2统计 | — | **不得跳过** |
-| `docs-builder` | 5 | 知识策展 | — | **不得跳过** |
+## 2. Per-Agent Contract
 
-## 3. 调用顺序约束
+| Agent | Stage | Responsibility | Adoption Rule | Skip Condition |
+|-------|-------|----------------|---------------|----------------|
+| `doc-planner` | 0 | Generate adaptive execution plan based on execution memory | Suggested change level and agent strategy must serve as reference input for subsequent steps | May skip when execution memory does not exist or is empty (must annotate) |
+| `docs-retriever` | 1 | Retrieve rules/shared/checklists specifications | Returned list must be used for subsequent loading | Empty list may continue (annotate "not returned"), but the call must not be skipped |
+| `doc-impact-analyzer` | 2 (only 02/03) | Full-project impact chain closure | Result written to chapter 6 of 02 / chapter 5 of 03 | When not closed, write "Uncovered Risk" and annotate "pending manual confirmation" |
+| `codes-builder` | 3 (only 03) | Architecture design and code structure analysis | Conclusion must be adopted into design document | **Must not skip**; failure follows blocking flow |
+| `doc-architect` | 3 (only 03) | 5 mandatory questions (Q1 modules, Q2 interfaces, Q3 data flow, Q4 architecture diagram, Q5 convention compatibility) | Module division / interface specifications must be adopted | **Must not skip**; failure follows blocking flow |
+| `doc-mermaid-expert` | 4 (before Mermaid document finalization) | Mermaid syntax review and fix | Write back to the same file after fix | May skip if no Mermaid block |
+| `doc-reviewer` | 4 (after all document types) | Structure and expression quality review + cross-document consistency check | P0 must be fixed before saving | **Must not skip** |
+| `doc-markdown-tester` | 4 | Markdown quality test | — | **Must not skip** |
+| `doc-quality-tracker` | 4 | P0/P1/P2 statistics | — | **Must not skip** |
+| `docs-builder` | 5 | Knowledge curation | — | **Must not skip** |
 
-1. `doc-mermaid-expert` 必在 `doc-reviewer` 前
-2. `doc-impact-analyzer` 必在 `codes-builder`/`doc-architect` 前
-3. `codes-builder` 和 `doc-architect` 可并行
-4. 阶段绑定严格执行
+## 3. Invocation Order Constraints
 
-## 4. 门禁校验
+1. `doc-planner` must precede `docs-retriever` (Step 0 before Step 1)
+2. `doc-mermaid-expert` must precede `doc-reviewer`
+3. `doc-impact-analyzer` must precede `codes-builder` / `doc-architect`
+4. `codes-builder` and `doc-architect` may run in parallel
+5. `execution-memory` write must occur after `docs-builder` and before `import-docs`
+6. Stage binding is strictly enforced
 
-> SKILL.md 原则 #4 定义统一要求。
+## 4. Gate Validation
 
-- Agent 输出末尾须附加 JSON 契约附录块（见 `../../shared/agent-output-contract.md`）
-- 采纳前校验（至少必答覆盖+产物存在性）
-- 脚本：`node skills/implement-code/scripts/validate-agent-output.js --agent <名> --text "<输出>"`
-- 失败处理：第1次补齐重试；第2次视为调用失败走阻断/降级
+> SKILL.md principle #4 defines unified requirements.
 
-## 5. 真源索引
+- Agent output must append a JSON contract appendix block at the end (see `../../shared/agent-output-contract.md`)
+- Validate before adoption (at least mandatory question coverage + artifact existence)
+- Script: `node skills/implement-code/scripts/validate-agent-output.js --agent <name> --text "<output>"`
+- Failure handling: 1st attempt → supplementary retry; 2nd attempt → treat as invocation failure and follow blocking/degradation flow
 
-| 主题 | 真源 |
-|------|------|
-| 影响分析维度 | `../../shared/impact-analysis-contract.md` |
-| Agent 输出 JSON 格式 | `../../shared/agent-output-contract.md` |
-| Skill/Agent 边界 | `../../shared/agent-skill-boundaries.md` |
-| 阶段绑定与门禁 | `rules/orchestration.md §6` |
-| 各 Agent 必答问题 | `../../agents/<name>.md` |
+## 5. Source-of-Truth Index
+
+| Topic | Source of Truth |
+|-------|-----------------|
+| Impact analysis dimensions | `../../shared/impact-analysis-contract.md` |
+| Agent output JSON format | `../../shared/agent-output-contract.md` |
+| Skill / Agent boundaries | `../../shared/agent-skill-boundaries.md` |
+| Stage binding and gates | `rules/orchestration.md` §6 |
+| Per-agent mandatory questions | `../../agents/<name>.md` |
+| Execution memory format | Data structure comments in `scripts/execution-memory.js` |
+| Self-improvement output | Proposal format in `scripts/self-improve.js` |

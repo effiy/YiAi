@@ -1,73 +1,73 @@
-# 全项目影响分析契约
+# Full-Project Impact Analysis Contract
 
-> `generate-document` 与 `implement-code` 共用的影响分析口径。
+> Shared impact-analysis口径 for `generate-document` and `implement-code`.
 
-## 适用阶段
+## Applicable Stages
 
-| 阶段 | 使用方 | 目标 |
-|------|--------|------|
-| 规划期 | `generate-document` | 从上游文档和现有代码识别受影响模块、依赖和验证范围 |
-| 实施前 | `implement-code` 阶段 3 | 复核拟改动点为可实施清单，确认无遗漏依赖 |
-| 实施后 | `implement-code` 阶段 4/6 | 对真实 diff 做回归搜索，确认同步修改项已处理 |
+| Stage | Consumer | Goal |
+|-------|----------|------|
+| Planning | `generate-document` | Identify affected modules, dependencies, and verification scope from upstream documents and existing code |
+| Pre-implementation | `implement-code` stage 3 | Review proposed change points as an actionable list, confirm no missing dependencies |
+| Post-implementation | `implement-code` stage 4/6 | Regression search on real diff, confirm sync-modification items are handled |
 
-## 核心原则
+## Core Principles
 
-1. **全项目范围**：默认搜索整个仓库，不只搜 `src/` 或当前模块
-2. **依赖图闭合**：每个改动点须追踪"依赖谁、谁依赖它"，直到影响链闭合或明确停止原因
-3. **反向依赖优先**：删除/重命名/修改公共接口前，须证明所有调用方已覆盖
-4. **传递影响必查**：直接命中点若作为二级 API、barrel export、全局注册等被再次依赖，须继续追踪
-5. **事实来自工具**：引用关系须来自实际搜索/文件读取，不得凭记忆填写
-6. **未命中也要记录**：每个搜索词都须记录结果，无命中时写"未找到引用"并说明含义
-7. **规划与实施互相校验**：`generate-document` 给出预判，`implement-code` 须在真实变更前后复核
+1. **Full-project scope**: Search the entire repository by default, not just `src/` or the current module.
+2. **Dependency graph closure**: Every change point must trace "depends on whom, whom depends on it" until the impact chain closes or the stop reason is explicitly stated.
+3. **Reverse-dependency priority**: Before deleting/renaming/modifying a public interface, prove all callers are covered.
+4. **Transitive impact required**: If a direct hit serves as a secondary API, barrel export, global registration, etc., continue tracing.
+5. **Facts come from tools**: Reference relationships must come from actual search/file reads; do not fill from memory.
+6. **Misses must be recorded**: Every search term must be logged; when there are no hits, write "no references found" and explain the implication.
+7. **Planning and implementation cross-check**: `generate-document` provides the forecast; `implement-code` must re-check before and after real changes.
 
-## 搜索范围
+## Search Scope
 
-**包含**：源码（src/、组件、Store、composables、services、utils、styles）、测试（tests/）、文档（docs/）、.claude/ 规则、配置与构建（package.json、路由、CI、别名）、项目根目录运行/构建相关文件
+**Include**: source code (src/, components, Store, composables, services, utils, styles), tests (tests/), docs (docs/), .claude/ rules, configuration and build (package.json, routing, CI, aliases), project-root run/build related files.
 
-**排除**：node_modules/、dist/、build/、.git/、lock 文件、二进制资源
+**Exclude**: node_modules/, dist/, build/, .git/, lock files, binary assets.
 
-## 必查维度
+## Required Dimensions
 
-| 维度 | 闭合标准 |
-|------|----------|
-| 直接引用 | 每个搜索词都有命中或"未找到引用"记录 |
-| 上游依赖 | 上游变更风险已标注（同步修改/保持兼容/仅验证） |
-| 反向依赖 | 所有调用方处置方式明确 |
-| 传递依赖 | 二级及以上影响已闭合或写明停止原因 |
-| 导出链 | 导出入口和所有 import 方一致 |
-| 注册链 | 注册点、消费点、注册顺序已核对 |
-| 数据流 | payload/返回字段与所有消费方一致 |
-| 类型与契约 | 类型、文档示例、mock 与实现一致 |
-| 样式影响 | 模板、:class、classList 均已覆盖 |
-| 测试与文档 | 需新增/更新/回归的测试与文档已列入处置 |
-| 配置与构建 | 本地运行、构建、CI 无断链 |
-| 外部依赖 | 新增或升级依赖有来源、用途、风险和降级策略 |
+| Dimension | Closure Standard |
+|-----------|-----------------|
+| Direct references | Every search term has a hit or a "no references found" record |
+| Upstream dependencies | Upstream change risks are labeled (sync modify / keep compatible / verify only) |
+| Reverse dependencies | All caller disposition methods are explicit |
+| Transitive dependencies | Secondary+ impacts are closed or the stop reason is stated |
+| Export chain | Export entry and all import sides are consistent |
+| Registration chain | Registration point, consumption point, and registration order are verified |
+| Data flow | Payload / return fields are consistent with all consumers |
+| Types and contracts | Types, doc examples, and mocks are consistent with implementation |
+| Style impact | Templates, :class, and classList are all covered |
+| Tests and docs | Tests and docs to be added/updated/regressed are listed for disposition |
+| Configuration and build | Local run, build, and CI have no broken links |
+| External dependencies | New or upgraded dependencies have source, purpose, risk, and fallback strategy |
 
-## 分析步骤
+## Analysis Steps
 
-1. 列出所有拟改动点：文件、导出、函数、组件、Store、路由、事件、CSS、配置、依赖包
-2. 为每个改动点建立搜索词集合：名称、别名、路径、标签名、事件名、路由名、字符串 key、CSS token、环境变量名、包名
-3. 先搜改动点本身，再搜导出入口、注册入口和公共聚合入口
-4. 全项目搜索每个搜索词，记录命中文件、行号、引用方式、影响层级和证据
-5. 判断直接命中点是否存在二级影响（继续导出/注册/转发/被测试依赖）
-6. 对二级影响继续搜索，直到影响链闭合；停止时须写明原因
-7. 标注处置方式：同步修改、保持兼容、补充验证、人工复核、无需处理
-8. 实施后以真实 diff 重跑 2-7 步
+1. List all proposed change points: files, exports, functions, components, Store, routes, events, CSS, configuration, dependency packages.
+2. Build a search-term set for each change point: name, alias, path, tag name, event name, route name, string key, CSS token, env var name, package name.
+3. Search the change point itself first, then export entry, registration entry, and public aggregation entry.
+4. Full-project search each term, recording hit file, line number, reference method, impact level, and evidence.
+5. Determine whether direct hits have secondary impact (further export/registration/forwarding/test dependency).
+6. Continue searching secondary impact until the chain closes; state the reason when stopping.
+7. Label disposition method: sync modify, keep compatible, supplement verification, manual review, no action needed.
+8. Re-run steps 2–7 with real diff after implementation.
 
-## 输出格式
+## Output Format
 
-须包含四个部分（字段不得缺失）：
+Must contain four parts (fields must not be missing):
 
-1. **搜索词与改动点清单**：改动点 / 类型 / 搜索词 / 来源 / 备注
-2. **改动点影响链**：改动点 / 搜索词 / 命中文件 / 引用方式 / 影响层级 / 依赖方向 / 处置方式 / 闭合状态 / 说明
-3. **依赖闭合摘要**：改动点 / 上游已核对 / 反向已核对 / 传递已闭合 / 测试文档配置已覆盖 / 结论
-4. **未覆盖风险**：风险来源 / 原因 / 影响 / 缓解方式
+1. **Search-term and change-point list**: change point / type / search term / source / notes
+2. **Change-point impact chain**: change point / search term / hit file / reference method / impact level / dependency direction / disposition method / closure status / explanation
+3. **Dependency closure summary**: change point / upstream verified / reverse verified / transitive closed / tests/docs/config covered / conclusion
+4. **Uncovered risks**: risk source / reason / impact / mitigation
 
-## P0 门禁
+## P0 Gate
 
-- 未完成全项目搜索，不得生成设计结论或开始实施
-- 未输出搜索词与改动点清单，不得声称影响分析完整
-- 未分析上游/反向/传递依赖，不得删除/重命名/修改公共接口
-- 未分析导出链、注册链、测试、文档和配置影响，不得修改 Store/事件/路由/全局组件/构建配置
-- 发现"同步修改"或"阻断"项未处理时，须写入阻断原因或待处理清单
-- 实施后未用真实 diff 回归搜索，不得进入最终总结
+- Do not generate design conclusions or start implementation before completing the full-project search.
+- Do not claim impact analysis is complete without outputting the search-term and change-point list.
+- Do not delete/rename/modify public interfaces without analyzing upstream/reverse/transitive dependencies.
+- Do not modify Store/events/routes/global components/build configuration without analyzing export chains, registration chains, tests, docs, and configuration impact.
+- When "sync modify" or "block" items are found unhandled, write the block reason or pending list.
+- Do not enter final summary without regression search using real diff after implementation.

@@ -1,9 +1,9 @@
-调用 `verification-loop` 技能执行验证循环。
+Invoke the `verification-loop` skill to execute a verification loop.
 
-参数：`$ARGUMENTS`
+Arguments: `$ARGUMENTS`
 
-执行要求：
-- 执行前须做 MCP 可用性探针，禁止静默降级；必要工具不可用且无降级时须停止提示
-- 阶段 1-3 有阻断项时禁止进入阶段 4；命令名须取自 `package.json scripts`，不得硬编码
-- 阶段 4 只执行一次，失败不自动重试，须给出"一次性修复清单"及重入阶段
-- playwright 降级时须标注 ⚠️，不得以全通过呈现降级结果
+Execution requirements:
+- Must perform an MCP availability probe before execution; silent degradation is prohibited. Stop and prompt when a required tool is unavailable and no fallback exists.
+- Phases 1–3 with blocking items must not enter Phase 4; command names must be taken from `package.json` scripts, never hard-coded.
+- Phase 4 executes only once; on failure, do not auto-retry. Provide a "one-time fix checklist" and the re-entry phase.
+- Playwright degradation must be labeled with ⚠️; do not present degraded results as a full pass.

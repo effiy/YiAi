@@ -1,119 +1,234 @@
 ---
 name: generate-document
 description: |
-  文档生成编排器。在 `docs/<功能名>/` 下创建或更新全文档编号集（01-05, 07），5 步工作流驱动，三层审查门禁把关。
-  结束时强制执行 `import-docs`（文档同步）→ `wework-bot`（群通知），中断/完成均不可省略。
-  支持：`/generate-document 功能名-描述`（功能文档）、`init`（项目初始化）、`weekly`（周报）、`from-weekly <周报路径>`（从周报拆解全文档）。
+  Documentation generation orchestrator. Creates or updates the full numbered document set (01–05, 07)
+  under docs/<feature-name>/. Drives a 5-step workflow with three-layer review gates.
+  Enforces import-docs → wework-bot at termination; interruptions and completions alike.
+  Supports: /generate-document <feature-name>-<description>, init, weekly, from-weekly <path>.
+user_invocable: true
+lifecycle: document-pipeline
+pipeline:
+  stages:
+    - id: "0"
+      name: adaptive-planning
+      title: Adaptive Planning
+      agents: [doc-planner]
+      gates: [execution-memory-ready]
+      optional: true
+    - id: "1"
+      name: discovery
+      title: Discovery & Specification Retrieval
+      agents: [docs-retriever]
+      gates: [specs-loaded]
+    - id: "2"
+      name: impact-analysis
+      title: Upstream Grounding & Impact Analysis
+      agents: [doc-impact-analyzer]
+      gates: [impact-chain-closed]
+    - id: "3"
+      name: architecture
+      title: Expert Architecture Design
+      agents: [codes-builder, doc-architect]
+      gates: [architecture-validated]
+      parallel: true
+    - id: "4"
+      name: generation
+      title: Per-Document Generation & Self-Review
+      agents: [doc-mermaid-expert, doc-reviewer, doc-markdown-tester, doc-quality-tracker]
+      gates: [p0-clear, diagram-valid, markdown-valid, quality-tracked]
+    - id: "5"
+      name: curation
+      title: Save & Knowledge Curation
+      agents: [docs-builder]
+      gates: [knowledge-persisted]
+    - id: "6"
+      name: delivery
+      title: Document Sync & Notification
+      skills: [import-docs, wework-bot]
+agents:
+  required:
+    - doc-planner
+    - docs-retriever
+    - doc-impact-analyzer
+    - codes-builder
+    - doc-architect
+    - doc-mermaid-expert
+    - doc-reviewer
+    - doc-markdown-tester
+    - doc-quality-tracker
+    - docs-builder
+  optional: []
+contracts:
+  output: shared/agent-output-contract.md
+  impact: shared/impact-analysis-contract.md
+  evidence: shared/evidence-and-uncertainty.md
 ---
 
 # generate-document
 
-> 命令速查见 [README.md](./README.md#命令速查)
+> Quick reference: [README.md](./README.md)
 
-## 核心原则
+## Positioning
 
-1. **只生成文档，不改代码** — 绝对不修改任何代码文件
-2. **规范驱动，防幻觉** — `rules/<类型>.md` 是唯一契约；`03_设计文档` 和 `05_动态检查清单` 禁用模板。技术事实必须可追溯到上游文档或代码；无据可依时写 `> 待补充（原因：…）`，禁止虚构
-3. **Agent 实干，必答必采纳** — 关键步骤必须调用 agent，必须采纳其必答问题。调用链路见 [agent-contract.md](./rules/agent-contract.md)
-4. **审查门禁（三层递进）** — 语法层（Mermaid）→ 质量层（设计文档）→ 测试层（Markdown 质量）。契约校验见 [agent-contract.md §4](./rules/agent-contract.md#4-门禁校验)
-5. **全文档交付，级联刷新** — 编号集 01-05, 07；级联规则：01 变更 → 02/03 重写，02/03 变更 → 04/05 重写，07 追加更新
-6. **测试先行** — `02_需求任务.md` 每个场景须有可验证的验收标准；`05_动态检查清单.md` 须含可执行 P0 检查项
-7. **中断与完成必须通知** — 流程结束必须先 `import-docs` 再 `wework-bot`，不得省略、颠倒或静默降级
-8. **自检闭环** — P0 全部通过才保存为通过状态；最多自修复 1 轮；仍不通过也必须保存，顶部标注未通过项
-9. **一次执行到底** — 默认不中断，缺失信息写"待确认"继续推进；仅命中阻断门槛才打断，打断后按原则 #7 收尾
+`generate-document` is the documentation-generation orchestrator. It does not modify code.
 
-### 阻断门槛与降级
+### When to use
 
-> 详细降级策略见 [orchestration.md](./rules/orchestration.md#4-阻断点)
+- A `docs/<feature-name>/` document set exists or needs to be created.
+- The user explicitly asks for documentation.
+- Progressive refinement of requirements, design, or checklists is needed.
 
-| # | 场景 | 能否降级 |
-|---|------|----------|
-| H1 | 功能名无法解析且无法生成合理默认 | 否 |
-| H2 | P0 章节缺上游来源，且无法"待补充"降级 | 否 |
-| H3 | 同一请求指向两个不兼容的功能域 | 否 |
-| H4 | `from-weekly`：周报无效或无可落地条目 | 否 |
-| H5 | `API_X_TOKEN` 缺失 | 是（跳过同步，通知照发） |
+### When NOT to use
 
-打断后统一 4 步：落盘 → 同步（H5 跳过）→ 通知 → 兜底
+- The user wants code implementation (use `implement-code`).
+- The user is still clarifying raw requirements (do a quick Q&A first).
+- Only a trivial one-line doc fix is needed.
 
----
+## Input Prerequisites
 
-## 全文档类型一览
+### P0 (blocking if missing)
 
-| 类型 | 文件名 | 模板 | 生成方式 |
-|------|--------|------|----------|
-| 需求文档 | `01_需求文档.md` | ✅ | 模板骨架 + 规范约束 |
-| 需求任务 | `02_需求任务.md` | ✅ | 模板骨架 + 规范约束 |
-| 设计文档 | `03_设计文档.md` | ❌ | **仅规范驱动** |
-| 使用文档 | `04_使用文档.md` | ❌ | 规范驱动 |
-| 动态检查清单 | `05_动态检查清单.md` | ❌ | **仅规范驱动** |
-| 实施总结 | `06_实施总结.md` | — | **仅 implement-code 写入** |
-| 项目报告 | `07_项目报告.md` | ❌ | 规范驱动 + 真实变更数据 |
+- `02_requirement-tasks.md` — user stories, scenarios, preconditions.
+- `03_design-document.md` — modules, interfaces, constraints.
+- `05_dynamic-checklist.md` — verifiable checklist items.
 
----
+### P1/P2 (non-blocking)
 
-## 5 步工作流
+- `01_requirement-document.md` — background and goals.
+- `04_usage-document.md` — UI copy and usage guidance.
 
-> 详细步骤见 [workflow.md](./rules/workflow.md)
+## Document Type Matrix
 
-示例：`/generate-document 用户登录-支持手机号验证码登录`
+| Type | File | Template Allowed | Generation Mode |
+|------|------|------------------|-----------------|
+| Requirement Document | `01_requirement-document.md` | Yes | Skeleton + rule constraints |
+| Requirement Tasks | `02_requirement-tasks.md` | Yes | Skeleton + rule constraints |
+| Design Document | `03_design-document.md` | **No** | **Rules only** |
+| Usage Document | `04_usage-document.md` | No | Rules only |
+| Dynamic Checklist | `05_dynamic-checklist.md` | **No** | **Rules only** |
+| Process Summary | `06_process-summary.md` | — | **Written only by `implement-code`** |
+| Project Report | `07_project-report.md` | No | Rules + real change data |
 
----
+## Commands
 
-## 命令：项目初始化（init）
+### Feature document
 
-> 详细规范见 [init.md](./rules/init.md)
+```
+/generate-document <feature-name>-<description>
+```
 
-示例：`/generate-document init`
+Example: `/generate-document user-login-phone-otp`
 
----
+### Project initialization
 
-## 命令：周报（weekly）
+```
+/generate-document init
+```
 
-> 详细规范见 [weekly.md](./rules/weekly.md)
+See `rules/init.md` for full specification.
 
-示例：`/generate-document weekly` 或 `/generate-document weekly 2026-04-29`
+### Weekly report
 
----
+```
+/generate-document weekly [YYYY-MM-DD]
+```
 
-## 命令：从周报拆解全文档（from-weekly）
+After weekly generation, `self-improve.js` runs automatically and appends a "System Self-Improvement Proposals" section.
 
-> 详细规范见 [from-weekly.md](./rules/from-weekly.md)
+### From-weekly decomposition
 
-示例：`/generate-document from-weekly docs/周报/2026-04-27~2026-05-03/周报.md`
+```
+/generate-document from-weekly docs/weekly/<week-range>/weekly.md
+```
 
----
+See `rules/from-weekly.md` for full specification.
 
-## Agent 调用契约
+## Delta Rules (Beyond `document-pipeline` Template)
 
-> 详细规范见 [agent-contract.md](./rules/agent-contract.md)
+### 1. Document postscript
 
----
+Every generated document must append a section:
 
-## 编排会话日志（强制）
+```markdown
+## Postscript: Future Planning & Improvements
+```
 
-> 详细规范见 [orchestration-logging.md](./rules/orchestration-logging.md)
+### 2. Update-mode shortcuts
 
----
+| Change Level | Stage 2 (Impact) | Stage 3 (Architecture) | Stage 4 (Generation) |
+|--------------|------------------|------------------------|----------------------|
+| T1 Micro | Skip (reuse prior) | Skip (reuse prior) | Rewrite changed chapter only |
+| T2 Local | Trim (changed point only) | Trim (affected modules only) | Rewrite target + sync downstream entries |
+| T3 Scope | Full re-run | Full re-run | Full cascade refresh |
 
-## 支持文件结构
+- T1/T2 must not trigger full-project impact rescans.
+- Change-level downgrading to save time is prohibited.
+
+### 3. Weekly self-improvement trigger
+
+The `weekly` command automatically runs `self-improve.js` after Stage 6.
+
+## Block / Abort Thresholds
+
+| # | Scenario | Degradable? |
+|---|----------|-------------|
+| H1 | Feature name unparseable and no reasonable default | No |
+| H2 | P0 section lacks upstream source and cannot be downgraded to "pending" | No |
+| H3 | Same request points to two incompatible feature domains | No |
+| H4 | `from-weekly`: weekly invalid or has no actionable items | No |
+| H5 | `API_X_TOKEN` missing | Yes (skip sync, notify still sent) |
+
+On abort: persist → sync (skip on H5) → notify → fallback.
+
+## Stop Conditions
+
+Generate a blocking `06_process-summary.md` when:
+
+- P0 prerequisite documents are missing.
+- Impact chain cannot be closed.
+- Document P0 failures cannot self-repair within 1 round.
+- All modules are blocked.
+
+Blocking summary format: record block reason and artifacts → write summary → write block status → `import-docs` + `wework-bot` block notification.
+
+## Supporting Files
 
 ```
 .claude/skills/generate-document/
-├── SKILL.md                 # 入口 + 9 条核心原则 + 命令说明（唯一真源）
-├── README.md                # 快速开始 + 命令速查 + 真源索引
-├── checklist.md             # 检查清单入口索引
-├── checklists/              # 各文档类型检查清单
-├── rules/                   # 各文档类型规范 + 编排细则
-│   ├── workflow.md          # 5 步工作流
-│   ├── orchestration.md     # 阶段状态机 + 阻断降级
-│   ├── agent-contract.md    # Agent 调用契约
-│   ├── orchestration-logging.md # 编排会话日志
-│   ├── init.md / weekly.md / from-weekly.md  # 命令规范
-│   ├── 需求文档.md / 需求任务.md / 设计文档.md  # 文档类型规范
-│   ├── 使用文档.md / 动态检查清单.md / 项目报告.md
-│   ├── 项目基础文件.md / 周报.md / 通用文档.md
-│   ├── 编码规范.md / 代码结构.md
-│   └── ...
-└── templates/               # 模板（03/05 禁用）
+├── SKILL.md              # Entry + manifest (this file)
+├── README.md             # Quick start + command cheat sheet
+├── checklist.md          # Checklist index
+├── checklists/           # Per-document-type validation checklists
+├── rules/                # Per-document-type rules + command specs
+│   ├── workflow.md
+│   ├── orchestration.md
+│   ├── agent-contract.md
+│   ├── orchestration-logging.md
+│   ├── init.md
+│   ├── weekly.md
+│   ├── from-weekly.md
+│   ├── requirement-document.md
+│   ├── requirement-tasks.md
+│   ├── design-document.md
+│   ├── usage-document.md
+│   ├── dynamic-checklist.md
+│   ├── project-report.md
+│   ├── project-basics.md
+│   ├── weekly-report.md
+│   ├── general-document.md
+│   ├── coding-standard.md
+│   └── code-structure.md
+├── templates/            # Skeleton templates (disabled for 03/05)
+└── scripts/              # Automation utilities
+    ├── validate-agent-contracts.js
+    ├── append-key-node.js
+    ├── collect-weekly-kpi.js
+    ├── collect-weekly-logs.js
+    ├── draft-weekly-report.js
+    ├── execution-memory.js
+    ├── log-agent-run.js
+    ├── log-key-node.js
+    ├── log-orchestration.js
+    ├── natural-week.js
+    └── self-improve.js
 ```
