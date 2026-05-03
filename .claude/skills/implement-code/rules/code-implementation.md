@@ -24,7 +24,6 @@
 - **Entry initialization**: Follow the project's existing `initApp` pattern; do not introduce new patterns
 - **Hooks factory**: `store.js` (Vue.ref) → `useComputed.js` (Vue.computed) → `useMethods.js` (domain methods);禁止使用 Vue.reactive directly
 - **Shared component registration**: Export/register per project convention, maintain unified entry
-- **Code structure**: Follow `../../generate-document/rules/code-structure.md`
 
 ---
 

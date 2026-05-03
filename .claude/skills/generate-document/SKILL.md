@@ -234,8 +234,6 @@ Blocking summary format: record block reason and artifacts → write summary →
 │   ├── project-basics.md
 │   ├── weekly-report.md
 │   ├── general-document.md
-│   ├── coding-standard.md
-│   └── code-structure.md
 ├── templates/            # Skeleton templates (disabled for 03/05)
 └── scripts/              # Automation utilities
     ├── validate-agent-contracts.js

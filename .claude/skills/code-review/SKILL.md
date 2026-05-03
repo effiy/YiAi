@@ -30,8 +30,6 @@ This skill defines the review method, dimensions, and output format. For paralle
 - **Entry initialization pattern**: does the view entry follow the project's existing initialization method?
 - **State management pattern**: does the Store/state layer follow the project's existing organization?
 - **Shared component registration/export**: are shared components managed centrally per project convention and correctly referenceable?
-- **Code structure**: does it conform to `../generate-document/rules/code-structure.md`?
-- **Coding standards**: does it conform to `../generate-document/rules/coding-standard.md` (naming, comments, formatting)?
 
 ### Universal Quality
 
@@ -58,6 +56,5 @@ No-issue items: <explicitly state if a dimension has no issues>
 
 ## Usage Rules
 
-- Read `../generate-document/rules/code-structure.md` and `../generate-document/rules/coding-standard.md` as judgment basis.
 - Only review **actually read code**; do not infer unseen file content.
 - When files cannot be accessed, output "Cannot read file <path>, skipping."
