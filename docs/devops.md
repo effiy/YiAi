@@ -32,6 +32,9 @@ pip install -r requirements.txt
 - feedparser>=6.0.10
 - apscheduler>=3.10.0
 - fastapi-mcp>=0.4.0
+- typer>=0.9.0
+- rich>=13.0.0
+- tenacity>=8.2.3
 
 ### 本地启动
 
@@ -61,6 +64,16 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 | middleware.auth_token | API_X_TOKEN | 认证令牌 |
 | oss.* | OSS_* | 阿里云 OSS 配置 |
 | ollama.url | OLLAMA_URL | Ollama 服务地址 |
+| state_store.enabled | STATE_STORE_ENABLED | State Store 开关 |
+| state_store.default_ttl | STATE_STORE_DEFAULT_TTL | 状态记录 TTL |
+| state_store.query_max_limit | STATE_STORE_QUERY_MAX_LIMIT | 查询分页上限 |
+| observer.enabled | OBSERVER_ENABLED | Observer 系统开关 |
+| observer.throttle_enabled | OBSERVER_THROTTLE_ENABLED | 限流开关 |
+| observer.throttle_max_requests | OBSERVER_THROTTLE_MAX_REQUESTS | 限流窗口内最大请求数 |
+| observer.sampler_enabled | OBSERVER_SAMPLER_ENABLED | 采样开关 |
+| observer.sandbox_enabled | OBSERVER_SANDBOX_ENABLED | 沙箱开关 |
+| observer.guard_enabled | OBSERVER_GUARD_ENABLED | 重入守卫开关 |
+| uvicorn.limit_concurrency | UVICORN_LIMIT_CONCURRENCY | Uvicorn 并发限制 |
 
 ### 生产部署建议
 
@@ -77,6 +90,7 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 | 检查项 | 命令/方法 |
 |--------|----------|
 | 服务状态 | `curl http://localhost:8000/docs` |
+| Observer 状态 | `curl http://localhost:8000/health/observer` |
 | MongoDB 连接 | 检查日志中的 "MongoDB connected" |
 | RSS 调度器 | 检查日志中的调度器启动信息 |
 | 磁盘空间 | 监控 `static.base_dir` 目录 |
@@ -95,3 +109,5 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 | 模块执行失败 | 检查 `module.allowlist` 配置 |
 | 文件上传失败 | 检查 `static.base_dir` 目录权限和 OSS 配置 |
 | RSS 不更新 | 检查 `rss.scheduler_enabled` 和 `rss.scheduler_interval` |
+| 429 Too Many Requests | 检查 `throttle_max_requests` 和 `throttle_window_seconds` 配置 |
+| 状态记录查询异常 | 检查 `state_store.enabled` 和 MongoDB 连接 |

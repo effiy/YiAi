@@ -19,7 +19,7 @@ def _get_service() -> StateStoreService:
     return _state_service
 
 
-@router.post("/records", status_code=201)
+@router.post("/records", status_code=201, operation_id="create_state_record")
 async def create_record(record: StateRecord):
     """创建状态记录"""
     service = _get_service()
@@ -31,7 +31,7 @@ async def create_record(record: StateRecord):
     return result
 
 
-@router.get("/records")
+@router.get("/records", operation_id="query_state_records")
 async def query_records(
     record_type: Optional[str] = Query(None),
     tags: Optional[list[str]] = Query(None),
@@ -54,7 +54,7 @@ async def query_records(
     )
 
 
-@router.get("/records/{key}")
+@router.get("/records/{key}", operation_id="get_state_record")
 async def get_record(key: str):
     """根据 key 获取单条记录"""
     service = _get_service()
@@ -64,7 +64,7 @@ async def get_record(key: str):
     return record
 
 
-@router.put("/records/{key}")
+@router.put("/records/{key}", operation_id="update_state_record")
 async def update_record(key: str, record: StateRecord):
     """更新状态记录"""
     service = _get_service()
@@ -75,7 +75,7 @@ async def update_record(key: str, record: StateRecord):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.delete("/records/{key}")
+@router.delete("/records/{key}", operation_id="delete_state_record")
 async def delete_record(key: str):
     """删除状态记录"""
     service = _get_service()

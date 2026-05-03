@@ -41,7 +41,7 @@ class ObserverHealth(BaseModel):
     guard_current_max_depth: int
 
 
-@router.get("/health/observer", response_model=ObserverHealth, tags=["Observer"])
+@router.get("/health/observer", response_model=ObserverHealth, tags=["Observer"], operation_id="get_observer_health")
 async def observer_health():
     """获取 Observer 运行时状态"""
     return ObserverHealth(

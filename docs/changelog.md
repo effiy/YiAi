@@ -7,8 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- State Store 服务：结构化状态记录 CRUD（`StateStoreService`）
+- SkillRecorder：fire-and-forget 技能执行记录
+- SessionAdapter：遗留 session 文档转换为结构化模型
+- Observer Reliability 系统：ThrottleMiddleware（限流）、TailSampler（采样）、SandboxMiddleware（沙箱）、LazyStartManager（懒启动）、ReentrancyGuard（重入守卫）
+- CLI 工具：`src/cli/state_query.py`（typer + rich），支持 list/get/export/stats
+- 新 API 端点：`/state/records`（CRUD）、`/health/observer`（Observer 健康检查）
+- 新数据库集合：`state_records`
+- 新依赖：typer>=0.9.0、rich>=13.0.0、tenacity>=8.2.3
+- 新配置段：`state_store`、`observer`（14 字段）、`uvicorn`
 - 文档重构，采用敏捷需求管理方式组织
-- 项目初始化文档体系（docs/项目初始化/01-07）
+- 项目初始化文档体系（docs/project-init/01-07）
 
 ## [0.3.0] - 2026-03-19
 

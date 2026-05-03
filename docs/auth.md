@@ -51,8 +51,8 @@ flowchart TD
     Validate -->|是| Pass
     Validate -->|否| Reject[返回401]
     Pass --> API[继续处理]
-    Reject --> End([返回错误])
-    API --> End
+    Reject --> ErrorEnd([返回错误])
+    API --> Done([请求完成])
 ```
 
 ## 权限层级
@@ -61,6 +61,7 @@ flowchart TD
 |------|--------|------|
 | 路由级 | `middleware.py` 白名单 | `/write-file`, `/read-file`, `/delete-file`, `/upload`, `/static/*`, `/mcp*` 跳过认证 |
 | API 级 | `module.allowlist` | 动态模块执行的白名单控制 |
+| API 级 | `X-Token` 认证 | `/state/records`, `/health/observer`, `/execution`, `/wework/send-message` 等需认证 |
 | 数据级 | 暂无 | 当前无用户级数据隔离 |
 
 ## Token 管理

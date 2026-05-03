@@ -35,6 +35,12 @@
 | `effiy-api` | `execute_module_get` / `execute_module_post` | Node `child_process` or direct module import | No |
 | `effiy-api` | `send_wework_message` | `skills/wework-bot/scripts/send-message.js` | No |
 | `effiy-api` | `upload_file` / `upload_image_to_oss` | `skills/observer/scripts/observer-client.js` sandboxed write + manual sync | No |
+| `effiy-api` | `create_state_record` | `services/state/state_service.py` direct import + `asyncio.run` | No |
+| `effiy-api` | `query_state_records` | `services/state/state_service.py` direct import + `asyncio.run` | No |
+| `effiy-api` | `get_state_record` | `services/state/state_service.py` direct import + `asyncio.run` | No |
+| `effiy-api` | `update_state_record` | `services/state/state_service.py` direct import + `asyncio.run` | No |
+| `effiy-api` | `delete_state_record` | `services/state/state_service.py` direct import + `asyncio.run` | No |
+| `effiy-api` | `get_observer_health` | Direct HTTP GET `https://api.effiy.cn/health/observer` via `fetch` | No |
 
 ## 3. Probe Checks
 

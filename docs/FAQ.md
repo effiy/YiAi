@@ -16,6 +16,9 @@
 | RSS 不自动更新 | 调度器未启用 | 检查 `rss.scheduler_enabled` |
 | Ollama 请求失败 | 服务未运行 | `curl http://localhost:11434/api/tags` |
 | 静态文件 404 | 目录不存在 | `ls -la static/`, 检查 `static.base_dir` |
+| 429 Too Many Requests | 触发限流 | 检查 `observer.throttle_max_requests`，或加 IP 到 `throttle_whitelist` |
+| 状态记录写入失败 | State Store 未启用或 DB 故障 | 检查 `state_store.enabled` 和 MongoDB 连接 |
+| CLI 命令报错 | State Store 服务无法访问 | 确认 `state_store.enabled: true`，MongoDB 运行中 |
 
 ## 问题分类
 
@@ -101,6 +104,34 @@
 - 下载模型：`ollama pull <model>`
 - 修改配置：更新 `ollama.url`
 
+### 限流问题
+
+**症状**：API 返回 429 {"code":1003,"message":"Too Many Requests"}
+
+**排查步骤**：
+1. 检查当前 IP 是否触发了限流阈值
+2. 查看 `observer.throttle_max_requests` 和 `observer.throttle_window_seconds` 配置
+3. 检查 `observer.throttle_whitelist` 是否应加入当前 IP
+
+**修复方案**：
+- 调高 `throttle_max_requests`：增大窗口内允许的请求数
+- 加入白名单：在 `throttle_whitelist` 中添加 IP 地址
+- 临时关闭：设置 `observer.throttle_enabled: false`
+
+### 状态记录问题
+
+**症状**：状态记录 CRUD 操作失败或返回空
+
+**排查步骤**：
+1. 确认 `state_store.enabled: true`
+2. 确认 MongoDB 连接正常
+3. 检查 `collection_state_records` 对应的集合是否存在
+4. 确认 `X-Token` 已携带（State 端点需认证）
+
+**修复方案**：
+- 启用服务：设置 `state_store.enabled: true`
+- 检查权限：确认请求头包含有效 `X-Token`
+
 ## 自愈参考
 
 | 场景 | 自动行为 | 需人工介入 |
@@ -109,3 +140,5 @@
 | MongoDB 连接失败 | 启动时抛出异常，进程退出 | 检查 MongoDB 服务 |
 | 参数验证失败 | 返回 400 和详细错误信息 | 修正请求参数 |
 | 未捕获异常 | 返回 500 并记录错误日志 | 查看日志修复代码 |
+| 请求过频（限流） | ThrottleMiddleware 返回 429，窗口过后自动恢复 | 降低请求频率或调整限流参数 |
+| 沙箱违规 | SandboxMiddleware 抛出 SandboxViolation | 审查 fs/network allowlist |

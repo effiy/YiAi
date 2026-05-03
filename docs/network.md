@@ -14,8 +14,11 @@
 
 | 入口 | 文件 | 用途 |
 |------|------|------|
-| FastAPI 应用 | `src/main.py` | HTTP 服务端入口 |
-| aiohttp 客户端 | `src/api/routes/wework.py` | 企业微信 Webhook 发送 |
+| `execution` | `src/api/routes/execution.py` | 动态模块执行 |
+| `upload` | `src/api/routes/upload.py` | 文件管理 |
+| `wework` | `src/api/routes/wework.py` | 企业微信 Webhook 发送 |
+| `state` | `src/api/routes/state.py` | 状态记录 CRUD |
+| `observer_health` | `src/api/routes/observer_health.py` | Observer 健康检查 |
 | Ollama 客户端 | `src/services/ai/chat_service.py` | AI 聊天服务调用 |
 
 ## BaseURL
@@ -50,6 +53,12 @@ X-Token: <your-token>
 - `/static/*`
 - `/mcp*`
 
+非白名单路径（需 X-Token 认证）：
+- `/state/records` 及子路径
+- `/health/observer`
+- `/execution`
+- `/wework/send-message`
+
 ## 错误处理
 
 ### 统一响应格式
@@ -77,6 +86,7 @@ X-Token: <your-token>
 | 0 | 200 | 成功 |
 | 1000 | 400 | 无效请求 |
 | 1002 | 400 | 无效参数 |
+| 1003 | 429 | 请求过于频繁（ThrottleMiddleware 限流） |
 | 1004 | 404 | 未找到资源 |
 | 1009 | 401 | 未认证 |
 | 1008 | 403 | 权限拒绝 |

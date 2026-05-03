@@ -56,6 +56,32 @@
 - [ ] `/mcp` 路径可访问
 - [ ] MCP 服务器正确挂载，不与 Maintenance 端点冲突
 
+### State Store
+
+- [ ] POST `/state/records` 创建记录成功，返回 `{"key": "..."}`
+- [ ] GET `/state/records?record_type=X` 返回分页结果
+- [ ] GET `/state/records/{key}` 返回单条记录
+- [ ] PUT `/state/records/{key}` 更新记录成功
+- [ ] DELETE `/state/records/{key}` 删除记录成功
+- [ ] 不存在的 key 返回 404
+- [ ] `state_records` 集合在 MongoDB 中自动创建
+
+### Observer Reliability
+
+- [ ] `GET /health/observer` 返回 Observer 各组件状态
+- [ ] 超过 `throttle_max_requests` 后返回 429，`code: 1003`
+- [ ] `throttle_whitelist` 中 IP 不受限流
+- [ ] `observer.enabled: false` 时 Observer 健康端点仍可访问
+- [ ] SamplerMiddleware 记录慢请求到环形缓冲区
+
+### CLI 工具
+
+- [ ] `python src/cli/state_query.py list` 表格格式正常输出
+- [ ] `python src/cli/state_query.py list --format json` JSON 格式输出
+- [ ] `python src/cli/state_query.py get <key>` 返回记录或 "Record not found"
+- [ ] `python src/cli/state_query.py stats` 显示总数统计
+- [ ] `python src/cli/state_query.py export -o out.json` 导出成功
+
 ## P2 检查项（优化项）
 
 - [ ] 日志目录 `logs/` 正常生成，格式符合配置
@@ -69,3 +95,16 @@
 - 增加自动化测试覆盖检查
 - 增加依赖安全扫描检查
 - 增加性能基准测试检查
+
+## Workflow Standardization Review
+
+1. **Repetitive labor identification**: P0/P1 检查项与 02 用户故事的验收标准高度重叠。
+2. **Decision criteria missing**: 检查项分级（P0/P1/P2）的边界（如"功能不可用"vs"性能下降"）缺乏量化标准。
+3. **Information silos**: 检查项分散在 05 和各 feature 文档中，缺乏统一的跟踪系统。
+4. **Feedback loop**: 检查结果缺乏向相关文档章节的自动反馈。
+
+## System Architecture Evolution Thinking
+
+- **A1. Current architecture bottleneck**: 检查清单为静态 Markdown，无法追踪执行状态和历史趋势。
+- **A2. Next natural evolution node**: 将检查清单集成为可执行的自动化测试套件，结果关联到文档。
+- **A3. Risks and rollback plans for evolution**: 自动化测试可能因环境差异产生假阳性。回退：保持手动清单为权威参考。
