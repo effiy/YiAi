@@ -6,14 +6,12 @@
 
 | Skill | Invocable | Lifecycle | Stages | Required Agents |
 |-------|-----------|-----------|--------|-----------------|
+| build-feature | Yes | build-feature-pipeline | 11 | coder, docer, tester, reporter, designer |
 | code-review | Yes | default-pipeline | 0 | — |
 | e2e-testing | Yes | default-pipeline | 0 | — |
-| find-agents | Yes | default-pipeline | 0 | — |
-| find-skills | Yes | default-pipeline | 0 | — |
-| generate-document | Yes | document-pipeline | 7 | doc-planner, docs-retriever, doc-impact-analyzer, codes-builder, doc-architect, doc-mermaid-expert, doc-reviewer, doc-markdown-tester, doc-quality-tracker, docs-builder |
-| implement-code | Yes | code-pipeline | 5 | codes-retriever, code-impact-analyzer, doc-impact-analyzer, codes-builder, code-reviewer, doc-quality-tracker, docs-builder, code-impl-reporter |
 | import-docs | Yes | default-pipeline | 0 | — |
 | search-first | Yes | default-pipeline | 0 | — |
+| self-improving | Yes | default-pipeline | 0 | — |
 | verification-loop | Yes | default-pipeline | 0 | — |
 | wework-bot | Yes | default-pipeline | 0 | — |
 
@@ -21,26 +19,29 @@
 
 | Agent | Role | Tools | Gates Provided |
 |-------|------|-------|----------------|
-| code-e2e-tester | End-to-end test scheme and automation design expert | Read, Grep, Glob, Bash | — |
-| code-impact-analyzer | Code change impact analysis expert | Read, Grep, Glob, Bash | impact-chain-closed |
-| code-impl-reporter | Code implementation process reporting and quality metrics expert | Read, Write, Edit, Bash | report-generated |
-| code-reviewer | Code review expert | Read, Grep, Glob, Bash | p0-clear, smoke-passed |
-| codes-builder | Code architecture design and build planning expert | Read, Write, Edit, Bash | architecture-validated |
-| codes-retriever | Project code retrieval and recall expert | Read, Grep, Glob, Bash | specs-loaded |
-| doc-architect | Document architecture design expert | Read, Grep, Glob, Bash | architecture-validated |
-| doc-generate-reporter | Process reporter and quality metrics specialist for document generation pipelines | Read, Write, Edit, Bash | — |
-| doc-impact-analyzer | Document and code change impact analysis expert | Read, Grep, Glob, Bash | impact-chain-closed, doc-impact-closed |
-| doc-markdown-tester | Markdown quality testing expert for documents | Read, Grep, Glob, Bash | markdown-valid |
-| doc-mermaid-expert | Mermaid diagram syntax review and repair expert | Read, Write, Edit, Grep, Glob | diagram-valid |
-| doc-planner | Adaptive planning expert for document generation | Read, Grep, Glob, Bash | execution-memory-ready |
-| doc-quality-tracker | Document generation quality metrics, trend analysis, and diagnosis expert | Read, Grep, Glob, Bash | quality-tracked |
-| doc-reviewer | Document quality review expert | Read, Grep, Glob, Bash | p0-clear |
-| docs-builder | Knowledge curation and asset沉淀 expert | Read, Write, Edit, Bash | knowledge-persisted |
-| docs-retriever | Project document retrieval and recall expert | Read, Grep, Glob, Bash | specs-loaded |
-| test-markdown-builder | Document test prototype builder | Read, Write, Edit | — |
-| test-page-builder | E2E test prototype page builder | Read, Write, Edit | prototype-valid |
+| coder | Code implementation expert | Read, Write, Edit, Grep, Glob, Bash | specs-loaded, architecture-validated, impact-chain-closed |
+| designer | Interaction experience designer | Read, Write, Edit, Grep, Glob, Bash | ix-validated |
+| docer | Document generation expert | Read, Write, Edit, Grep, Glob, Bash | execution-memory-ready, specs-loaded, impact-chain-closed, doc-impact-closed, architecture-validated |
+| reporter | Process reporting and knowledge curation expert | Read, Write, Edit, Grep, Glob, Bash | report-generated, knowledge-persisted |
+| tester | Quality assurance expert | Read, Write, Edit, Grep, Glob, Bash | prototype-valid, p0-clear, smoke-passed, diagram-valid, markdown-valid, quality-tracked |
 
 ## Pipeline Stage Map
+
+### build-feature
+
+| Stage | Name | Agents | Gates | Optional | Parallel |
+|-------|------|--------|-------|----------|----------|
+| D0 | adaptive-planning | docer | execution-memory-ready | Yes | No |
+| D1 | discovery | docer | specs-loaded | No | No |
+| D2 | document-impact-analysis | docer, coder | impact-chain-closed | No | No |
+| D3 | architecture-design | docer, coder | architecture-validated | No | Yes |
+| D4 | document-generation | docer, tester, designer | p0-clear, diagram-valid, markdown-valid, quality-tracked, ix-validated | No | No |
+| D5 | curation | reporter, docer | knowledge-persisted | No | No |
+| C0 | code-preflight | coder, docer | specs-loaded, impact-chain-closed, doc-impact-closed, architecture-validated | No | No |
+| C1 | test-first | tester, designer | p0-clear, ix-validated | No | No |
+| C2 | code-implementation | coder, tester, designer | p0-clear, ix-validated | No | No |
+| C3 | code-validation | tester | smoke-passed, p0-clear | No | No |
+| C4 | delivery | reporter, tester | quality-tracked, knowledge-persisted, report-generated | No | No |
 
 ### code-review
 
@@ -52,44 +53,17 @@
 | Stage | Name | Agents | Gates | Optional | Parallel |
 |-------|------|--------|-------|----------|----------|
 
-### find-agents
-
-| Stage | Name | Agents | Gates | Optional | Parallel |
-|-------|------|--------|-------|----------|----------|
-
-### find-skills
-
-| Stage | Name | Agents | Gates | Optional | Parallel |
-|-------|------|--------|-------|----------|----------|
-
-### generate-document
-
-| Stage | Name | Agents | Gates | Optional | Parallel |
-|-------|------|--------|-------|----------|----------|
-| 0 | adaptive-planning | doc-planner | execution-memory-ready | Yes | No |
-| 1 | discovery | docs-retriever | specs-loaded | No | No |
-| 2 | impact-analysis | doc-impact-analyzer | impact-chain-closed | No | No |
-| 3 | architecture | codes-builder, doc-architect | architecture-validated | No | Yes |
-| 4 | generation | doc-mermaid-expert, doc-reviewer, doc-markdown-tester, doc-quality-tracker | p0-clear, diagram-valid, markdown-valid, quality-tracked | No | No |
-| 5 | curation | docs-builder | knowledge-persisted | No | No |
-| 6 | delivery | import-docs, wework-bot | — | No | No |
-
-### implement-code
-
-| Stage | Name | Agents | Gates | Optional | Parallel |
-|-------|------|--------|-------|----------|----------|
-| 1 | preflight | codes-retriever, code-impact-analyzer, doc-impact-analyzer, codes-builder | specs-loaded, impact-chain-closed, doc-impact-closed, architecture-validated | No | No |
-| 2 | implementation | code-reviewer | p0-clear | No | No |
-| 3 | validation | code-reviewer | smoke-passed, p0-clear | No | No |
-| 4 | summary | doc-quality-tracker, docs-builder, code-impl-reporter | quality-tracked, knowledge-persisted, report-generated | No | No |
-| 5 | delivery | import-docs, wework-bot | — | No | No |
-
 ### import-docs
 
 | Stage | Name | Agents | Gates | Optional | Parallel |
 |-------|------|--------|-------|----------|----------|
 
 ### search-first
+
+| Stage | Name | Agents | Gates | Optional | Parallel |
+|-------|------|--------|-------|----------|----------|
+
+### self-improving
 
 | Stage | Name | Agents | Gates | Optional | Parallel |
 |-------|------|--------|-------|----------|----------|

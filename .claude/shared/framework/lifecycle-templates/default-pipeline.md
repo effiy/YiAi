@@ -3,33 +3,46 @@ paths:
   - "shared/framework/lifecycle-templates/default-pipeline.md"
 ---
 
-# Lifecycle Template: Default Pipeline
+# 生命周期模板：Default Pipeline
 
-This is the base lifecycle template inherited by all multi-stage skills unless they specify otherwise. It defines universal mechanics: pre-flight, per-stage logging, severity gating, stop conditions, and mandatory post-flight steps.
+```mermaid
+graph TD
+    P[Preflight Checks] --> S0[Stage 0: Adaptive Planning]
+    S0 --> S1[Stage 1-N: Execution]
+    S1 --> G{Gate Check}
+    G -->|P0 blocked| SR[Self-Repair 1 round]
+    SR -->|still blocked| ST[Stop + Notify]
+    G -->|P0 clear| NEXT[Next Stage]
+    NEXT --> PP[Post-Processing]
+    PP --> ID[import-docs]
+    ID --> WB[wework-bot]
+```
 
-Skills that inherit this template (`lifecycle: default-pipeline`) only document their *delta* rules in body text. They do not repeat these universal rules.
+这是所有多阶段 skill 继承的基础生命周期模板，除非它们另有指定。它定义了通用机制：预检、逐阶段日志、严重级别门禁、停止条件以及强制的后处理步骤。
+
+继承此模板的 skill（`lifecycle: default-pipeline`）只需在正文中记录其 *delta* 规则。它们不重复这些通用规则。
 
 ---
 
-## Pre-Flight (Before Stage 0)
+## 预检（阶段 0 之前）
 
-1. **Git branch check** (git repositories only): Ensure the current branch is `feat/<feature-name>`. If not, create or check it out. Never work on `main`/`master`.
-2. **Document precheck**: Verify that P0 prerequisite documents exist. Missing P0 documents is a blocking condition.
-3. **Environment probe**: Check for required environment variables (`API_X_TOKEN`). Missing tokens may trigger a downgrade (skip sync, but still notify).
-4. **Execution memory load**: If the skill uses adaptive planning, read `docs/.memory/execution-memory.jsonl` before Stage 0.
+1. **Git 分支检查**（仅 git 仓库）：确保当前分支为 `feat/<feature-name>`。如果不是，则创建或检出。切勿在 `main`/`master` 上工作。
+2. **文档前置检查**：验证 P0 前置文档存在。缺少 P0 文档为阻塞条件。
+3. **环境探测**：检查必需的环境变量（`API_X_TOKEN`）。缺少 token 可能触发降级（跳过同步，但仍需通知）。
+4. **执行记忆加载**：如果 skill 使用自适应规划，在阶段 0 之前读取 `docs/.memory/execution-memory.jsonl`。
 
 ---
 
-## Per-Stage Mechanics
+## 逐阶段机制
 
-### Logging (Mandatory)
+### 日志记录（强制）
 
-After every skill/agent/MCP/shared interaction, append an orchestration log:
+每次 skill/agent/shared 交互后，追加一条编排日志：
 
 ```bash
-node .claude/skills/generate-document/scripts/log-orchestration.js \
+node skills/build-feature/scripts/log-orchestration.js \
   --skill <skill-name> \
-  --kind <skill|agent|mcp|shared|other> \
+  --kind <skill|agent|shared|other> \
   [--name <identifier>] \
   [--scenario "<operation context>"] \
   [--case <good|bad|neutral>] \
@@ -38,76 +51,76 @@ node .claude/skills/generate-document/scripts/log-orchestration.js \
   [--text "<one-line summary>"]
 ```
 
-### Severity Gating
+### 严重级别门禁
 
-- **P0 (Blocking)**: Must be resolved before saving or advancing. Examples: syntax errors, missing required sections, hallucinated facts.
-- **P1 (Warning)**: Should be fixed, but may be deferred if time-constrained. Log and track.
-- **P2 (Suggestion)**: Nice-to-have improvements. Track for trend analysis only.
+- **P0（阻塞）**：必须在保存或推进之前解决。示例：语法错误、缺少必需章节、幻觉事实。
+- **P1（警告）**：应当修复，但在时间受限时可推迟。记录并追踪。
+- **P2（建议）**：锦上添花的改进。仅追踪用于趋势分析。
 
-A stage is **blocked** if any P0 gate is not satisfied. The skill must:
-1. Attempt one self-repair round.
-2. If still blocked, mark the stage as failed and proceed to Stop Conditions.
+某阶段如果任何 P0 门禁未满足则**被阻塞**。skill 必须：
+1. 尝试一轮自我修复。
+2. 如果仍然被阻塞，将该阶段标记为失败并进入停止条件。
 
-### Agent Output Validation
+### Agent 输出验证
 
-Before adopting an agent's output, validate its JSON contract appendix:
+在采纳 agent 的输出之前，验证其 JSON 契约附录：
 
 ```bash
-node .claude/skills/implement-code/scripts/validate-agent-output.js \
+node skills/build-feature/scripts/validate-agent-output.js \
   --agent <agent-name> \
   --text "<raw output>"
 ```
 
-If validation fails, retry once with correction instructions. If it fails again, treat as an agent invocation failure and follow Stop Conditions.
+如果验证失败，携带修正指令重试一次。如果再次失败，视为 agent 调用失败并遵循停止条件。
 
 ---
 
-## Post-Flight (After Final Stage)
+## 后处理（最终阶段之后）
 
-Every skill MUST execute these two steps in order before declaring completion:
+每个 skill 在声明完成之前必须按顺序执行以下两步：
 
-1. **`import-docs`**: Synchronize generated or updated documents to the external doc index.
-2. **`wework-bot`**: Send a completion, block, or gate-failure notification.
+1. **`import-docs`**：将生成或更新的文档同步到外部文档索引。
+2. **`wework-bot`**：发送完成、阻塞或门禁失败通知。
 
-Neither step may be skipped, reordered, or silently downgraded.
+这两步均不得跳过、重排序或默默降级。
 
-### Notification Content
+### 通知内容
 
-The wework-bot message must include:
-- **Type**: Completion, Block, or Gate Failure.
-- **Conclusion**: One-line outcome.
-- **Artifacts**: List of files created or updated.
-- **Metrics**: Elapsed time, session usage, model name, and tool count.
-- **Next Actions**: Up to 2 actionable recommendations.
-
----
-
-## Stop Conditions
-
-The skill must halt and generate a blocking summary (`06_process-summary.md` or equivalent) when any of the following occur:
-
-- P0 prerequisite documents are missing.
-- Impact chain cannot be closed and no downgrade path exists.
-- P0 review issues cannot be resolved after one self-repair round.
-- All modules are blocked.
-- An agent invocation fails twice in a row.
-
-When stopping:
-1. Record the block reason and partial artifacts.
-2. Generate the blocking summary.
-3. Write block status back to all affected documents.
-4. Execute `import-docs` + `wework-bot` with a block notification.
+wework-bot 消息必须包含：
+- **类型**：完成、阻塞或门禁失败。
+- **结论**：一句话结果。
+- **产物**：已创建或更新的文件列表。
+- **指标**：耗时、会话用量、模型名称和工具调用次数。
+- **后续行动**：最多 2 条可执行建议。
 
 ---
 
-## Incremental Update Support
+## 停止条件
 
-All pipelines support three change levels. Skills with document-pipeline or code-pipeline templates extend these defaults:
+当以下任何情况发生时，skill 必须停止并生成阻塞总结（特性文档的 §4 Project Report，或等效回退）：
 
-| Level | Name | Stage Strategy |
+- P0 前置文档缺失。
+- 影响链无法闭合且无降级路径。
+- P0 审查问题在一轮自我修复后仍无法解决。
+- 所有模块均被阻塞。
+- Agent 调用连续失败两次。
+
+停止时：
+1. 记录阻塞原因和部分产物。
+2. 生成阻塞总结。
+3. 将阻塞状态写回所有受影响的文档。
+4. 执行 `import-docs` + `wework-bot` 并发送阻塞通知。
+
+---
+
+## 增量更新支持
+
+所有 pipeline 支持三个变更级别。使用 document-pipeline 或 code-pipeline 模板的 skill 在这些默认值基础上进行扩展：
+
+| Level | 名称 | 阶段策略 |
 |-------|------|----------------|
-| T1 | Micro | Re-run target stage only. Reuse previous impact analysis and architecture. |
-| T2 | Local | Re-run target stage + directly affected downstream stages. Partial impact analysis. |
-| T3 | Scope | Full pipeline re-run. Complete impact analysis and architecture review. |
+| T1 | 微观 | 仅重新运行目标阶段。复用之前的影响分析和架构。 |
+| T2 | 局部 | 重新运行目标阶段 + 直接受影响的下游阶段。部分影响分析。 |
+| T3 | 范围 | 完整重新运行 pipeline。完整影响分析和架构审查。 |
 
-The change level is determined during Stage 0 (adaptive planning) and must not be downgraded to save time.
+变更级别在阶段 0（自适应规划）中确定，且不得为节省时间而降级。

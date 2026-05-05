@@ -193,9 +193,9 @@ function printHelp() {
 Document import — sync local files to remote documentation API
 
 Usage:
-  node .claude/skills/import-docs/scripts/import-docs.js import [options]
-  node .claude/skills/import-docs/scripts/import-docs.js list [options]
-  node .claude/skills/import-docs/scripts/import-docs.js [options]   # defaults to import
+  node skills/import-docs/scripts/import-docs.js import [options]
+  node skills/import-docs/scripts/import-docs.js list [options]
+  node skills/import-docs/scripts/import-docs.js [options]   # defaults to import
 
 Options:
   --dir, -d     Directory to import (default: auto-detect)

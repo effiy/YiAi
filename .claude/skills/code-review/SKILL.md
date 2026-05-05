@@ -11,50 +11,61 @@ lifecycle: default-pipeline
 
 # code-review
 
-## Purpose
-
-Perform normative review on specified code files or snippets, outputting a P0/P1/P2 graded issue list.
-
-This skill defines the review method, dimensions, and output format. For parallel expert roles or required questions, use `../../agents/code-reviewer.md`. Boundaries: `../../shared/agent-skill-boundaries.md`.
-
-## Input
-
-- **Review target**: file path list or code snippet (required)
-- **Context**: related design document chapter or feature description (optional)
-- **Focus area**: such as `architecture consistency` / `security` / `performance` (optional, defaults to full review)
-
-## Review Dimensions
-
-### Project-Specific (apply per repository status)
-
-- **Entry initialization pattern**: does the view entry follow the project's existing initialization method?
-- **State management pattern**: does the Store/state layer follow the project's existing organization?
-- **Shared component registration/export**: are shared components managed centrally per project convention and correctly referenceable?
-
-### Universal Quality
-
-- **Readability**: are function/variable names clear, are necessary comments present?
-- **Boundary handling**: are null values and exception paths handled?
-- **Security**: are there XSS / CSRF / sensitive information leak risks?
-- **Performance**: are there obvious unnecessary renders / memory leak risks?
-
-## Output Format
-
-```
-Review Results:
-P0 (must fix):
-  - file:line — <issue description> — <fix suggestion>
-
-P1 (suggested fix):
-  - file:line — <issue description>
-
-P2 (optional optimization):
-  - file:line — <issue description>
-
-No-issue items: <explicitly state if a dimension has no issues>
+```mermaid
+graph TD
+    A[Input: target files] --> B[Read code]
+    B --> C[Review dimensions]
+    C --> C1[Project-specific]
+    C --> C2[General quality]
+    C1 --> D[Grade: P0/P1/P2]
+    C2 --> D
+    D --> E[Output structured report]
 ```
 
-## Usage Rules
+## 用途
 
-- Only review **actually read code**; do not infer unseen file content.
-- When files cannot be accessed, output "Cannot read file <path>, skipping."
+对指定的代码文件或代码片段执行规范性审查，输出 P0/P1/P2 分级问题列表。
+
+本 skill 定义审查方法、维度和输出格式。审查由 `tester` agent 在 `build-feature` 流水线 C2 阶段执行。
+
+## 输入
+
+- **审查目标**：文件路径列表或代码片段（必填）
+- **上下文**：相关设计文档章节或功能描述（可选）
+- **关注领域**：如 `architecture consistency` / `security` / `performance`（可选，默认全面审查）
+
+## 审查维度
+
+### 项目专项（根据仓库现状适用）
+
+- **入口初始化模式**：视图入口是否遵循项目现有的初始化方式？
+- **状态管理模式**：Store/状态层是否遵循项目现有的组织方式？
+- **共享组件注册/导出**：共享组件是否按项目约定集中管理且可正确引用？
+
+### 通用质量
+
+- **可读性**：函数/变量命名是否清晰、必要注释是否存在？
+- **边界处理**：空值、异常路径是否已处理？
+- **安全性**：是否存在 XSS / CSRF / 敏感信息泄露风险？
+- **性能**：是否存在明显的不必要渲染 / 内存泄漏风险？
+
+## 输出格式
+
+```
+审查结果：
+P0（必须修复）：
+  - file:line — <问题描述> — <修复建议>
+
+P1（建议修复）：
+  - file:line — <问题描述>
+
+P2（可选优化）：
+  - file:line — <问题描述>
+
+无问题项：<若某维度无问题，明确声明>
+```
+
+## 使用规则
+
+- 仅审查**实际读取到的代码**；不推断未看到的文件内容。
+- 文件无法访问时，输出"无法读取文件 <路径>，跳过。"

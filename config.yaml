@@ -97,7 +97,7 @@ state_store:
 # Observer Reliability Configuration
 observer:
   enabled: true
-  throttle_enabled: true
+  throttle_enabled: false
   throttle_max_requests: 100
   throttle_window_seconds: 60
   throttle_whitelist: ""

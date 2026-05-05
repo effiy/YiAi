@@ -1,10 +1,20 @@
-Invoke the `import-docs` skill to sync local documents to the remote document API.
+调用 `import-docs` 技能将本地文档同步到远程文档 API。
 
-Arguments: `$ARGUMENTS`
+```mermaid
+graph LR
+    A[/import-docs] --> B{Auto-detect source}
+    B -->|.claude/| C[Import all files]
+    B -->|other| D[Import .md files]
+    C --> E[Execute import-docs.js]
+    D --> E
+    E --> F[Summarize: new / overwrite / fail]
+```
 
-Execution requirements:
-- Default to `--dir docs --exts md` when no arguments are given.
-- Must run the script's real `import` path; do not stop at a command draft.
-- When the user asks to "see the list first", run `list` first, then `import` based on the results.
-- Return statistics: created N, overwritten N, failed N (or note that docs does not exist and skip).
-- Do not output the `API_X_TOKEN` in plaintext.
+参数: `$ARGUMENTS`
+
+执行要求：
+- 无参数时默认使用 `--dir docs --exts md`。
+- 必须运行脚本真实的 `import` 路径；不得止步于命令草稿。
+- 用户要求"先看列表"时，先跑 `list`，再根据结果 `import`。
+- 返回统计：新建 N，覆盖 N，失败 N（或注明 docs 不存在并跳过）。
+- 不得明文输出 `API_X_TOKEN`。

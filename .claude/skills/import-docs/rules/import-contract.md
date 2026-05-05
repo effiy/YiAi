@@ -1,5 +1,16 @@
 # import-docs 导入契约
 
+```mermaid
+graph LR
+    SRC[Source Files] --> DET{Auto-detect}
+    DET -->|.claude/| ALL[All files]
+    DET -->|other| MD[.md only]
+    ALL --> PATH[Path: prefix/repo/dir/file]
+    MD --> PATH
+    PATH --> GIT[git ls-files filter]
+    GIT --> SEND[Send to API]
+```
+
 ## 路径生成
 
 远端 `target_file` 按以下顺序拼接：

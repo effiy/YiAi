@@ -7,20 +7,12 @@
     }
   },
   "agents": {
-    "generate-document": "general",
+    "build-feature": "general",
     "import-docs": "general",
     "wework-bot": "general",
-    "implement-code": "general",
-    "planner": "general",
-    "architect": "general",
-    "code-reviewer": "general",
-    "security-reviewer": "general",
-    "doc-reviewer": "general",
-    "doc-updater": "general",
-    "docs-lookup": "general",
-    "e2e-tester": "general",
-    "impl-reporter": "general",
-    "message-pusher": "general",
-    "test-page-builder": "general"
+    "coder": "general",
+    "docer": "general",
+    "tester": "general",
+    "reporter": "general"
   }
 }

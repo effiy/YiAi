@@ -1,16 +1,29 @@
-Invoke the `generate-document` skill to generate or update documentation.
+调用 `build-feature` 技能（文档模式）生成或更新文档。
 
-Arguments: `$ARGUMENTS`
+```mermaid
+graph TD
+    A[/generate-document] --> B{Command}
+    B -->|init| C[Initialize project docs]
+    B -->|feature-name| D[Generate §1-§4 + postscript]
+    B -->|weekly| E[Generate weekly report]
+    B -->|from-weekly| F[Decompose into features]
+    C --> G[import-docs → wework-bot]
+    D --> G
+    E --> G
+    F --> G
+```
 
-## Command cheat sheet
+参数: `$ARGUMENTS`
 
-| Command | Purpose |
+## 命令速查
+
+| 命令 | 用途 |
 |---------|---------|
-| `init` | Initialize project base files + full `docs/project-init/` document set |
-| `<feature-name>-<description>` | Generate/update document set under `docs/<feature-name>/` (01–05, 07) |
-| `weekly [date]` | Generate/update this week's weekly report |
-| `from-weekly <weekly-path>` | Decompose "future planning" from a weekly report into multiple feature document sets |
+| `init` | 初始化项目基础文件 + 完整 `docs/project-init/` 文档集 |
+| `<feature-name>-<description>` | 生成/更新单一文档 `docs/<feature-name>.md`（§1–§4 + 后记），以故事为单位组织 |
+| `weekly [date]` | 生成/更新本周周报 |
+| `from-weekly <weekly-path>` | 将周报中的"未来规划"分解为多个功能文档 |
 
-All commands are idempotent; existing documents are incrementally updated. Every run must end with `import-docs` then `wework-bot`.
+所有命令均为幂等；已有文档增量更新。每次运行必须以 `import-docs` 结束，再以 `wework-bot` 结束。
 
-See `skills/generate-document/SKILL.md` and `README.md` for full rules.
+完整规则参见 `skills/build-feature/SKILL.md` 和 `README.md`。

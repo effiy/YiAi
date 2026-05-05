@@ -1,10 +1,18 @@
-Invoke the `wework-bot` skill to send a WeChat Work bot message.
+调用 `wework-bot` 技能发送企业微信机器人消息。
 
-Arguments: `$ARGUMENTS`
+```mermaid
+graph LR
+    A[/wework-bot] --> B[Assemble message body]
+    B --> C[Resolve robot via agent/config]
+    C --> D[Validate credentials]
+    D --> E[Send via send-message.js]
+    E --> F{HTTP status}
+    F -->|200| G[Report success]
+    F -->|error| H[Log failure + retry note]
+```
 
-Execution requirements:
-- When the user's intent is to send a group notification, must execute `send-message.js` for real sending; do not stop at a draft.
-- Long copy should use `--content-file`; short copy may use `--content`. Body must align with `message-contract`.
-- When linked with `generate-document` / `implement-code`: run `import-docs` first, then `wework-bot`.
-- Completion notification `☁️ Document sync` must reference real `import-docs` statistics; do not write placeholder numbers.
-- Do not leak `API_X_TOKEN` or webhook plaintext.
+参数: `$ARGUMENTS`
+
+执行要求：
+- 用户意图为发送群通知时，必须执行 `send-message.js` 真实发送；不得止步于草稿。
+- 长文案使用 `--content-file`；短文案可用 `--content`。正文须符合 `message-contract`。

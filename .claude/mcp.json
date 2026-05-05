@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "effiy-api": {
-      "command": "npx",
-      "args": ["-y", "mcp-proxy", "https://api.effiy.cn/mcp"]
-    }
-  }
-}

@@ -1,5 +1,16 @@
 # wework-bot 消息契约
 
+```mermaid
+graph LR
+    A[Trigger] --> B[Resolve Robot]
+    B --> C[Load Webhook]
+    C --> D[Build Message Body]
+    D --> E[POST with X-Token]
+    E --> F{Response}
+    F -->|200| G[Success]
+    F -->|error| H[Log failure]
+```
+
 ## API 契约
 
 请求：`POST <WEWORK_BOT_API_URL>`，体为 `{"webhook_url": "<url>", "content": "<正文>"}`
@@ -23,9 +34,8 @@
     "security": { "webhook_url": "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=<另一key>" }
   },
   "agents": {
-    "generate-document": "general",
-    "security-reviewer": "security",
-    "implement-code": "general"
+    "build-feature": "general",
+    "tester": "general"
   }
 }
 ```
@@ -38,7 +48,7 @@
 
 ### 管理层阅读优先（摘要/明细分层）
 
-**摘要段（分隔线之上）**：约 10 行内，让读者先读完结论、影响、下一步。禁止在摘要里粘贴完整调用链或 MCP 清单。
+**摘要段（分隔线之上）**：约 10 行内，让读者先读完结论、影响、下一步。禁止在摘要里粘贴完整调用链。
 
 **明细段（分隔线之下）**：`────────────【以下为核对明细】────────────` 之后放技术细节。
 
@@ -61,7 +71,7 @@
 - `🔗 调用链`、`🤝 AI 调用`
 - `🤖 模型`、`🧰 工具`、`🕒 最后更新`（精确到秒）
 - `🌿 分支`、`🔖 提交`
-- `📐 实施总结图表`、`🧩 MCP 明细`、`🧾 待办与风险`、`🗂️ 状态回写`、`📁 测试路径`、`📦 产物`、`☁️ 文档同步`、`📂 报告`
+- `📐 实施总结图表`、`🧾 待办与风险`、`🗂️ 状态回写`、`📁 测试路径`、`📦 产物`、`☁️ 文档同步`、`📂 报告`
 
 ### 格式要求
 
@@ -74,9 +84,9 @@
 
 ## 观测点
 
-**generate-document**：开始生成 / P0 自检失败 / 缺参写入 `99_agent-runs` / `import-docs` 同步完成
+**build-feature (document mode)**：开始生成 / P0 自检失败 / 缺参写入 `99_agent-runs` / `import-docs` 同步完成
 
-**implement-code**：阶段 0/2/4/6/7 完成 / 任意阻断需人工介入 / 门禁未执行/无证据/被跳过
+**build-feature (code mode)**：阶段 0/2/4/6/7 完成 / 任意阻断需人工介入 / 门禁未执行/无证据/被跳过
 
 **import-docs**：导入完成产生汇总 / 导入失败但主流程继续
 

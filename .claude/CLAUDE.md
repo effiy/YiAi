@@ -1,65 +1,73 @@
 # CLAUDE.md
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
-
-## 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-## 2. Simplicity First
-
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-## 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
+```mermaid
+graph LR
+    T[1. Think Before Code] --> M[2. Minimal Code]
+    M --> S[3. Surgical Edits]
+    S --> G[4. Goal-Driven Execution]
+    G -.->|loop until verified| T
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+减少常见 LLM 编码错误的行为准则。按需与项目特定说明合并。
+
+**权衡：** 这些准则偏向谨慎而非速度。对于简单任务，自行判断。
+
+## 1. 编码前先思考
+
+**不要假设。不要隐藏困惑。呈现权衡。**
+
+实现之前：
+- 明确陈述假设。如有不确定，提问。
+- 存在多种理解方式时，逐一呈现——不要默选一种。
+- 存在更简单方案时，说出来。有必要时提出反对。
+- 遇到不清晰之处，停下来。指出困惑点。提问。
+
+## 2. 简洁优先
+
+**解决问题所需的最少代码。杜绝臆测。**
+
+- 不添加超出需求的功能。
+- 不为单次使用创建抽象。
+- 不添加未被要求的"灵活性"或"可配置性"。
+- 不为不可能发生的场景添加错误处理。
+- 200 行能解决的问题写成 50 行，就重写。
+
+自问："高级工程师会认为这过度设计吗？" 如果会，简化。
+
+## 3. 精确修改
+
+**只动必须动的。只清理自己造成的混乱。**
+
+编辑已有代码时：
+- 不要"优化"旁边的代码、注释或格式。
+- 不要重构没有问题的部分。
+- 匹配现有风格，即使你会有不同做法。
+- 发现无关的死代码，提及即可——不要删除。
+
+当你的改动产生了孤立项：
+- 移除因你的改动而不再使用的导入/变量/函数。
+- 未被要求时不要删除已有的死代码。
+
+检验标准：每一行改动都应直接追溯到用户的请求。
+
+## 4. 目标驱动执行
+
+**定义成功标准。循环直到验证通过。**
+
+将任务转化为可验证的目标：
+- "添加验证" → "为无效输入编写测试，然后使测试通过"
+- "修复 bug" → "编写复现 bug 的测试，然后使测试通过"
+- "重构 X" → "确保重构前后测试均通过"
+
+对于多步骤任务，给出简要计划：
+```
+1. [步骤] → 验证: [检查项]
+2. [步骤] → 验证: [检查项]
+3. [步骤] → 验证: [检查项]
+```
+
+强大的成功标准让你能独立循环推进。弱标准（"让它跑通"）需要不断请示。
 
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+**这些准则有效的标志：** diff 中不必要的改动减少、因过度设计导致的重写减少、澄清性问题在实现之前提出而非犯错之后。

@@ -131,12 +131,6 @@ docs: update API documentation for upload endpoints
 
 详细的功能规格、API 规格和架构规格位于 `specs/` 目录。
 
-### MCP 服务器
-
-MCP (Model Context Protocol) 服务通过 `fastapi-mcp` 自动将 FastAPI 端点暴露为 MCP 工具。配置位于 `.claude/mcp.json`，生产端点为 `https://api.effiy.cn/mcp`。
-
-18 个 MCP 工具分 5 类：Upload(9)、Execution(2)、WeWork(1)、State(5)、Observer(1)，完整清单见 [docs/mcp-service-optimization/03_design-document.md](docs/mcp-service-optimization/03_design-document.md)，快速入门见 [docs/mcp-service-optimization/04_usage-document.md](docs/mcp-service-optimization/04_usage-document.md)。
-
 ### 记忆目录
 
 `.claude/memory/` 目录用于持久化对话记忆，**不提交到 Git**。
@@ -204,11 +198,9 @@ main.py (FastAPI 入口，兼容性包装器)
 
 5. **双重存储策略**：文件上传功能支持 OSS 云存储和本地静态存储两种模式，自动 fallback。
 
-6. **MCP 服务器集成**：通过 `fastapi-mcp` 自动将 FastAPI 端点暴露为 Model Context Protocol 服务，`/mcp` 路径由 MCP 服务器接管。
+6. **State Store 服务**：结构化状态记录的 CRUD 服务，包含 `StateStoreService`（CRUD）、`SkillRecorder`（fire-and-forget 执行记录）和 `SessionAdapter`（遗留文档转换）。通过 `/state/records` API 和 CLI 工具访问。
 
-7. **State Store 服务**：结构化状态记录的 CRUD 服务，包含 `StateStoreService`（CRUD）、`SkillRecorder`（fire-and-forget 执行记录）和 `SessionAdapter`（遗留文档转换）。通过 `/state/records` API 和 CLI 工具访问。
-
-8. **Observer Reliability 系统**：5 组件可靠性监控——ThrottleMiddleware（IP 限流）、TailSampler（慢/错误请求采样）、SandboxMiddleware（FS/网络沙箱）、LazyStartManager（懒启动）、ReentrancyGuard（重入守卫）。中间件栈：Auth → CORS → Throttle → Sampler。健康状态通过 `/health/observer` 查询。
+7. **Observer Reliability 系统**：5 组件可靠性监控——ThrottleMiddleware（IP 限流）、TailSampler（慢/错误请求采样）、SandboxMiddleware（FS/网络沙箱）、LazyStartManager（懒启动）、ReentrancyGuard（重入守卫）。中间件栈：Auth → CORS → Throttle → Sampler。健康状态通过 `/health/observer` 查询。
 
 ## 配置
 
@@ -255,7 +247,6 @@ main.py (FastAPI 入口，兼容性包装器)
 | POST | `/rename-folder` | 重命名文件夹 |
 | POST | `/wework/send-message` | 发送消息到企业微信 |
 | POST | `/cleanup-unused-images` | 清理未引用的图片 |
-| GET/POST | `/mcp` | MCP 协议端点（由 fastapi-mcp 自动挂载） |
 | POST | `/state/records` | 创建状态记录 |
 | GET | `/state/records` | 查询状态记录 |
 | GET | `/state/records/{key}` | 获取单条状态记录 |

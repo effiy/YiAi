@@ -19,7 +19,8 @@ class ErrorCode(Enum):
     # Client errors
     INVALID_REQUEST = ErrorInfo(1000, http_status.HTTP_400_BAD_REQUEST, "无效的请求")
     INVALID_PARAMS = ErrorInfo(1002, http_status.HTTP_400_BAD_REQUEST, "无效的参数")
-    BUSINESS_ERROR = ErrorInfo(1003, http_status.HTTP_400_BAD_REQUEST, "业务错误")
+    RATE_LIMITED = ErrorInfo(1003, http_status.HTTP_429_TOO_MANY_REQUESTS, "请求过于频繁")
+    BUSINESS_ERROR = ErrorInfo(1001, http_status.HTTP_400_BAD_REQUEST, "业务错误")
     DATA_NOT_FOUND = ErrorInfo(1004, http_status.HTTP_404_NOT_FOUND, "未找到资源")
     UNAUTHORIZED = ErrorInfo(1009, http_status.HTTP_401_UNAUTHORIZED, "未认证")
     PERMISSION_DENIED = ErrorInfo(1008, http_status.HTTP_403_FORBIDDEN, "权限拒绝")
@@ -50,6 +51,7 @@ def map_http_to_error_code(status: int) -> ErrorCode:
         http_status.HTTP_404_NOT_FOUND: ErrorCode.DATA_NOT_FOUND,
         http_status.HTTP_403_FORBIDDEN: ErrorCode.PERMISSION_DENIED,
         http_status.HTTP_400_BAD_REQUEST: ErrorCode.INVALID_REQUEST,
+        http_status.HTTP_429_TOO_MANY_REQUESTS: ErrorCode.RATE_LIMITED,
         http_status.HTTP_500_INTERNAL_SERVER_ERROR: ErrorCode.SERVER_ERROR,
     }
     return mapping.get(status, ErrorCode.SERVER_ERROR)

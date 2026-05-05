@@ -1,75 +1,84 @@
-# Behavioral Guidelines
+# 行为准则
 
-> Reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+```mermaid
+graph LR
+    T[Think First] --> M[Minimal Code]
+    M --> S[Surgical Edits]
+    S --> G[Goal-Driven Execution]
+    G --> N[Notify on Complete/Block]
+    N -->|loop| T
+```
+
+> 减少常见 LLM 编码错误。根据需要与项目特定指令合并。
 >
-> **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+> **权衡：** 这些准则偏重谨慎而非速度。对于简单任务，可自行判断。
 
-## 1. Think Before Coding
+## 1. 先思考再编码
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+**不要假设。不要隐藏困惑。呈现权衡方案。**
 
-Before implementing:
-- State assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+实现之前：
+- 明确陈述假设。如有不确定，提问。
+- 如果存在多种理解，呈现它们——不要默不作声地选择。
+- 如果有更简单的方法，说出来。在合理时提出异议。
+- 如果有什么不清楚，停下来。指出困惑所在。提问。
 
-## 2. Simplicity First
+## 2. 简洁优先
 
-**Minimum code that solves the problem. Nothing speculative.**
+**用最少代码解决问题。不做推测性工作。**
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite.
+- 不要添加超出需求的功能。
+- 不要为一次性代码创建抽象。
+- 不要添加未被要求的"灵活性"或"可配置性"。
+- 不要为不可能发生的场景添加错误处理。
+- 如果你写了 200 行但可以精简到 50 行，重写。
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+问自己："资深工程师会说这个过度复杂吗？"如果是，简化。
 
-## 3. Surgical Changes
+## 3. 手术式变更
 
-**Touch only what you must. Clean up only your own mess.**
+**只触碰必须改的。只清理自己造成的混乱。**
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it — don't delete it.
+编辑已有代码时：
+- 不要"改进"相邻的代码、注释或格式。
+- 不要重构没有问题的东西。
+- 匹配现有风格，即使你的做法不同。
+- 如果注意到无关的废弃代码，指出它——不要删除它。
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+当你的变更产生孤立代码时：
+- 移除因你的变更而不再使用的导入/变量/函数。
+- 除非被要求，否则不要删除已有的废弃代码。
 
-The test: Every changed line should trace directly to the user's request.
+检验标准：每一行变更都应直接追溯到用户的请求。
 
-## 4. Goal-Driven Execution
+## 4. 目标驱动的执行
 
-**Define success criteria. Loop until verified.**
+**定义成功标准。循环直到验证通过。**
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+将任务转化为可验证的目标：
+- "添加验证" → "为无效输入编写测试，然后让它们通过"
+- "修复 bug" → "编写能复现它的测试，然后让它通过"
+- "重构 X" → "确保测试在重构前后都通过"
 
-For multi-step tasks, state a brief plan:
+对于多步骤任务，陈述一个简短的方案：
 ```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
+1. [步骤] → 验证：[检查项]
+2. [步骤] → 验证：[检查项]
+3. [步骤] → 验证：[检查项]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+强有力的成功标准让你可以独立循环。软弱的标准（"让它工作"）则需要不断澄清。
 
-## 5. Completion and Interruption Require Notification
+## 5. 完成和中断需要通知
 
-**When a flow completes or is interrupted, you must use wework-bot to send a notification and import-docs to sync documents.**
+**当流程完成或中断时，必须使用 wework-bot 发送通知，并使用 import-docs 同步文档。**
 
-- Flow completion (success / includes P0 failure): first execute `import-docs` to sync `docs`, then call `wework-bot` to send completion notification. The `☁️ Document sync` line must reference real `import-docs` statistics; do not fabricate numbers.
-- Flow interruption / block / gate anomaly: likewise execute `import-docs` first (record real numbers even on failure), then call `wework-bot` to send block/gate-anomaly notification. Notification must include blocked stage, reason, evidence, and recovery point.
-- Notification order: **first `import-docs`, then `wework-bot`** — do not send notification before sync completes, otherwise `☁️ Document sync` cannot be filled with real values.
-- Notification send failure: record failure reason (API status code, desensitized route, model, tool, last update time) into `06_process-summary.md` or `docs/99_agent-runs/` fallback log. Do not silently omit.
-- Missing `API_X_TOKEN`: `import-docs` skips sync and records reason; `wework-bot` notification must still be sent, omitting the `☁️ Document sync` line with a one-line note: "`API_X_TOKEN` not detected; manual sync available later."
+- 流程完成（成功 / 包含 P0 失败）：首先执行 `import-docs` 同步 `docs`，然后调用 `wework-bot` 发送完成通知。`☁️ 文档同步` 行必须引用真实的 `import-docs` 统计数据；不得编造数字。
+- 流程中断 / 阻塞 / 门禁异常：同样先执行 `import-docs`（即使失败也要记录真实数字），然后调用 `wework-bot` 发送阻塞/门禁异常通知。通知必须包含阻塞的阶段、原因、证据和恢复点。
+- 通知顺序：**先 `import-docs`，后 `wework-bot`**——不要在同步完成前发送通知，否则 `☁️ 文档同步` 无法填入真实值。
+- 通知发送失败：将失败原因（API 状态码、脱敏后的路由、模型、工具、最后更新时间）记录到 `docs/<feature-name>.md` 的 §4 Project Report 或 `docs/99_agent-runs/` 回退日志中。不要默默省略。
+- 缺少 `API_X_TOKEN`：`import-docs` 跳过同步并记录原因；`wework-bot` 通知仍必须发送，省略 `☁️ 文档同步` 行并添加一行说明："`API_X_TOKEN` 未检测到；稍后可手动同步。"
 
 ---
 
-**These guidelines are working when:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, clarifying questions come before implementation rather than after mistakes, and every flow interruption/completion produces a verifiable group notification.
+**这些准则行之有效的标志：** diff 中不必要的变更减少、因过度复杂导致的重写减少、澄清性问题在实现之前提出而非在错误之后提出、每次流程中断/完成都产生可验证的群通知。

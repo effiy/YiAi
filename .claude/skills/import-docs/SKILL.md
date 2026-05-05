@@ -2,66 +2,77 @@
 name: import-docs
 description: |
   Batch synchronize local documents to remote document API. Mandatory step upon
-  generate-document / implement-code completion.
+  build-feature completion.
 user_invocable: true
 lifecycle: default-pipeline
 ---
 
 # import-docs
 
-## Positioning
+```mermaid
+graph LR
+    A[import-docs] --> B{Auto-detect}
+    B -->|.claude/| C[All files]
+    B -->|other| D[.md only]
+    C --> E[import-docs.js]
+    D --> E
+    E --> F[Result: new / overwrite / fail]
+    F --> G[Feed stats to wework-bot]
+```
 
-Document import skill: auto-detect import source → support `list` to enumerate candidates → execute import → summarize results for `wework-bot` to fill real numbers.
+## 定位
 
-## When to Use
+文档导入 skill：自动检测导入来源 → 支持 `list` 枚举候选文件 → 执行导入 → 汇总结果供 `wework-bot` 填入真实数字。
 
-- User requests sync/upload/publish/import documents to remote
-- Mandatory step upon `generate-document` / `implement-code` completion
-- Do not trigger: only local Markdown generation/modification and user explicitly does not need sync; target is just group notification (use `wework-bot`)
+## 何时使用
 
-## Input
+- 用户请求将文档同步/上传/发布/导入到远端
+- `build-feature` 完成时的强制步骤
+- 不触发的情况：仅本地 Markdown 生成/修改且用户明确不需要同步；目标仅为群通知（使用 `wework-bot`）
 
-| Parameter | Default | Description |
+## 输入
+
+| 参数 | 默认值 | 描述 |
 |-----------|---------|-------------|
-| `--dir` | auto-detect | Import directory |
-| `--exts` | auto-detect | Comma-separated extensions |
-| `--token` | `API_X_TOKEN` only | **Disabled** CLI parameter, read only from system env |
-| `--api-url` | `https://api.effiy.cn` | API address |
-| `--prefix` | empty | Remote path prefix, comma-separated |
-| `command` | `import` | `import` imports files; `list` only enumerates |
+| `--dir` | 自动检测 | 导入目录 |
+| `--exts` | 自动检测 | 逗号分隔的扩展名 |
+| `--token` | 仅 `API_X_TOKEN` | **已禁用** CLI 参数，仅从系统环境变量读取 |
+| `--api-url` | `https://api.effiy.cn` | API 地址 |
+| `--prefix` | 空 | 远端路径前缀，逗号分隔 |
+| `command` | `import` | `import` 导入文件；`list` 仅枚举 |
 
-## Auto-Detection Rules
+## 自动检测规则
 
-- Under `.claude` → import `.claude` directory, all files
-- Otherwise → import project root directory, `.md` files only
-- When `--dir` points to `.claude` / `.cursor`, `exts` defaults to empty (import all files)
+- 在 `.claude` 下 → 导入 `.claude` 目录，所有文件
+- 其他情况 → 导入项目根目录，仅 `.md` 文件
+- 当 `--dir` 指向 `.claude` / `.cursor` 时，`exts` 默认为空（导入所有文件）
 
-## Workflow
+## 工作流程
 
-1. Parameter parsing: extract directory, extensions, prefix from user request
-2. Enumerate candidates (optional): `node scripts/import-docs.js list`
-3. Security check: do not display token in replies
-4. Execute import: `node scripts/import-docs.js --dir docs --exts md`
-5. Result summary: files found, created / overwritten / failed counts
-6. Return notification summary: `☁️ Document sync: docs → remote (created N, overwritten N, failed N)`
+1. 参数解析：从用户请求中提取目录、扩展名、前缀
+2. 枚举候选（可选）：`node scripts/import-docs.js list`
+3. 安全检查：回复中不展示 token
+4. 执行导入：`node scripts/import-docs.js --dir docs --exts md`
+5. 结果汇总：已找到文件数、新建 / 覆盖 / 失败计数
+6. 返回通知摘要：`☁️ 文档同步：docs → 远端（新建 N，覆盖 N，失败 N）`
 
-## Standard docs Import (called by upstream skills)
+## 标准 docs 导入（由上游 skills 调用）
 
-Standard command: `node scripts/import-docs.js --dir docs --exts md`
+标准命令：`node scripts/import-docs.js --dir docs --exts md`
 
-- Directory exists → execute import, result written to wework-bot notification
-- Directory does not exist → skip, notification writes `docs does not exist, skipping import`
-- Import failure → does not block main flow, note failure count
-- `API_X_TOKEN` missing → record "`API_X_TOKEN` not detected, can manually sync later"
+- 目录存在 → 执行导入，结果写入 wework-bot 通知
+- 目录不存在 → 跳过，通知写入 `docs 不存在，跳过导入`
+- 导入失败 → 不阻断主流程，注明失败数量
+- `API_X_TOKEN` 缺失 → 记录"`API_X_TOKEN` 未检测到，可稍后手动同步"
 
-## Constraints
+## 约束
 
-- Default auto-detection unless user specifies `--dir` / `--exts`
-- Do not write token to repository files, logs, or documents
-- Script overwrites remote files at same path
-- Always ignore `.git`, do not follow symlinks
+- 除非用户指定 `--dir` / `--exts`，否则默认自动检测
+- 不得将 token 写入仓库文件、日志或文档
+- 脚本会覆盖远端同路径文件
+- 始终忽略 `.git`，不跟随符号链接
 
-## Supporting Files
+## 支持文件
 
-- `rules/import-contract.md`: path generation, deduplication, security constraints
-- `scripts/import-docs.js`: CLI implementation
+- `rules/import-contract.md`：路径生成、去重、安全约束
+- `scripts/import-docs.js`：CLI 实现

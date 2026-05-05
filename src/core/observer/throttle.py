@@ -2,8 +2,10 @@
 import time
 import logging
 from typing import Dict, List, Optional
-from fastapi import Request, Response
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from core.error_codes import ErrorCode
 
 logger = logging.getLogger(__name__)
 
@@ -39,17 +41,45 @@ class ThrottleMiddleware(BaseHTTPMiddleware):
             cutoff = now - self.window_seconds
             active = [t for t in timestamps if t > cutoff]
 
-            if len(active) >= self.max_requests:
-                logger.warning(f"Throttle: {client_ip} exceeded limit {self.max_requests}/{self.window_seconds}s")
-                return Response(
-                    content='{"code":1003,"message":"Too Many Requests"}',
-                    status_code=429,
-                    headers={"Retry-After": str(self.window_seconds)},
-                    media_type="application/json",
+            current = len(active)
+            remaining = max(0, self.max_requests - current - 1)
+
+            if current >= self.max_requests:
+                retry_after = int(active[0] - cutoff)
+                reset_at = int(active[0] + self.window_seconds)
+                logger.warning(
+                    f"Throttle: {client_ip} exceeded limit "
+                    f"{current}/{self.max_requests}/{self.window_seconds}s, "
+                    f"retry_after={retry_after}s"
+                )
+                return JSONResponse(
+                    status_code=ErrorCode.RATE_LIMITED.http,
+                    content={
+                        "code": ErrorCode.RATE_LIMITED.business,
+                        "message": ErrorCode.RATE_LIMITED.message,
+                        "data": {
+                            "limit": self.max_requests,
+                            "current": current,
+                            "remaining": 0,
+                            "reset_at": reset_at,
+                        },
+                    },
+                    headers={
+                        "Retry-After": str(retry_after),
+                        "X-RateLimit-Limit": str(self.max_requests),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(reset_at),
+                    },
                 )
 
             active.append(now)
             self._requests[client_ip] = active
+
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(self.max_requests)
+            response.headers["X-RateLimit-Remaining"] = str(remaining)
+            response.headers["X-RateLimit-Reset"] = str(int(active[0] + self.window_seconds))
+            return response
         except Exception:
             logger.exception("Throttle middleware error")
 
