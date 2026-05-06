@@ -106,4 +106,17 @@ API 文档可通过 /docs 和 /redoc 访问。
 
 ## 📖 更多信息
 
-关于项目的更多详细信息，请参考 [CLAUDE.md](CLAUDE.md) 和 [docs/](docs/) 目录下的文档。
+## 文档体系
+
+| 文档 | 内容 |
+|------|------|
+| [CLAUDE.md](CLAUDE.md) | AI 编码指南与项目全貌 |
+| [docs/architecture.md](docs/architecture.md) | 架构设计与模块结构 |
+| [docs/changelog.md](docs/changelog.md) | 版本变更日志 |
+| [docs/devops.md](docs/devops.md) | 构建、部署与运维 |
+| [docs/network.md](docs/network.md) | 网络请求约定 |
+| [docs/state-management.md](docs/state-management.md) | 状态管理策略 |
+| [docs/FAQ.md](docs/FAQ.md) | 故障排除与常见问题 |
+| [docs/auth.md](docs/auth.md) | 认证鉴权 |
+| [docs/security.md](docs/security.md) | 安全策略 |
+| [docs/project-init/](docs/project-init/) | 项目初始化文档集 |

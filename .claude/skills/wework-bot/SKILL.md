@@ -1,7 +1,7 @@
 ---
 name: wework-bot
 description: |
-  Send WeChat Work (WeCom) bot messages. Mandatory upon build-feature
+  Send WeChat Work (WeCom) bot messages. Mandatory upon rui
   completion, block, or gate failure.
 user_invocable: true
 lifecycle: default-pipeline
@@ -28,7 +28,7 @@ graph LR
 
 - 用户请求向企业微信群/机器人发送信息
 - 长流程需要外部可观测性（阶段状态/阻断/门禁失败/验证结论）
-- **流水线强制步骤**：`build-feature` 完成/阻断/门禁失败必须通知，顺序：先 `import-docs`，再 `wework-bot`
+- **流水线强制步骤**：`rui` 完成/阻断/门禁失败必须通知，顺序：先 `import-docs`，再 `wework-bot`
 - 不触发的情况：用户仅写草稿但明确不发送；目标是同步文档（使用 `import-docs`）
 
 ## 输入
@@ -50,12 +50,12 @@ Webhook 仅在 `config.json` 中配置，无 CLI 参数。
 1. 组装消息：按电梯演讲和契约编写完整正文
 2. 选择机器人：`config.json` 通过 `--agent` 或 `--robot` 解析 webhook；未指定时使用 `default_robot`
 3. 验证凭据：`API_X_TOKEN` + 来自 config 的 webhook
-4. 发送：`node scripts/send-message.js --agent … --content-file …`
+4. 发送：`node skills/wework-bot/scripts/send-message.js --agent … --content-file …`
 5. 汇总结果：根据 HTTP 状态码判断成功/失败
 
 ## 推送文案与反幻觉
 
-- 需要系统事实核查时参照 `shared/contracts.md` 中的证据标准
+- 需要系统事实核查时参照 [`agents/AGENT.md`](../../agents/AGENT.md#证据标准反幻觉) 中的证据标准
 - 正文转义：字面量 `\n` 应使用 `--content-file` 或脚本 `normalizeMessageText` 规范化
 
 ## 消息格式（单一真源）
@@ -70,7 +70,7 @@ Webhook 仅在 `config.json` 中配置，无 CLI 参数。
 
 ```bash
 API_X_TOKEN=*** node skills/wework-bot/scripts/send-message.js \
-  --agent build-feature \
+  --agent rui \
   -f ./tmp/wework-body.md
 ```
 
@@ -93,3 +93,17 @@ API_X_TOKEN=*** node skills/wework-bot/scripts/send-message.js \
 - `rules/message-contract.md`：消息格式、安全、调用契约
 - `config.json`：默认配置（已提交）
 - `scripts/send-message.js`：发送脚本
+
+## 消息格式细节
+
+**两层结构**: 摘要段（分隔线上，≤600 字）+ 明细段（分隔线下）。
+
+**摘要必含**: `🎯 结论` + `📝 描述`(≤100 字) + `📌 范围` + `👉 下一步`。完成/阻断/门禁类追加 `🌐 影响` + `📎 证据` + `⏱️ 会话`(合并耗时+用量)。
+
+**阻断类追加**: `❌ 原因`(≤2 条) + `🧭 恢复点`。门禁类追加 `🔍 门禁` + `📊 结果`。
+
+**格式约束**: 分隔线至多两条；数字须来自执行结果，禁止占位符；全文 ≤2000 字；正文不得出现字面量 `\n`。
+
+**API 契约**: `POST <WEWORK_BOT_API_URL>`，体 `{"webhook_url": "...", "content": "..."}`，Header `X-Token` = `API_X_TOKEN`（仅环境变量）。
+
+**安全**: 不得提交 token、webhook URL 或 key。日志和回复必须脱敏。

@@ -7,7 +7,7 @@
     }
   },
   "agents": {
-    "build-feature": "general",
+    "rui": "general",
     "import-docs": "general",
     "wework-bot": "general",
     "coder": "general",
