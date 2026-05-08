@@ -81,9 +81,11 @@ class ThrottleMiddleware(BaseHTTPMiddleware):
             response.headers["X-RateLimit-Reset"] = str(int(active[0] + self.window_seconds))
             return response
         except Exception:
-            logger.exception("Throttle middleware error")
-
-        return await call_next(request)
+            logger.exception("Throttle middleware error — failing closed to prevent unthrottled passthrough")
+            return JSONResponse(
+                status_code=500,
+                content={"code": 500, "message": "Internal server error"},
+            )
 
     def _cleanup(self, now: float) -> None:
         if now - self._last_cleanup < self.window_seconds:

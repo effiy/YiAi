@@ -88,38 +88,31 @@ def extract_referenced_images(text: str) -> Set[str]:
     return referenced
 
 
+def _extract_refs_from_value(field_value: Any) -> Set[str]:
+    """从任意嵌套结构的字段值中提取图片引用"""
+    refs: Set[str] = set()
+    if isinstance(field_value, str):
+        refs.update(extract_referenced_images(field_value))
+    elif isinstance(field_value, list):
+        for item in field_value:
+            refs.update(_extract_refs_from_value(item))
+    elif isinstance(field_value, dict):
+        for v in field_value.values():
+            refs.update(_extract_refs_from_value(v))
+    return refs
+
+
 async def get_all_session_contents() -> tuple[Set[str], List[Dict[str, Any]]]:
     """从数据库 sessions 集合中获取所有引用的图片"""
     await db.initialize()
     collection = db.db[settings.collection_sessions]
-
-    referenced_images = set()
-    all_sessions = []
-
+    referenced_images: Set[str] = set()
+    all_sessions: list[Dict[str, Any]] = []
     cursor = collection.find({})
     async for doc in cursor:
         all_sessions.append(doc)
-
         for field_value in doc.values():
-            if isinstance(field_value, str):
-                refs = extract_referenced_images(field_value)
-                referenced_images.update(refs)
-            elif isinstance(field_value, list):
-                for item in field_value:
-                    if isinstance(item, str):
-                        refs = extract_referenced_images(item)
-                        referenced_images.update(refs)
-                    elif isinstance(item, dict):
-                        for v in item.values():
-                            if isinstance(v, str):
-                                refs = extract_referenced_images(v)
-                                referenced_images.update(refs)
-            elif isinstance(field_value, dict):
-                for v in field_value.values():
-                    if isinstance(v, str):
-                        refs = extract_referenced_images(v)
-                        referenced_images.update(refs)
-
+            referenced_images.update(_extract_refs_from_value(field_value))
     return referenced_images, all_sessions
 
 
@@ -157,8 +150,8 @@ def delete_image_files(static_dir: str, unused_images: Set[str], dry_run: bool =
                     size = full_path.stat().st_size
                     freed_space += size
                     deleted_count += 1
-                except Exception:
-                    pass
+                except (OSError, FileNotFoundError):
+                    logger.debug(f"Stat failed for dry-run: {full_path}")
 
     return deleted_count, freed_space
 
@@ -185,23 +178,7 @@ async def cleanup_sessions_with_missing_images(
         for field_name, field_value in session.items():
             if field_name in ('_id', 'key'):
                 continue
-
-            refs = set()
-            if isinstance(field_value, str):
-                refs = extract_referenced_images(field_value)
-            elif isinstance(field_value, list):
-                for item in field_value:
-                    if isinstance(item, str):
-                        refs.update(extract_referenced_images(item))
-                    elif isinstance(item, dict):
-                        for v in item.values():
-                            if isinstance(v, str):
-                                refs.update(extract_referenced_images(v))
-            elif isinstance(field_value, dict):
-                for v in field_value.values():
-                    if isinstance(v, str):
-                        refs.update(extract_referenced_images(v))
-
+            refs = _extract_refs_from_value(field_value)
             for ref in refs:
                 img_path = static_path / ref
                 if not img_path.exists():
