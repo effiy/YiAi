@@ -15,7 +15,7 @@ from core.error_codes import ErrorCode
 from core.exceptions import BusinessException
 from core.response import success
 from core.config import settings
-from core.database import db
+from services.maintenance.session_service import get_all_sessions, delete_session_by_key
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -105,13 +105,9 @@ def _extract_refs_from_value(field_value: Any) -> Set[str]:
 
 async def get_all_session_contents() -> tuple[Set[str], List[Dict[str, Any]]]:
     """从数据库 sessions 集合中获取所有引用的图片"""
-    await db.initialize()
-    collection = db.db[settings.collection_sessions]
+    all_sessions = await get_all_sessions()
     referenced_images: Set[str] = set()
-    all_sessions: list[Dict[str, Any]] = []
-    cursor = collection.find({})
-    async for doc in cursor:
-        all_sessions.append(doc)
+    for doc in all_sessions:
         for field_value in doc.values():
             referenced_images.update(_extract_refs_from_value(field_value))
     return referenced_images, all_sessions
@@ -166,9 +162,6 @@ async def cleanup_sessions_with_missing_images(
     static_path = Path(static_dir)
     cleaned_count = 0
 
-    await db.initialize()
-    collection = db.db[settings.collection_sessions]
-
     for session in all_sessions:
         session_key = session.get('key')
         if not session_key:
@@ -196,8 +189,8 @@ async def cleanup_sessions_with_missing_images(
         if has_missing_image:
             if not dry_run:
                 try:
-                    result = await collection.delete_one({'key': session_key})
-                    if result.deleted_count > 0:
+                    deleted = await delete_session_by_key(session_key)
+                    if deleted > 0:
                         cleaned_count += 1
                         logger.info(f"Deleted session: {session_key}")
                 except Exception as e:
