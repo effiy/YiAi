@@ -48,8 +48,8 @@ class MongoDB:
                     mongodb_url,
                     maxPoolSize=settings.mongodb_max_pool_size,
                     minPoolSize=settings.mongodb_pool_size,
-                    maxIdleTimeMS=30000,
-                    waitQueueTimeoutMS=10000,
+                    maxIdleTimeMS=30000,  # 30s idle connection lifetime
+                    waitQueueTimeoutMS=10000,  # 10s queue wait for connection
                     retryWrites=True,
                     retryReads=True
                 )

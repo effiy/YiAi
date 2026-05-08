@@ -9,6 +9,11 @@ from core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_IMAGE_FETCH_CHUNK = 256 * 1024       # 256KB read chunks
+_IMAGE_FETCH_MAX_BYTES = 10 * 1024 * 1024  # 10MB max per image
+_IMAGE_FETCH_SEMAPHORE = 4            # concurrent HTTP fetches
+
+
 def _extract_user_only_text(user_content: str) -> str:
     text = (user_content or "").strip()
     if not text:
@@ -26,7 +31,7 @@ def _is_http_url(v: str) -> bool:
     s = (v or "").strip().lower()
     return s.startswith("http://") or s.startswith("https://")
 
-async def _fetch_image_bytes(url: str, *, timeout_seconds: float = 15.0, max_bytes: int = 10 * 1024 * 1024) -> Optional[bytes]:
+async def _fetch_image_bytes(url: str, *, timeout_seconds: float = 15.0, max_bytes: int = _IMAGE_FETCH_MAX_BYTES) -> Optional[bytes]:
     u = (url or "").strip()
     if not u:
         return None
@@ -39,7 +44,7 @@ async def _fetch_image_bytes(url: str, *, timeout_seconds: float = 15.0, max_byt
             if ct and not ct.startswith("image/"):
                 return None
             buf = bytearray()
-            async for chunk in resp.content.iter_chunked(256 * 1024):
+            async for chunk in resp.content.iter_chunked(_IMAGE_FETCH_CHUNK):
                 if not chunk:
                     continue
                 buf.extend(chunk)
@@ -69,7 +74,7 @@ async def _resolve_images(images: Any) -> List[bytes]:
             continue
 
     if http_urls:
-        sem = asyncio.Semaphore(4)
+        sem = asyncio.Semaphore(_IMAGE_FETCH_SEMAPHORE)
 
         async def _task(u: str) -> Optional[bytes]:
             async with sem:

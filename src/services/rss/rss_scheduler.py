@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 class RSSSchedulerManager:
     """RSS 调度器管理器，封装调度器状态和配置"""
 
+    _PARSE_CONCURRENCY = 3  # simultaneous RSS feed parses
+
     def __init__(self):
         self._scheduler: Optional[AsyncIOScheduler] = None
         self._running = False
@@ -68,7 +70,7 @@ class RSSSchedulerManager:
 
             logger.info(f"开始批量解析 {len(sources)} 个 RSS 源")
 
-            sem = asyncio.Semaphore(3)
+            sem = asyncio.Semaphore(self._PARSE_CONCURRENCY)
 
             async def worker(source):
                 url = source.get('url')

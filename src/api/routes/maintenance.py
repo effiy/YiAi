@@ -22,6 +22,7 @@ router = APIRouter()
 
 # 图片文件扩展名
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico'}
+MAX_UNUSED_IMAGE_DETAILS = 100  # limit detailed response to avoid OOM
 
 # 图片引用模式
 IMAGE_PATTERNS = [
@@ -272,5 +273,5 @@ async def cleanup_unused_images(request: CleanupRequest):
             "freed_space_mb": round(freed_space / 1024 / 1024, 2),
             "cleaned_sessions_count": cleaned_sessions
         },
-        "unused_images": unused_list[:100]  # 最多返回 100 个详情
+        "unused_images": unused_list[:MAX_UNUSED_IMAGE_DETAILS]
     })

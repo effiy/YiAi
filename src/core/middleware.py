@@ -10,6 +10,9 @@ from core.error_codes import ErrorCode
 
 logger = logging.getLogger(__name__)
 
+CORS_MAX_AGE = "3600"  # 1 hour browser cache for preflight
+
+
 def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
     """
     为响应添加 CORS 头（允许所有来源）
@@ -31,7 +34,7 @@ def _add_cors_headers(response: JSONResponse, request: Request) -> JSONResponse:
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "*"
     response.headers["Access-Control-Expose-Headers"] = "*"
-    response.headers["Access-Control-Max-Age"] = "3600"
+    response.headers["Access-Control-Max-Age"] = CORS_MAX_AGE
 
     return response
 

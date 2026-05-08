@@ -16,6 +16,8 @@ from core.exceptions import BusinessException
 
 logger = logging.getLogger(__name__)
 
+EXEC_LOG_TRUNCATION = 500  # max chars for parameter/result recording
+
 allowlist = settings.module_allowlist
 if isinstance(allowlist, str):
     allowlist = [x.strip() for x in allowlist.split(',') if x.strip()]
@@ -206,8 +208,8 @@ def _record_execution(
             skill_name=f"{module_path}:{function_name}",
             status=status,
             duration_ms=duration_ms,
-            input_summary=str(parameters)[:500],
-            output_summary=str(result)[:500] if result else "",
+            input_summary=str(parameters)[:EXEC_LOG_TRUNCATION],
+            output_summary=str(result)[:EXEC_LOG_TRUNCATION] if result else "",
             error_message=error_message,
         )
     except Exception as rec_err:

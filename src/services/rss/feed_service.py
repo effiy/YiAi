@@ -12,6 +12,8 @@ from core.exceptions import BusinessException
 
 logger = logging.getLogger(__name__)
 
+RSS_CHUNK_SIZE = 8192  # bytes per chunk when streaming RSS feed
+
 async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
     """
     获取并解析 RSS 源内容
@@ -48,7 +50,7 @@ async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
 
                 # 流式读取并限制大小
                 content = bytearray()
-                async for chunk in response.content.iter_chunked(8192):
+                async for chunk in response.content.iter_chunked(RSS_CHUNK_SIZE):
                     content.extend(chunk)
                     if len(content) > MAX_RSS_SIZE:
                         raise BusinessException(

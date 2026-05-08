@@ -40,6 +40,9 @@ class YamlConfigSettingsSource(PydanticBaseSettingsSource):
     def __call__(self) -> Dict[str, Any]:
         return self.data
 
+MB = 1024 * 1024
+
+
 class Settings(BaseSettings):
     # Server
     server_host: str = Field("0.0.0.0", validation_alias="server_host")
@@ -160,11 +163,11 @@ class Settings(BaseSettings):
 
     @property
     def static_max_zip_size(self) -> int:
-        return self.static_max_zip_size_mb * 1024 * 1024
+        return self.static_max_zip_size_mb * MB
 
     @property
     def oss_max_file_size(self) -> int:
-        return self.oss_max_file_size_mb * 1024 * 1024
+        return self.oss_max_file_size_mb * MB
     
     def get_cors_origins(self) -> List[str]:
         if isinstance(self.cors_origins, str) and self.cors_origins == "*":
