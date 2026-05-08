@@ -9,79 +9,106 @@ lifecycle: default-pipeline
 
 # import-docs
 
+将 workspace 内所有 `.md` 文档（排除 `.git`、`node_modules`）批量同步到远端文档 API。rui 交付步骤 2。
+
 ```mermaid
-graph LR
-    A[import-docs] --> B{Auto-detect}
-    B -->|.claude/| C[All files]
-    B -->|other| D[.md only]
-    C --> E[import-docs.js]
-    D --> E
-    E --> F[Result: new / overwrite / fail]
-    F --> G[Feed stats to wework-bot]
+flowchart TD
+    CMD["import-docs --workspace"] --> SCAN["递归扫描项目目录"]
+    SCAN --> FILTER["仅 .md 文件"]
+    FILTER --> EXCLUDE["排除 .git / node_modules"]
+    EXCLUDE --> LIST["收集文件列表"]
+    LIST --> IMPORT["逐文件 POST /write-file"]
+    IMPORT --> DEDUP{远端已有?}
+    DEDUP -->|是| OW["覆盖（overwritten）"]
+    DEDUP -->|否| NEW["新建（created）"]
+    OW & NEW --> STATS["汇总: 新建 N / 覆盖 N / 失败 N"]
 ```
 
-## 定位
+---
 
-文档导入 skill：自动检测导入来源 → 支持 `list` 枚举候选文件 → 执行导入 → 汇总结果供 `wework-bot` 填入真实数字。
+## 扫描规则
 
-## 何时使用
+`--workspace` 模式自动检测 workspace 根目录（向上查找 `.git` 或 `.claude/`），递归扫描项目目录下所有 `.md` 文件。
 
-- 用户请求将文档同步/上传/发布/导入到远端
-- `rui` 完成时的强制步骤
-- 不触发的情况：仅本地 Markdown 生成/修改且用户明确不需要同步；目标仅为群通知（使用 `wework-bot`）
+- **包含**: 项目根目录及所有子目录中的 `.md` 文件
+- **排除**: `.git`、`node_modules` 目录（不遍历）
+- **远端路径**: `<prefix>/<workspace名>/<相对路径>`，空格替换为 `_`，目录结构与本地一致
 
-## 输入
+---
+
+## 工作流
+
+```mermaid
+sequenceDiagram
+    participant RUI as rui 交付
+    participant CMD as import-docs.js
+    participant API as 远端 API
+    participant WW as wework-bot
+
+    RUI->>CMD: --workspace
+    CMD->>CMD: 递归扫描 .md（排除 .git/node_modules）
+    CMD->>API: 查询已有 sessions
+    API-->>CMD: existing file_path set
+    loop 逐文件
+        CMD->>API: POST /write-file
+        alt 远端已存在
+            API-->>CMD: overwritten
+        else 新建
+            API-->>CMD: created
+            CMD->>API: create_document session
+        end
+    end
+    CMD-->>RUI: 新建 N / 覆盖 N / 失败 N
+    RUI->>WW: 填入统计数字
+```
+
+---
+
+## 命令
+
+```bash
+# workspace 模式（rui 默认调用）
+node skills/import-docs/scripts/import-docs.js --workspace
+
+# 单目录模式
+node skills/import-docs/scripts/import-docs.js --dir <path> [--exts md,json]
+
+# 仅枚举（不导入）
+node skills/import-docs/scripts/import-docs.js list --workspace
+```
 
 | 参数 | 默认值 | 描述 |
-|-----------|---------|-------------|
-| `--dir` | 自动检测 | 导入目录 |
-| `--exts` | 自动检测 | 逗号分隔的扩展名 |
-| `--token` | 仅 `API_X_TOKEN` | **已禁用** CLI 参数，仅从系统环境变量读取 |
-| `--api-url` | `https://api.effiy.cn` | API 地址 |
-| `--prefix` | 空 | 远端路径前缀，逗号分隔 |
-| `command` | `import` | `import` 导入文件；`list` 仅枚举 |
+|------|--------|------|
+| `--workspace` / `-w` | — | 按工作区扫描规则导入 |
+| `--exclude` / `-x` | — | 排除的子项目（逗号分隔，仅 workspace 模式） |
+| `--dir` / `-d` | 自动检测 | 单目录导入 |
+| `--exts` / `-e` | 自动检测 | 扩展名过滤（逗号分隔） |
+| `--prefix` / `-p` | 空 | 远端路径前缀 |
+| `--api-url` / `-a` | `https://api.effiy.cn` | API 地址 |
+| `command` | `import` | `import` 导入；`list` 仅枚举 |
 
-## 自动检测规则
+**凭据**: `API_X_TOKEN` 仅从系统环境变量读取，不接受 CLI 参数或配置文件。
 
-- 在 `.claude` 下 → 导入 `.claude` 目录，所有文件
-- 其他情况 → 导入项目根目录，仅 `.md` 文件
-- 当 `--dir` 指向 `.claude` / `.cursor` 时，`exts` 默认为空（导入所有文件）
+---
 
-## 工作流程
+## 自动检测（非 workspace 模式）
 
-1. 参数解析：从用户请求中提取目录、扩展名、前缀
-2. 枚举候选（可选）：`node skills/import-docs/scripts/import-docs.js list`
-3. 安全检查：回复中不展示 token
-4. 执行导入：`node skills/import-docs/scripts/import-docs.js --dir docs --exts md`
-5. 结果汇总：已找到文件数、新建 / 覆盖 / 失败计数
-6. 返回通知摘要：`☁️ 文档同步：docs → 远端（新建 N，覆盖 N，失败 N）`
+- 默认导入当前目录下所有 `.md` 文件
+- 始终忽略 `.git` 和 `node_modules`，不跟随符号链接
 
-## 标准 docs 导入（由上游 skills 调用）
-
-标准命令：`node skills/import-docs/scripts/import-docs.js --dir docs --exts md`
-
-- 目录存在 → 执行导入，结果写入 wework-bot 通知
-- 目录不存在 → 跳过，通知写入 `docs 不存在，跳过导入`
-- 导入失败 → 不阻断主流程，注明失败数量
-- `API_X_TOKEN` 缺失 → 记录"`API_X_TOKEN` 未检测到，可稍后手动同步"
+---
 
 ## 约束
 
-- 除非用户指定 `--dir` / `--exts`，否则默认自动检测
-- 不得将 token 写入仓库文件、日志或文档
-- 脚本会覆盖远端同路径文件
-- 始终忽略 `.git`，不跟随符号链接
+- 目录不存在 → 跳过并提示
+- 单文件失败 → 记录错误，继续处理其余文件
+- `failed > 0` → 非零退出
+- `API_X_TOKEN` 缺失 → 停止，不尝试匿名导入（H9 降级）
+- 不得将 token 写入仓库、日志或文档
+- 文件遍历优先 `git ls-files`（遵循 `.gitignore`），回退到文件系统遍历
+
+---
 
 ## 支持文件
 
 - `scripts/import-docs.js`：CLI 实现
-
-## 实现细节
-
-**路径生成**: 远端路径 = `<prefix...>/<仓库名>/<导入目录名>/<相对路径>`，空格替换为 `_`，分隔符统一为 `/`。
-
-**文件遍历**: 目录在 git 仓库内时使用 `git ls-files --cached --others --exclude-standard`（遵循 `.gitignore`），否则回退到文件系统遍历。始终忽略 `.git`，不跟随符号链接。
-
-**去重**: 导入前查询已有 `file_path`，存在则覆盖（`overwritten`），不存在则创建（`created`）。
-
-**失败处理**: 单文件失败记录错误并继续；最终 `failed > 0` 时非零退出；空目录或无匹配文件正常退出。`API_X_TOKEN` 缺失时停止，不尝试匿名导入。

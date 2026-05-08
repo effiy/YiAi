@@ -10,8 +10,9 @@ import inspect
 import subprocess
 import time
 from typing import Dict, Any, Union
-from fastapi import HTTPException
 from core.config import settings
+from core.error_codes import ErrorCode
+from core.exceptions import BusinessException
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +64,9 @@ def parse_parameters(parameters: Union[Dict[str, Any], str]) -> Dict[str, Any]:
     try:
         parsed = json.loads(parameters)
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"Invalid JSON: {str(e)}")
     if not isinstance(parsed, dict):
-        raise HTTPException(status_code=400, detail="Parameters must be a JSON object")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="Parameters must be a JSON object")
     return parsed
 
 async def run_script(script_path: str, timeout: int = 300) -> Dict[str, Any]:
@@ -168,19 +169,19 @@ async def execute_module(module_path: str, function_name: str, parameters: Union
         from core.observer.guard import _reentrancy_depth
         depth = _reentrancy_depth.get()
         if depth >= guard.max_depth:
-            raise HTTPException(
-                status_code=508,
-                detail=f"Reentrancy depth {depth} exceeds limit {guard.max_depth}"
+            raise BusinessException(
+                ErrorCode.SERVER_ERROR,
+                message=f"Reentrancy depth {depth} exceeds limit {guard.max_depth}"
             )
         token = _reentrancy_depth.set(depth + 1)
 
     try:
         if not module_path or not function_name:
-            raise HTTPException(status_code=400, detail="Module path and function name required")
+            raise BusinessException(ErrorCode.INVALID_PARAMS, message="Module path and function name required")
 
         allow_key = f"{module_path}:{function_name}"
         if "*" not in EXEC_ALLOWLIST and allow_key not in EXEC_ALLOWLIST:
-            raise HTTPException(status_code=403, detail=f"Execution forbidden: {allow_key}")
+            raise BusinessException(ErrorCode.PERMISSION_DENIED, message=f"Execution forbidden: {allow_key}")
 
         parameters_dict = parse_parameters(parameters)
 
@@ -189,7 +190,7 @@ async def execute_module(module_path: str, function_name: str, parameters: Union
             target_function = getattr(module, function_name)
         except (ImportError, AttributeError) as e:
             logger.error(f"Module import error: {str(e)}")
-            raise HTTPException(status_code=422, detail=f"Module or function not found: {str(e)}")
+            raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"Module or function not found: {str(e)}")
 
         start = time.perf_counter()
         status = "success"
@@ -205,13 +206,11 @@ async def execute_module(module_path: str, function_name: str, parameters: Union
                 result = await _run_function(target_function, parameters_dict)
             else:
                 result = await _run_function(target_function, parameters_dict)
-        except HTTPException:
-            raise
         except Exception as e:
             status = "failed"
             error_message = str(e)
             logger.error(f"Execution error: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
+            raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"Execution failed: {str(e)}") from e
         finally:
             duration_ms = (time.perf_counter() - start) * 1000
             recorder = _get_recorder()

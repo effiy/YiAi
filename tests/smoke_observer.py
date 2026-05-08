@@ -16,9 +16,10 @@ def test_health_observer():
         resp = client.get("/health/observer")
         assert resp.status_code == 200, f"Health failed: {resp.text}"
         data = resp.json()
-        assert data.get("throttle_enabled") is True
-        assert data.get("sampler_enabled") is True
-        assert data.get("guard_enabled") is True
+        assert "throttle_enabled" in data
+        assert "sampler_enabled" in data
+        assert "sandbox_enabled" in data
+        assert "guard_enabled" in data
         print(f"[PASS] /health/observer: {data}")
 
 

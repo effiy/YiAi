@@ -191,15 +191,15 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
             query_params['pageSize'] = int(query_params.pop('limit'))
         else:
             query_params.pop('limit', None)
-    except:
+    except (ValueError, TypeError):
         query_params.pop('limit', None)
-    
+
     try:
         if 'page' in query_params and 'pageNum' not in query_params:
             query_params['pageNum'] = int(query_params.pop('page'))
         else:
             query_params.pop('page', None)
-    except:
+    except (ValueError, TypeError):
         query_params.pop('page', None)
 
     await db.initialize()

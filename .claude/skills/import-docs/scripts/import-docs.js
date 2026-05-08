@@ -9,52 +9,36 @@ const { execFile } = require('child_process');
 const execFileAsync = util.promisify(execFile);
 
 /**
- * 从起始目录向上查找 .git 目录，确定项目根目录
+ * 从起始目录向上查找项目根目录
+ * 优先检测 .git，否则检测 .claude/ 目录
  * @param {string} startDir - 起始目录
  * @returns {string} 项目根目录
  */
 function findProjectRoot(startDir) {
   let currentDir = path.resolve(startDir);
-  let foundRoot = null;
-  // 一直向上找，直到文件系统根目录
   while (true) {
-    try {
-      fs.accessSync(path.join(currentDir, '.git'));
-      foundRoot = currentDir; // 记录找到的，但继续往上找
-    } catch {
-      // 没找到，继续
+    if (fs.existsSync(path.join(currentDir, '.git'))) {
+      if (path.basename(currentDir) === '.claude') return path.dirname(currentDir);
+      return currentDir;
+    }
+    if (fs.existsSync(path.join(currentDir, '.claude'))) {
+      return currentDir;
     }
     const parentDir = path.dirname(currentDir);
-    if (parentDir === currentDir) {
-      break; // 到达文件系统根目录
-    }
+    if (parentDir === currentDir) break;
     currentDir = parentDir;
   }
-  // 如果找到了任何 .git，返回最顶层的那个（最接近文件系统根目录的）
-  // 否则返回起始目录
-  return foundRoot || startDir;
+  return path.resolve(startDir);
 }
 
 /**
- * 检查当前目录是否在项目根目录的 .claude 下
- * @param {string} cwd - 当前工作目录
- * @param {string} projectRoot - 项目根目录
- * @returns {boolean}
- */
-function isInClaudeDir(cwd, projectRoot) {
-  const claudeDir = path.join(projectRoot, '.claude');
-  const relative = path.relative(claudeDir, cwd);
-  return !relative.startsWith('..') && !path.isAbsolute(relative);
-}
-
-/**
- * 查找文件，优先使用 git ls-files 以遵循 .gitignore 规则
+ * 递归查找 .md 文件，优先使用 git ls-files，回退到文件系统遍历
+ * 排除 .git 和 node_modules 目录
  * @param {string} dir - 起始目录
- * @param {string[]} exts - 扩展名列表，为空表示所有文件
  * @param {string} projectRoot - git 仓库根目录
  * @returns {Promise<string[]>} 文件路径列表
  */
-async function findFiles(dir, exts, projectRoot) {
+async function findMdFiles(dir, projectRoot) {
   const dirRel = path.relative(projectRoot, dir);
   const canUseGit = projectRoot && !dirRel.startsWith('..') && !path.isAbsolute(dirRel);
 
@@ -65,16 +49,17 @@ async function findFiles(dir, exts, projectRoot) {
         maxBuffer: 50 * 1024 * 1024
       });
       const dirRelPosix = dirRel.split(path.sep).join('/');
-      return stdout
+      const gitFiles = stdout
         .split('\n')
         .filter(Boolean)
         .filter(file => dirRelPosix === '' || file === dirRelPosix || file.startsWith(dirRelPosix + '/'))
-        .filter(file => {
-          if (exts.length === 0) return true;
-          const ext = path.extname(file).slice(1).toLowerCase();
-          return exts.includes(ext);
-        })
-        .map(file => path.join(projectRoot, file));
+        .filter(file => path.extname(file).toLowerCase() === '.md')
+        .filter(file => !file.split('/').some(part => part === '.git' || part === 'node_modules'))
+        .map(file => path.join(projectRoot, file))
+        .filter(fullPath => {
+          try { return fs.statSync(fullPath).isFile(); } catch { return false; }
+        });
+      if (gitFiles.length > 0) return gitFiles;
     } catch {
       // 回退到文件系统遍历
     }
@@ -86,22 +71,15 @@ async function findFiles(dir, exts, projectRoot) {
     const entries = await fsp.readdir(currentDir, { withFileTypes: true });
 
     for (const entry of entries) {
-      if (entry.name === '.git') {
+      if (entry.name === '.git' || entry.name === 'node_modules') {
         continue;
       }
       const fullPath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory() && !entry.isSymbolicLink()) {
         await traverse(fullPath);
-      } else if (entry.isFile()) {
-        if (exts.length === 0) {
-          results.push(fullPath);
-        } else {
-          const ext = path.extname(entry.name).slice(1).toLowerCase();
-          if (exts.includes(ext)) {
-            results.push(fullPath);
-          }
-        }
+      } else if (entry.isFile() && path.extname(entry.name).toLowerCase() === '.md') {
+        results.push(fullPath);
       }
     }
   }
@@ -116,95 +94,6 @@ function readApiXTokenFromEnv() {
   if (v == null || v === '') return null;
   const t = String(v).trim();
   return t || null;
-}
-
-/**
- * 确定导入配置
- * @returns {object} 配置对象
- */
-function determineConfig() {
-  const args = process.argv.slice(2);
-  const config = {
-    command: 'import',
-    dir: null,
-    exts: null,
-    token: readApiXTokenFromEnv(),
-    apiUrl: 'https://api.effiy.cn',
-    prefix: []
-  };
-
-  let argStartIndex = 0;
-  if (args[0] && !args[0].startsWith('-')) {
-    config.command = args[0];
-    argStartIndex = 1;
-  }
-
-  for (let i = argStartIndex; i < args.length; i++) {
-    const arg = args[i];
-    if (arg === '--dir' || arg === '-d') {
-      config.dir = path.resolve(args[++i]);
-    } else if (arg === '--exts' || arg === '-e') {
-      config.exts = args[++i].split(',').map(e => e.trim().toLowerCase());
-    } else if (arg === '--token' || arg === '-t') {
-      console.error('Error: --token 已禁用。出于安全原因，仅允许使用系统环境变量 API_X_TOKEN。');
-      process.exit(1);
-    } else if (arg === '--api-url' || arg === '-a') {
-      config.apiUrl = args[++i];
-    } else if (arg === '--prefix' || arg === '-p') {
-      config.prefix = args[++i].split(',').map(p => p.trim()).filter(Boolean);
-    } else if (arg === '--help' || arg === '-h') {
-      printHelp();
-      process.exit(0);
-    }
-  }
-
-  const cwd = process.cwd();
-  const projectRoot = findProjectRoot(cwd);
-  const inClaudeDir = isInClaudeDir(cwd, projectRoot);
-
-  if (config.dir === null) {
-    if (inClaudeDir) {
-      const claudeDir = path.join(projectRoot, '.claude');
-      try {
-        fs.accessSync(claudeDir);
-        config.dir = claudeDir;
-      } catch {
-        config.dir = cwd;
-      }
-      config.exts = config.exts || [];
-    } else {
-      config.dir = projectRoot;
-      config.exts = config.exts || ['md'];
-    }
-  } else {
-    const dirName = path.basename(config.dir);
-    if (['.claude', '.cursor'].includes(dirName)) {
-      config.exts = config.exts || [];
-    } else {
-      config.exts = config.exts || ['md'];
-    }
-  }
-
-  return { ...config, projectRoot };
-}
-
-function printHelp() {
-  console.log(`
-Document import — sync local files to remote documentation API
-
-Usage:
-  node skills/import-docs/scripts/import-docs.js import [options]
-  node skills/import-docs/scripts/import-docs.js list [options]
-  node skills/import-docs/scripts/import-docs.js [options]   # defaults to import
-
-Options:
-  --dir, -d     Directory to import (default: auto-detect)
-  --exts, -e    File extensions (comma-separated, default: auto-detect)
-  --token, -t   [disabled] use API_X_TOKEN environment variable only
-  --api-url, -a API base URL (default: https://api.effiy.cn)
-  --prefix, -p  Path prefix (comma-separated, e.g. Projects,YourNamespace)
-  --help, -h    Show this help message
-`);
 }
 
 function request(apiUrl, endpoint, method, token, data) {
@@ -276,27 +165,20 @@ async function getExistingSessions(apiUrl, token) {
   return { sessions, existingSet };
 }
 
-async function importFile(fullPath, baseDir, projectRoot, apiUrl, token, existingSet, prefix, explicitDir) {
-  const relativePath = path.relative(baseDir, fullPath);
-  const relativeTargetPath = relativePath
+async function importFile(fullPath, basePath, apiUrl, token, existingSet, prefix) {
+  const relativePath = path.relative(basePath, fullPath)
     .split(path.sep)
     .map(part => part.replace(/\s+/g, '_'))
     .join('/');
 
-  const rootDirName = path.basename(projectRoot).replace(/\s+/g, '_');
-  const baseDirName = path.basename(baseDir);
-  const isRootDir = baseDir === projectRoot && !explicitDir;
-  const dirName = isRootDir ? null : baseDirName.replace(/\s+/g, '_');
+  const baseDirName = path.basename(basePath).replace(/\s+/g, '_');
 
   const targetPathParts = [];
   if (prefix.length > 0) {
     targetPathParts.push(...prefix.map(part => part.replace(/\s+/g, '_')));
   }
-  targetPathParts.push(rootDirName);
-  if (dirName) {
-    targetPathParts.push(dirName);
-  }
-  targetPathParts.push(relativeTargetPath);
+  targetPathParts.push(baseDirName);
+  targetPathParts.push(relativePath);
 
   const targetPath = targetPathParts.join('/');
   const allParts = targetPath.split('/');
@@ -340,34 +222,78 @@ async function importFile(fullPath, baseDir, projectRoot, apiUrl, token, existin
   return { status: 'ok', path: targetPath };
 }
 
-function toSortedRelativePaths(files, baseDir) {
-  return files
-    .map(file => path.relative(baseDir, file).split(path.sep).join('/'))
-    .sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
+function printHelp() {
+  console.log(`
+Document import — sync local .md files to remote documentation API
+
+Usage:
+  node .claude/skills/import-docs/scripts/import-docs.js import [options]
+  node .claude/skills/import-docs/scripts/import-docs.js list [options]
+  node .claude/skills/import-docs/scripts/import-docs.js [options]   # defaults to import
+
+Options:
+  --workspace, -w  Recursively scan all .md files in project (excludes .git, node_modules)
+  --dir, -d        Single directory to import (default: auto-detect project root)
+  --api-url, -a    API base URL (default: https://api.effiy.cn)
+  --prefix, -p     Path prefix (comma-separated, e.g. Projects,YourNamespace)
+  --help, -h       Show this help message
+
+Environment:
+  API_X_TOKEN      Required for import. Set via system environment variable.
+`);
 }
 
 async function main() {
-  const config = determineConfig();
+  const args = process.argv.slice(2);
+  let command = 'import';
+  let argStartIndex = 0;
 
-  if (!['import', 'list'].includes(config.command)) {
-    console.error(`Error: unsupported command "${config.command}". Use "import" or "list".`);
+  if (args[0] && !args[0].startsWith('-')) {
+    command = args[0];
+    argStartIndex = 1;
+  }
+
+  if (!['import', 'list'].includes(command)) {
+    console.error(`Error: unsupported command "${command}". Use "import" or "list".`);
     process.exit(1);
   }
 
-  try {
-    await fsp.access(config.dir);
-  } catch {
-    console.error(`Error: directory not found: ${config.dir}`);
-    process.exit(1);
+  const config = {
+    command,
+    dir: null,
+    token: readApiXTokenFromEnv(),
+    apiUrl: 'https://api.effiy.cn',
+    prefix: [],
+    workspace: false
+  };
+
+  for (let i = argStartIndex; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--dir' || arg === '-d') {
+      config.dir = path.resolve(args[++i]);
+    } else if (arg === '--token' || arg === '-t') {
+      console.error('Error: --token 已禁用。出于安全原因，仅允许使用系统环境变量 API_X_TOKEN。');
+      process.exit(1);
+    } else if (arg === '--api-url' || arg === '-a') {
+      config.apiUrl = args[++i];
+    } else if (arg === '--prefix' || arg === '-p') {
+      config.prefix = args[++i].split(',').map(p => p.trim()).filter(Boolean);
+    } else if (arg === '--workspace' || arg === '-w') {
+      config.workspace = true;
+    } else if (arg === '--help' || arg === '-h') {
+      printHelp();
+      process.exit(0);
+    }
   }
 
-  const explicitDir = process.argv.includes('--dir') || process.argv.includes('-d');
-  const mode = config.exts.length === 0 ? 'all files' : config.exts.join(', ');
+  const cwd = process.cwd();
+  const projectRoot = findProjectRoot(cwd);
+  const scanDir = config.dir || projectRoot;
 
   console.log('=== Document import ===');
   console.log('Command:', config.command);
-  console.log('Directory:', config.dir);
-  console.log('Mode:', mode);
+  console.log('Mode:', config.workspace ? 'workspace' : 'single');
+  console.log('Scan dir:', scanDir);
   if (config.command === 'import') {
     console.log('API:', config.apiUrl);
     if (config.prefix.length > 0) {
@@ -376,18 +302,18 @@ async function main() {
   }
   console.log();
 
-  const files = await findFiles(config.dir, config.exts, config.projectRoot);
-  console.log(`Found ${files.length} files`);
+  const files = await findMdFiles(scanDir, projectRoot);
 
   if (files.length === 0) {
-    console.log('No files to process');
+    console.log('No .md files found');
     return;
   }
 
+  console.log(`Found ${files.length} .md files`);
+
   if (config.command === 'list') {
-    const relativePaths = toSortedRelativePaths(files, config.dir);
-    console.log('Files:');
-    for (const relativePath of relativePaths) {
+    for (const file of files.sort()) {
+      const relativePath = path.relative(projectRoot, file).split(path.sep).join('/');
       console.log(`- ${relativePath}`);
     }
     return;
@@ -406,12 +332,12 @@ async function main() {
   const stats = { ok: 0, overwritten: 0, failed: 0 };
 
   for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const relativePath = path.relative(config.dir, file);
-    console.log(`[${i + 1}/${files.length}] Processing: ${relativePath}`);
+    const fullPath = files[i];
+    const relativePath = path.relative(projectRoot, fullPath).split(path.sep).join('/');
+    console.log(`[${i + 1}/${files.length}] ${relativePath}`);
 
     try {
-      const result = await importFile(file, config.dir, config.projectRoot, config.apiUrl, config.token, existingSet, config.prefix, explicitDir);
+      const result = await importFile(fullPath, projectRoot, config.apiUrl, config.token, existingSet, config.prefix);
       if (result.status === 'ok') {
         console.log(`  ✓ ${result.path} (created)`);
         stats.ok++;

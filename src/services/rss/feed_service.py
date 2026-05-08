@@ -4,10 +4,11 @@ import feedparser
 import aiohttp
 import gc
 from typing import Dict, Any, Optional
-from fastapi import HTTPException
 from core.database import db
 from core.config import settings
 from core.utils import get_current_time
+from core.error_codes import ErrorCode
+from core.exceptions import BusinessException
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +33,17 @@ async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
             # 增加超时时间到 60秒
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as response:
                 if response.status != 200:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"无法获取 RSS 源，HTTP 状态码: {response.status}"
+                    raise BusinessException(
+                        ErrorCode.INVALID_PARAMS,
+                        message=f"无法获取 RSS 源，HTTP 状态码: {response.status}"
                     )
                 
                 # 检查 Content-Length
                 content_length = response.headers.get('Content-Length')
                 if content_length and int(content_length) > MAX_RSS_SIZE:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"RSS 源过大 (Content-Length: {content_length})，超过限制 {MAX_RSS_SIZE} 字节"
+                    raise BusinessException(
+                        ErrorCode.INVALID_PARAMS,
+                        message=f"RSS 源过大 (Content-Length: {content_length})，超过限制 {MAX_RSS_SIZE} 字节"
                     )
 
                 # 流式读取并限制大小
@@ -50,9 +51,9 @@ async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
                 async for chunk in response.content.iter_chunked(8192):
                     content.extend(chunk)
                     if len(content) > MAX_RSS_SIZE:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"RSS 源实际内容过大，超过限制 {MAX_RSS_SIZE} 字节"
+                        raise BusinessException(
+                            ErrorCode.INVALID_PARAMS,
+                            message=f"RSS 源实际内容过大，超过限制 {MAX_RSS_SIZE} 字节"
                         )
                 
                 feed = feedparser.parse(bytes(content))
@@ -63,10 +64,10 @@ async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
                 return feed
     except aiohttp.ClientError as e:
         logger.error(f"获取 RSS 源失败: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"获取 RSS 源失败: {str(e)}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"获取 RSS 源失败: {str(e)}")
     except Exception as e:
         logger.error(f"解析 RSS 源失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"解析 RSS 源失败: {str(e)}")
+        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"解析 RSS 源失败: {str(e)}")
 
 async def process_feed_from_url(url: str, name: Optional[str] = None) -> Dict[str, Any]:
     """

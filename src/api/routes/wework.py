@@ -82,10 +82,10 @@ async def send_wework_message(request: WeWorkWebhookRequest):
         raise BusinessException(
             ErrorCode.INTERNAL_ERROR,
             message=f"网络请求失败: {str(e)}"
-        )
+        ) from e
     except Exception as e:
         logger.error(f"发送企业微信消息时发生未知错误: {str(e)}", exc_info=True)
         raise BusinessException(
             ErrorCode.INTERNAL_ERROR,
             message=f"发送失败: {str(e)}"
-        )
+        ) from e

@@ -151,11 +151,10 @@ Usage: node .claude/skills/wework-bot/scripts/send-message.js [options]
 
 环境变量:
   API_X_TOKEN           必填，网关 X-Token
+  WEWORK_BOT_WEBHOOK_URL 必填，企业微信 Webhook 完整 URL（含 key）
   WEWORK_BOT_API_URL    可选，覆盖默认 ${DEFAULT_API_URL}
   WEWORK_BOT_CONFIG     可选，路由 JSON 路径（默认仓库 skills/wework-bot/config.json）
-  WEWORK_BOT_SKIP_MESSAGE_LOG  可选，设为 1 或 true 时不写入仓库 docs/周报/<自然周>/messages.md 归档
-  WEWORK_BOT_SKIP_KEY_NODE_LOG   可选，设为 1 或 true 时不写入仓库 docs/周报/<自然周>/key-notes.md 关键节点
-
+  
 选项:
   --config <path>       路由配置文件
   --agent <name>        按配置映射选择机器人（推荐）
@@ -319,61 +318,6 @@ try {
   process.exit(1);
 }
 
-/**
- * @param {string} s
- * @returns {string}
- */
-function sanitizeFilenameSegment(s) {
-  if (s == null || s === '') return 'unknown';
-  const t = String(s).replace(/[^\w\u4e00-\u9fff.-]+/g, '_');
-  return t.slice(0, 120) || 'unknown';
-}
-
-/**
- * 推送成功后归档正文到 `docs/周报/<自然周>/messages.md`（不落 webhook URL）。
- * 可通过环境变量 `WEWORK_BOT_SKIP_MESSAGE_LOG=1` 跳过。
- *
- * @param {{ agent: string|null, robot: string|null, content: string }} opts
- * @param {{ statusCode?: number, body: unknown }} result
- */
-function writeMessageArchive(opts, result) {
-  if (process.env.WEWORK_BOT_SKIP_MESSAGE_LOG === '1' || process.env.WEWORK_BOT_SKIP_MESSAGE_LOG === 'true') {
-    return;
-  }
-  const { getNaturalWeekRange } = require(path.join(CLAUDE_ROOT, 'scripts', 'lib', 'natural-week.js'));
-  const week = getNaturalWeekRange(new Date());
-  const dir = path.join(PROJECT_ROOT, 'docs', '周报', week.range);
-  fs.mkdirSync(dir, { recursive: true });
-  const filePath = path.join(dir, 'messages.md');
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
-    const preamble = [
-      '---',
-      `week: ${week.range}`,
-      'log_type: messages',
-      '---',
-      '',
-      `# 消息归档 · ${week.range}`,
-      '',
-      '---',
-      '',
-    ].join('\n');
-    fs.writeFileSync(filePath, preamble, 'utf-8');
-  }
-  const agentSeg = sanitizeFilenameSegment(opts.agent);
-  const robotSeg = sanitizeFilenameSegment(opts.robot);
-  const block = [
-    `## ${new Date().toISOString()} · ${agentSeg} · ${robotSeg}`,
-    '',
-    `- HTTP: ${result.statusCode ?? 'null'}`,
-    '',
-    opts.content,
-    '',
-    '---',
-    '',
-  ].join('\n');
-  fs.appendFileSync(filePath, block, 'utf-8');
-}
-
 function request(apiUrl, token, data) {
   return new Promise((resolve, reject) => {
     const url = new URL(apiUrl);
@@ -432,35 +376,6 @@ function request(apiUrl, token, data) {
       process.exit(1);
     }
 
-    try {
-      writeMessageArchive(
-        { agent: options.agent, robot: options.robot, content: options.content },
-        result
-      );
-    } catch (archiveErr) {
-      console.warn('Warning: failed to write weekly messages archive:', archiveErr.message);
-    }
-
-    try {
-      if (
-        process.env.WEWORK_BOT_SKIP_KEY_NODE_LOG !== '1' &&
-        process.env.WEWORK_BOT_SKIP_KEY_NODE_LOG !== 'true'
-      ) {
-        const { appendKeyNodeRecord } = require(path.join(CLAUDE_ROOT, 'scripts', 'lib', 'append-key-node.js'));
-        await appendKeyNodeRecord(PROJECT_ROOT, {
-          title: '企业微信推送成功',
-          category: 'notify',
-          skill: 'wework-bot',
-          body: [
-            `agent：${options.agent ?? '（未指定）'}`,
-            `robot：${options.robot ?? '（未知）'}`,
-            `HTTP：${result.statusCode}`
-          ].join('\n')
-        });
-      }
-    } catch (knErr) {
-      console.warn('Warning: failed to write weekly key-notes record:', knErr.message);
-    }
   } catch (error) {
     console.error('Error:', error.message);
     process.exit(1);

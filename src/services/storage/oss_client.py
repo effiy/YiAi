@@ -5,10 +5,12 @@ import os
 import oss2
 import logging
 from typing import Optional, List, Dict, Any
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile
 from datetime import datetime, timezone
 from core.config import settings
 from core.database import db
+from core.error_codes import ErrorCode
+from core.exceptions import BusinessException
 
 logger = logging.getLogger(__name__)
 
@@ -67,15 +69,15 @@ async def upload_file_to_oss(
 
     ALLOWED_EXTENSIONS = set(ext.lower() for ext in settings.oss_allowed_extensions)
     if not file.filename:
-        raise HTTPException(status_code=400, detail="Filename required")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="Filename required")
 
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_ext}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"Unsupported file type: {file_ext}")
 
     content = await file.read()
     if len(content) > settings.oss_max_file_size:
-        raise HTTPException(status_code=400, detail=f"File too large")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"File too large")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     object_name = f"{directory + '/' if directory else ''}{timestamp}{file_ext}"
@@ -101,10 +103,10 @@ async def upload_bytes_to_oss(
     safe_filename = (filename or "").strip() or "image.png"
     file_ext = os.path.splitext(safe_filename)[1].lower() or ".png"
     if file_ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_ext}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"Unsupported file type: {file_ext}")
 
     if len(content) > settings.oss_max_file_size:
-        raise HTTPException(status_code=400, detail="File too large")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="File too large")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     object_name = f"{directory + '/' if directory else ''}{timestamp}{file_ext}"
@@ -138,7 +140,7 @@ async def delete_oss_file(object_name: str):
     bucket = get_bucket(config)
     
     if not bucket.object_exists(object_name):
-        raise HTTPException(status_code=404, detail="File not found")
+        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message="File not found")
         
     bucket.delete_object(object_name)
     

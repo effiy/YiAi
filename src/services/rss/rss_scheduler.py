@@ -5,8 +5,9 @@
 import logging
 import asyncio
 from typing import List, Dict, Any, Optional
-from fastapi import HTTPException
 from core.database import db
+from core.error_codes import ErrorCode
+from core.exceptions import BusinessException
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -93,7 +94,7 @@ class RSSSchedulerManager:
             }
         except Exception as e:
             logger.error(f"批量解析失败: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"批量解析失败: {str(e)}")
+            raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"批量解析失败: {str(e)}")
 
     async def _get_enabled_sources(self) -> List[Dict[str, Any]]:
         """获取所有启用的 RSS 源配置"""

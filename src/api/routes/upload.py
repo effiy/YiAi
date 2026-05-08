@@ -32,10 +32,16 @@ def _normalize_no_spaces(value: str) -> str:
     return re.sub(r"\s+", "_", (value or "").strip())
 
 def _validate_path(path: str, param_name: str = "路径") -> str:
-    """验证路径安全性，返回规范化的相对路径"""
-    if not path or ".." in path or path.startswith("/"):
+    """验证路径安全性，返回规范化的相对路径。使用 realpath 防止编码绕过。"""
+    if not path:
         raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"非法{param_name}")
-    return path.strip().replace("\\", "/")
+    cleaned = path.strip().replace("\\", "/")
+    if cleaned.startswith("/"):
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"非法{param_name}")
+    norm = os.path.normpath(cleaned)
+    if norm.startswith("..") or os.path.isabs(norm):
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"非法{param_name}")
+    return norm
 
 def _resolve_static_path(target_file: str) -> str:
     """将相对路径解析为安全的绝对路径"""
@@ -127,8 +133,8 @@ async def upload_image_to_oss(request: ImageUploadToOssRequest):
 
     try:
         content = base64.b64decode(base64_part, validate=True)
-    except Exception:
-        raise BusinessException(ErrorCode.INVALID_PARAMS, message="Base64 解码失败")
+    except Exception as e:
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="Base64 解码失败") from e
 
     filename = _normalize_no_spaces(request.filename)
     directory = _normalize_no_spaces(request.directory or "aicr")
@@ -196,7 +202,7 @@ async def read_file(request: FileReadRequest):
 
     except Exception as e:
         logger.error(f"读取文件失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"读取文件失败: {str(e)}")
+        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"读取文件失败: {str(e)}") from e
 
 @router.post("/write-file", operation_id="write_file")
 async def write_file(request: FileWriteRequest):
@@ -222,7 +228,7 @@ async def write_file(request: FileWriteRequest):
         return success(data={"message": "保存成功", "path": target_path})
     except Exception as e:
         logger.error(f"写入文件失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"写入文件失败: {str(e)}")
+        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"写入文件失败: {str(e)}") from e
 
 @router.post("/delete-file", operation_id="delete_file")
 async def delete_file(request: FileDeleteRequest):
@@ -245,7 +251,7 @@ async def delete_file(request: FileDeleteRequest):
         logger.info(f"成功删除文件: {abs_path}")
     except Exception as e:
         logger.error(f"删除文件失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.DATA_DESTROY_FAIL, message=f"删除文件失败: {str(e)}")
+        raise BusinessException(ErrorCode.DATA_DESTROY_FAIL, message=f"删除文件失败: {str(e)}") from e
 
     return success(data={"message": "删除成功", "path": target_file})
 
@@ -270,7 +276,7 @@ async def delete_folder(request: FolderDeleteRequest):
         logger.info(f"成功删除目录: {abs_path}")
     except Exception as e:
         logger.error(f"删除目录失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.DATA_DESTROY_FAIL, message=f"删除目录失败: {str(e)}")
+        raise BusinessException(ErrorCode.DATA_DESTROY_FAIL, message=f"删除目录失败: {str(e)}") from e
 
     return success(data={"message": "删除成功", "path": target_dir})
 
@@ -290,7 +296,7 @@ async def rename_file(request: FileRenameRequest):
         logger.info(f"成功重命名文件: {abs_old} -> {abs_new}")
     except Exception as e:
         logger.error(f"重命名文件失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"重命名文件失败: {str(e)}")
+        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"重命名文件失败: {str(e)}") from e
 
     return success(data={"message": "重命名成功", "old_path": old_path_str, "new_path": new_path_str})
 
@@ -310,7 +316,7 @@ async def rename_folder(request: FolderRenameRequest):
         logger.info(f"成功重命名文件夹: {abs_old} -> {abs_new}")
     except Exception as e:
         logger.error(f"重命名文件夹失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"重命名文件夹失败: {str(e)}")
+        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"重命名文件夹失败: {str(e)}") from e
 
     return success(data={"message": "重命名成功", "old_path": old_dir_str, "new_path": new_dir_str})
 
@@ -319,9 +325,9 @@ async def upload_file(request: FileUploadRequest):
     """
     文件上传接口 (JSON 方式)
     """
-    target_dir = _normalize_no_spaces(request.target_dir)
-    # 确保目录存在 (相对于当前工作目录)
-    save_dir = os.path.join(os.getcwd(), target_dir)
+    target_dir = _validate_path(_normalize_no_spaces(request.target_dir), "目标目录")
+    base_dir = os.path.abspath(settings.static_base_dir)
+    save_dir = os.path.join(base_dir, target_dir)
     os.makedirs(save_dir, exist_ok=True)
     
     filename = _normalize_no_spaces(request.filename)
@@ -339,7 +345,7 @@ async def upload_file(request: FileUploadRequest):
                 f.write(request.content)
     except Exception as e:
         logger.error(f"文件保存失败: {str(e)}", exc_info=True)
-        raise ValueError(f"文件保存失败: {str(e)}")
+        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"文件保存失败: {str(e)}") from e
         
     # 返回相对路径
     rel_path = f"/{target_dir}/{filename}"

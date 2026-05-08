@@ -3,6 +3,7 @@
 """
 import os
 import logging
+import threading
 from typing import Optional, List, Dict, Any, TypeVar
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone
@@ -15,13 +16,16 @@ class MongoDB:
     MongoDB Database Handler (Singleton)
     """
     _instance: Optional['MongoDB'] = None
+    _lock: threading.Lock = threading.Lock()
     _client: Optional[AsyncIOMotorClient] = None
     _db = None
     _initialized: bool = False
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(MongoDB, cls).__new__(cls)
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(MongoDB, cls).__new__(cls)
         return cls._instance
 
     async def initialize(self):
