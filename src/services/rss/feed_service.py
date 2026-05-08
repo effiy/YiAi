@@ -69,102 +69,71 @@ async def fetch_rss_feed(url: str) -> feedparser.FeedParserDict:
         logger.error(f"解析 RSS 源失败: {str(e)}")
         raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"解析 RSS 源失败: {str(e)}")
 
+def _build_entry_data(entry, source_name: str, tags: list[str], url: str, current_time: str) -> Dict[str, Any]:
+    """从 RSS entry 构建入库数据"""
+    item_data = {
+        'title': entry.get('title', ''),
+        'link': entry.get('link', ''),
+        'description': entry.get('description', '') or entry.get('summary', ''),
+        'tags': tags,
+        'source_name': source_name,
+        'source_url': url,
+        'published': entry.get('published', ''),
+        'published_parsed': str(entry.get('published_parsed', '')) if entry.get('published_parsed') else '',
+        'createdTime': current_time,
+        'updatedTime': current_time,
+    }
+    if entry.get('author'):
+        item_data['author'] = entry.get('author')
+    content_list = entry.get('content', [])
+    if content_list:
+        item_data['content'] = content_list[0].get('value', '')
+    return item_data
+
+
+async def _save_or_update_entry(collection, item_data: Dict[str, Any], current_time: str) -> int:
+    """保存或更新单条RSS条目，返回 added=1 或 updated=1"""
+    existing_item = await collection.find_one({'link': item_data['link']})
+    if existing_item:
+        item_data['key'] = existing_item.get('key', str(uuid.uuid4()))
+        item_data['createdTime'] = existing_item.get('createdTime', current_time)
+        result = await collection.update_one({'link': item_data['link']}, {'$set': item_data})
+        return 0, 1 if result.modified_count > 0 else 0
+    else:
+        item_data['key'] = str(uuid.uuid4())
+        await collection.insert_one(item_data)
+        return 1, 0
+
+
 async def process_feed_from_url(url: str, name: Optional[str] = None) -> Dict[str, Any]:
-    """
-    获取、解析并保存 RSS 源数据 (核心业务逻辑)
-    
-    Returns:
-        Dict: 统计结果 {saved_count, updated_count, source_name, total_items, url, success, error}
-    """
+    """获取、解析并保存 RSS 源数据"""
     try:
-        # 确保数据库已初始化
         await db.initialize()
-
-        # 获取并解析 RSS 源
         feed = await fetch_rss_feed(url)
-
-        # 获取源名称（优先使用传入的 name，否则使用 feed 的 title）
         source_name = name or feed.feed.get('title', '未知源')
         tags = [source_name] if source_name else []
-
         current_time = get_current_time()
         collection = db.db[settings.collection_rss]
-        
-        saved_count = 0
-        updated_count = 0
-        total_items = 0
 
-        # 解析每个条目并直接入库，避免构建大列表占用内存
+        saved_count = updated_count = total_items = 0
         for entry in feed.entries:
-            item_link = entry.get('link', '')
-            if not item_link:
-                continue  # 跳过没有链接的条目
-            
+            if not entry.get('link'):
+                continue
             total_items += 1
+            item_data = _build_entry_data(entry, source_name, tags, url, current_time)
+            added, updated = await _save_or_update_entry(collection, item_data, current_time)
+            saved_count += added
+            updated_count += updated
 
-            item_data = {
-                'title': entry.get('title', ''),
-                'link': item_link,
-                'description': entry.get('description', '') or entry.get('summary', ''),
-                'tags': tags,
-                'source_name': source_name,
-                'source_url': url,
-                'published': entry.get('published', ''),
-                'published_parsed': str(entry.get('published_parsed', '')) if entry.get('published_parsed') else '',
-                'createdTime': current_time,
-                'updatedTime': current_time
-            }
-
-            # 如果有作者信息，也保存
-            if entry.get('author'):
-                item_data['author'] = entry.get('author')
-
-            # 如果有内容，也保存
-            if entry.get('content'):
-                content_list = entry.get('content', [])
-                if content_list and len(content_list) > 0:
-                    item_data['content'] = content_list[0].get('value', '')
-
-            # 直接存入 MongoDB
-            # 检查是否已存在
-            existing_item = await collection.find_one({'link': item_data['link']})
-
-            if existing_item:
-                # 更新
-                item_data['key'] = existing_item.get('key', str(uuid.uuid4()))
-                item_data['createdTime'] = existing_item.get('createdTime', current_time)
-                result = await collection.update_one(
-                    {'link': item_data['link']},
-                    {'$set': item_data}
-                )
-                if result.modified_count > 0:
-                    updated_count += 1
-            else:
-                # 新增
-                item_data['key'] = str(uuid.uuid4())
-                await collection.insert_one(item_data)
-                saved_count += 1
-        
-        # 主动释放内存
         del feed
         gc.collect()
-
         return {
-            'url': url,
-            'source_name': source_name,
-            'success': True,
-            'saved_count': saved_count,
-            'updated_count': updated_count,
-            'total_items': total_items
+            'url': url, 'source_name': source_name, 'success': True,
+            'saved_count': saved_count, 'updated_count': updated_count, 'total_items': total_items,
         }
     except Exception as e:
         logger.error(f"处理 RSS 源 {url} 失败: {str(e)}")
-        return {
-            'url': url,
-            'source_name': name or url,
-            'success': False,
-            'error': str(e)
-        }
+        return {'url': url, 'source_name': name or url, 'success': False, 'error': str(e)}
 
 async def parse_feed(params: Dict[str, Any]) -> Dict[str, Any]:
     """

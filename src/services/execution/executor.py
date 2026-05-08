@@ -151,46 +151,76 @@ async def _run_function(target_function, parameters_dict):
         return target_function(parameters_dict)
 
 
-async def execute_module(module_path: str, function_name: str, parameters: Union[Dict[str, Any], str]) -> Any:
-    """执行目标模块/函数
-    - 验证执行白名单
-    - 支持 dict 或 JSON 字符串参数
-    - 自动区分异步/同步函数
-    - 可选：异步记录执行结果到 State Store
-    - 集成 Observer 沙箱和重入守卫
-
-    Example:
-        GET /?module_name=module.path&method_name=function_name&parameters={"key": "value"}
-    """
-    # Reentrancy Guard
+def _acquire_guard() -> Optional[Any]:
+    """获取重入守卫token，超过深度限制则抛出"""
     guard = _get_guard()
-    token = None
-    if guard is not None:
+    if guard is None:
+        return None
+    from core.observer.guard import _reentrancy_depth
+    depth = _reentrancy_depth.get()
+    if depth >= guard.max_depth:
+        raise BusinessException(
+            ErrorCode.SERVER_ERROR,
+            message=f"Reentrancy depth {depth} exceeds limit {guard.max_depth}"
+        )
+    return _reentrancy_depth.set(depth + 1)
+
+
+def _release_guard(token: Optional[Any]) -> None:
+    """释放重入守卫token"""
+    if token is not None:
         from core.observer.guard import _reentrancy_depth
-        depth = _reentrancy_depth.get()
-        if depth >= guard.max_depth:
-            raise BusinessException(
-                ErrorCode.SERVER_ERROR,
-                message=f"Reentrancy depth {depth} exceeds limit {guard.max_depth}"
-            )
-        token = _reentrancy_depth.set(depth + 1)
+        _reentrancy_depth.reset(token)
 
+
+def _check_whitelist(module_path: str, function_name: str) -> None:
+    """验证模块+函数在执行白名单中"""
+    if not module_path or not function_name:
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message="Module path and function name required")
+    allow_key = f"{module_path}:{function_name}"
+    if "*" not in EXEC_ALLOWLIST and allow_key not in EXEC_ALLOWLIST:
+        raise BusinessException(ErrorCode.PERMISSION_DENIED, message=f"Execution forbidden: {allow_key}")
+
+
+def _import_target_function(module_path: str, function_name: str):
+    """动态导入目标模块并返回函数对象"""
     try:
-        if not module_path or not function_name:
-            raise BusinessException(ErrorCode.INVALID_PARAMS, message="Module path and function name required")
+        module = importlib.import_module(module_path)
+        return getattr(module, function_name)
+    except (ImportError, AttributeError) as e:
+        logger.error(f"Module import error: {str(e)}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"Module or function not found: {str(e)}")
 
-        allow_key = f"{module_path}:{function_name}"
-        if "*" not in EXEC_ALLOWLIST and allow_key not in EXEC_ALLOWLIST:
-            raise BusinessException(ErrorCode.PERMISSION_DENIED, message=f"Execution forbidden: {allow_key}")
 
+def _record_execution(
+    module_path: str, function_name: str,
+    parameters: Any, result: Any, error_message: str,
+    duration_ms: float, status: str,
+) -> None:
+    """异步记录执行结果到 State Store（best-effort）"""
+    recorder = _get_recorder()
+    if recorder is None:
+        return
+    try:
+        recorder.record_async(
+            skill_name=f"{module_path}:{function_name}",
+            status=status,
+            duration_ms=duration_ms,
+            input_summary=str(parameters)[:500],
+            output_summary=str(result)[:500] if result else "",
+            error_message=error_message,
+        )
+    except Exception as rec_err:
+        logger.error(f"SkillRecorder failed: {rec_err}")
+
+
+async def execute_module(module_path: str, function_name: str, parameters: Union[Dict[str, Any], str]) -> Any:
+    """执行目标模块/函数，集成 Observer 沙箱和重入守卫"""
+    token = _acquire_guard()
+    try:
+        _check_whitelist(module_path, function_name)
         parameters_dict = parse_parameters(parameters)
-
-        try:
-            module = importlib.import_module(module_path)
-            target_function = getattr(module, function_name)
-        except (ImportError, AttributeError) as e:
-            logger.error(f"Module import error: {str(e)}")
-            raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"Module or function not found: {str(e)}")
+        target_function = _import_target_function(module_path, function_name)
 
         start = time.perf_counter()
         status = "success"
@@ -212,24 +242,11 @@ async def execute_module(module_path: str, function_name: str, parameters: Union
             logger.error(f"Execution error: {str(e)}")
             raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"Execution failed: {str(e)}") from e
         finally:
-            duration_ms = (time.perf_counter() - start) * 1000
-            recorder = _get_recorder()
-            if recorder is not None:
-                try:
-                    recorder.record_async(
-                        skill_name=f"{module_path}:{function_name}",
-                        status=status,
-                        duration_ms=duration_ms,
-                        input_summary=str(parameters)[:500],
-                        output_summary=str(result)[:500] if result else "",
-                        error_message=error_message,
-                    )
-                except Exception as rec_err:
-                    logger.error(f"SkillRecorder failed: {rec_err}")
-
+            _record_execution(
+                module_path, function_name, parameters, result,
+                error_message, (time.perf_counter() - start) * 1000, status,
+            )
         return result
     finally:
-        if token is not None:
-            from core.observer.guard import _reentrancy_depth
-            _reentrancy_depth.reset(token)
+        _release_guard(token)
 
