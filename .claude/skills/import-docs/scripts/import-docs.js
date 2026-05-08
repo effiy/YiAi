@@ -45,7 +45,7 @@ async function findMdFiles(dir, projectRoot) {
   if (canUseGit) {
     try {
       await fsp.access(path.join(projectRoot, '.git'));
-      const { stdout } = await execFileAsync('git', ['-C', projectRoot, 'ls-files', '--cached', '--others', '--exclude-standard'], {
+      const { stdout } = await execFileAsync('git', ['-c', 'core.quotePath=false', '-C', projectRoot, 'ls-files', '--cached', '--others', '--exclude-standard'], {
         maxBuffer: 50 * 1024 * 1024
       });
       const dirRelPosix = dirRel.split(path.sep).join('/');
