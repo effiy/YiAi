@@ -49,14 +49,27 @@
 ## 项目结构
 
 ```
-.claude/
+YrY/
 ├── CLAUDE.md              # 本文件：哲学 + 原则 + 准则
-├── agents/AGENT.md        # Agent 身份与决策边界（阶段详表见 rui/SKILL.md）
-└── skills/
-    ├── rui/               # SDLC 编排器（内建自改进管线 + 交付）
-    │   ├── SKILL.md       # 全流程定义（文档管线 + 代码管线）+ 命令体系
-    │   ├── templates/故事任务模板.md  # 故事任务模板
-    │   └── scripts/       # self-improve, execution-memory, loop, rui-state, natural-week
+├── README.md              # 项目说明
+├── agents/                # Agent 身份与决策边界
+│   ├── AGENT.md           # Agent 总览
+│   ├── pm.md              # 产品决策者
+│   ├── coder.md           # 编码实现
+│   ├── tester.md          # 测试验证
+│   ├── reporter.md        # 报告交付
+│   ├── security.md        # 安全审查
+│   └── self-improve.md    # 自改进
+├── rules/                 # 规则库
+│   ├── code-pipeline.md   # 代码管线规则
+│   ├── doc-generation.md  # 文档生成规则
+│   ├── gate-rules.md      # 门禁规则
+│   └── self-improve.md    # 自改进规则
+└── skills/                # 技能定义
+    ├── rui/               # SDLC 编排器
+    │   ├── SKILL.md       # 全流程定义 + 命令体系
+    │   ├── templates/     # 故事任务/技术评审/实施报告/自改进复盘模板
+    │   └── scripts/       # self-improve, execution-memory, loop, rui-state, natural-week, list
     ├── wework-bot/        # 企业微信通知
     │   ├── SKILL.md
     │   ├── config.json
@@ -64,7 +77,6 @@
     └── import-docs/       # 文档同步
         ├── SKILL.md
         └── scripts/import-docs.js
-
 ```
 
 ---

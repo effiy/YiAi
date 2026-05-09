@@ -83,7 +83,8 @@ function buildSendMessageHeaders(token, bodyByteLength) {
  *   webhookUrl: string|null,
  *   webhookKey: string|null,
  *   content: string|null,
- *   contentFile: string|null
+ *   contentFile: string|null,
+ *   name: string|null
  * }} */
 const options = {
   token: readApiXTokenFromEnv(),
@@ -94,7 +95,9 @@ const options = {
   webhookUrl: null,
   webhookKey: null,
   content: null,
-  contentFile: null
+  contentFile: null,
+  name: null,
+  noSend: false
 };
 
 function readValue(index, flag) {
@@ -143,6 +146,11 @@ for (let i = 0; i < args.length; i++) {
   } else if (arg === '--content-file' || arg === '-f') {
     options.contentFile = readValue(i, arg);
     i++;
+  } else if (arg === '--name' || arg === '-n') {
+    options.name = readValue(i, arg);
+    i++;
+  } else if (arg === '--no-send') {
+    options.noSend = true;
   } else if (arg === '--help' || arg === '-h') {
     console.log(`
 WeWork Bot — 发送企业微信机器人消息（正文由 agent 生成，直接 POST）
@@ -161,6 +169,8 @@ Usage: node .claude/skills/wework-bot/scripts/send-message.js [options]
   --robot, -r <name>    直接指定机器人名（慎用，优先 --agent）
   --content, -c <text>   完整正文（单行或多行转义）
   --content-file, -f <path>  从 UTF-8 文件读取正文（推荐长文案）
+  --name, -n <name>      故事名称，用于追加消息到 docs/故事任务面板/<name>/09-消息通知列表.md
+  --no-send            仅追加消息日志，不实际发送
   --api-url, -a <url>   覆盖发送 API
   --help, -h
 
@@ -280,6 +290,26 @@ function normalizeMessageText(text) {
     .replace(/\\t/g, '\t');
 }
 
+function formatTimestamp() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `【${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}】`;
+}
+
+function appendToStoryNotificationLog(name, content) {
+  const storyDir = path.join(PROJECT_ROOT, 'docs', '故事任务面板', name);
+  const logFile = path.join(storyDir, '09-消息通知列表.md');
+  fs.mkdirSync(storyDir, { recursive: true });
+  const timestamp = formatTimestamp();
+  const entry = `\n${timestamp}\n\n${content}\n`;
+  fs.appendFileSync(logFile, entry, 'utf-8');
+}
+
 if (options.contentFile) {
   try {
     options.content = fs.readFileSync(resolveUserPath(options.contentFile), 'utf-8');
@@ -299,6 +329,15 @@ if (!options.content || !String(options.content).trim()) {
 }
 
 options.content = String(options.content).trimEnd();
+
+if (options.name) {
+  appendToStoryNotificationLog(options.name, options.content);
+}
+
+if (options.noSend) {
+  console.log('--no-send: message appended to log, skipping send.');
+  process.exit(0);
+}
 
 if (!options.webhookUrl && options.webhookKey) {
   options.webhookUrl = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${options.webhookKey}`;

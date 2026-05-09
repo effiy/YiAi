@@ -30,7 +30,7 @@ flowchart TD
 
 `--workspace` 模式自动检测 workspace 根目录（向上查找 `.git` 或 `.claude/`），递归扫描项目目录下所有 `.md` 文件。
 
-- **包含**: 项目根目录及所有子目录中的 `.md` 文件
+- **包含**: 项目根目录及所有子目录中的 `.md` 文件（文件系统遍历，不受 `.gitignore` 限制）
 - **排除**: `.git`、`node_modules` 目录（不遍历）
 - **远端路径**: `<prefix>/<workspace名>/<相对路径>`，空格替换为 `_`，目录结构与本地一致
 
@@ -70,8 +70,11 @@ sequenceDiagram
 # workspace 模式（rui 默认调用）
 node skills/import-docs/scripts/import-docs.js --workspace
 
-# 单目录模式
-node skills/import-docs/scripts/import-docs.js --dir <path> [--exts md,json]
+# 单目录 + 自定义扩展名
+node skills/import-docs/scripts/import-docs.js --dir <path> --exts md,json,yaml
+
+# 排除特定子目录
+node skills/import-docs/scripts/import-docs.js --workspace --exclude tmp,build
 
 # 仅枚举（不导入）
 node skills/import-docs/scripts/import-docs.js list --workspace
@@ -80,9 +83,9 @@ node skills/import-docs/scripts/import-docs.js list --workspace
 | 参数 | 默认值 | 描述 |
 |------|--------|------|
 | `--workspace` / `-w` | — | 按工作区扫描规则导入 |
-| `--exclude` / `-x` | — | 排除的子项目（逗号分隔，仅 workspace 模式） |
 | `--dir` / `-d` | 自动检测 | 单目录导入 |
-| `--exts` / `-e` | 自动检测 | 扩展名过滤（逗号分隔） |
+| `--exts` / `-e` | `md` | 扩展名过滤（逗号分隔，不含点） |
+| `--exclude` / `-x` | — | 排除的子目录（逗号分隔，workspace 和单目录模式均可用） |
 | `--prefix` / `-p` | 空 | 远端路径前缀 |
 | `--api-url` / `-a` | `https://api.effiy.cn` | API 地址 |
 | `command` | `import` | `import` 导入；`list` 仅枚举 |
@@ -105,7 +108,7 @@ node skills/import-docs/scripts/import-docs.js list --workspace
 - `failed > 0` → 非零退出
 - `API_X_TOKEN` 缺失 → 停止，不尝试匿名导入（H9 降级）
 - 不得将 token 写入仓库、日志或文档
-- 文件遍历优先 `git ls-files`（遵循 `.gitignore`），回退到文件系统遍历
+- 文件遍历使用文件系统遍历，不受 `.gitignore` 限制
 
 ---
 

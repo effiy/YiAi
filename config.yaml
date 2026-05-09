@@ -28,7 +28,7 @@ default_user:
 
 # Static Files Settings
 static:
-  base_dir: "/var/www/YiKnowledge/static"
+  base_dir: "~/YiKnowledge/static"
   base_url: "https://api.effiy.cn/static"
   max_zip_size_mb: 100
 

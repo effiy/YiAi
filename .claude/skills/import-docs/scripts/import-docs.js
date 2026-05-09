@@ -3,10 +3,8 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
-const http = require('https');
-const util = require('util');
-const { execFile } = require('child_process');
-const execFileAsync = util.promisify(execFile);
+const https = require('https');
+const http = require('http');
 
 /**
  * 从起始目录向上查找项目根目录
@@ -32,54 +30,35 @@ function findProjectRoot(startDir) {
 }
 
 /**
- * 递归查找 .md 文件，优先使用 git ls-files，回退到文件系统遍历
- * 排除 .git 和 node_modules 目录
+ * 递归查找文件，使用文件系统遍历（不受 .gitignore 限制）
  * @param {string} dir - 起始目录
- * @param {string} projectRoot - git 仓库根目录
+ * @param {string} projectRoot - 项目根目录
+ * @param {string[]} exts - 文件扩展名列表 (不含点，如 ['md', 'json'])
+ * @param {string[]} excludeDirs - 额外排除目录
  * @returns {Promise<string[]>} 文件路径列表
  */
-async function findMdFiles(dir, projectRoot) {
-  const dirRel = path.relative(projectRoot, dir);
-  const canUseGit = projectRoot && !dirRel.startsWith('..') && !path.isAbsolute(dirRel);
-
-  if (canUseGit) {
-    try {
-      await fsp.access(path.join(projectRoot, '.git'));
-      const { stdout } = await execFileAsync('git', ['-c', 'core.quotePath=false', '-C', projectRoot, 'ls-files', '--cached', '--others', '--exclude-standard'], {
-        maxBuffer: 50 * 1024 * 1024
-      });
-      const dirRelPosix = dirRel.split(path.sep).join('/');
-      const gitFiles = stdout
-        .split('\n')
-        .filter(Boolean)
-        .filter(file => dirRelPosix === '' || file === dirRelPosix || file.startsWith(dirRelPosix + '/'))
-        .filter(file => path.extname(file).toLowerCase() === '.md')
-        .filter(file => !file.split('/').some(part => part === '.git' || part === 'node_modules'))
-        .map(file => path.join(projectRoot, file))
-        .filter(fullPath => {
-          try { return fs.statSync(fullPath).isFile(); } catch { return false; }
-        });
-      if (gitFiles.length > 0) return gitFiles;
-    } catch {
-      // 回退到文件系统遍历
-    }
-  }
+async function findMdFiles(dir, projectRoot, exts = ['md'], excludeDirs = []) {
+  const extSet = new Set(exts.map(e => e.toLowerCase()));
+  const defaultExcludes = new Set(['.git', 'node_modules']);
+  excludeDirs.forEach(d => defaultExcludes.add(d));
 
   const results = [];
 
   async function traverse(currentDir) {
-    const entries = await fsp.readdir(currentDir, { withFileTypes: true });
+    let entries;
+    try {
+      entries = await fsp.readdir(currentDir, { withFileTypes: true });
+    } catch { return; }
 
     for (const entry of entries) {
-      if (entry.name === '.git' || entry.name === 'node_modules') {
-        continue;
-      }
+      if (defaultExcludes.has(entry.name)) continue;
       const fullPath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory() && !entry.isSymbolicLink()) {
         await traverse(fullPath);
-      } else if (entry.isFile() && path.extname(entry.name).toLowerCase() === '.md') {
-        results.push(fullPath);
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase().slice(1);
+        if (extSet.has(ext)) results.push(fullPath);
       }
     }
   }
@@ -99,15 +78,17 @@ function readApiXTokenFromEnv() {
 function request(apiUrl, endpoint, method, token, data) {
   return new Promise((resolve, reject) => {
     const url = new URL(endpoint, apiUrl);
+    const mod = url.protocol === 'https:' ? https : http;
     const postData = data ? JSON.stringify(data) : null;
 
     const requestOptions = {
       hostname: url.hostname,
-      port: url.port || 443,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
       path: url.pathname + url.search,
       method,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     };
 
@@ -119,26 +100,27 @@ function request(apiUrl, endpoint, method, token, data) {
       requestOptions.headers['Content-Length'] = Buffer.byteLength(postData);
     }
 
-    const req = http.request(requestOptions, (res) => {
-      let body = '';
-      res.on('data', (chunk) => {
-        body += chunk;
-      });
+    const req = mod.request(requestOptions, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
+        const body = Buffer.concat(chunks);
+        if (body.length === 0) {
+          resolve(res.statusCode >= 200 && res.statusCode < 300 ? {} : null);
+          return;
+        }
         try {
-          resolve(JSON.parse(body));
-        } catch (e) {
-          resolve(body);
+          resolve(JSON.parse(body.toString('utf-8')));
+        } catch {
+          resolve(body.toString('utf-8'));
         }
       });
     });
 
     req.on('error', reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Request timeout')); });
 
-    if (postData) {
-      req.write(postData);
-    }
-
+    if (postData) req.write(postData);
     req.end();
   });
 }
@@ -224,16 +206,18 @@ async function importFile(fullPath, basePath, apiUrl, token, existingSet, prefix
 
 function printHelp() {
   console.log(`
-Document import — sync local .md files to remote documentation API
+import-docs — sync local files to remote documentation API
 
 Usage:
-  node .claude/skills/import-docs/scripts/import-docs.js import [options]
-  node .claude/skills/import-docs/scripts/import-docs.js list [options]
-  node .claude/skills/import-docs/scripts/import-docs.js [options]   # defaults to import
+  node skills/import-docs/scripts/import-docs.js import [options]
+  node skills/import-docs/scripts/import-docs.js list [options]
+  node skills/import-docs/scripts/import-docs.js [options]   # defaults to import
 
 Options:
-  --workspace, -w  Recursively scan all .md files in project (excludes .git, node_modules)
-  --dir, -d        Single directory to import (default: auto-detect project root)
+  --workspace, -w  Recursively scan project (excludes .git, node_modules)
+  --dir, -d        Directory to scan (default: auto-detect project root)
+  --exts, -e       File extensions (comma-separated, default: md)
+  --exclude, -x    Extra dirs to exclude (comma-separated)
   --api-url, -a    API base URL (default: https://api.effiy.cn)
   --prefix, -p     Path prefix (comma-separated, e.g. Projects,YourNamespace)
   --help, -h       Show this help message
@@ -264,6 +248,8 @@ async function main() {
     token: readApiXTokenFromEnv(),
     apiUrl: 'https://api.effiy.cn',
     prefix: [],
+    exts: ['md'],
+    excludeDirs: [],
     workspace: false
   };
 
@@ -278,6 +264,11 @@ async function main() {
       config.apiUrl = args[++i];
     } else if (arg === '--prefix' || arg === '-p') {
       config.prefix = args[++i].split(',').map(p => p.trim()).filter(Boolean);
+    } else if (arg === '--exts' || arg === '-e') {
+      config.exts = args[++i].split(',').map(e => e.trim().replace(/^\./, '').toLowerCase()).filter(Boolean);
+      if (config.exts.length === 0) config.exts = ['md'];
+    } else if (arg === '--exclude' || arg === '-x') {
+      config.excludeDirs = args[++i].split(',').map(d => d.trim()).filter(Boolean);
     } else if (arg === '--workspace' || arg === '-w') {
       config.workspace = true;
     } else if (arg === '--help' || arg === '-h') {
@@ -294,6 +285,10 @@ async function main() {
   console.log('Command:', config.command);
   console.log('Mode:', config.workspace ? 'workspace' : 'single');
   console.log('Scan dir:', scanDir);
+  console.log('Extensions:', config.exts.join(', '));
+  if (config.excludeDirs.length > 0) {
+    console.log('Excluded dirs:', config.excludeDirs.join(', '));
+  }
   if (config.command === 'import') {
     console.log('API:', config.apiUrl);
     if (config.prefix.length > 0) {
@@ -302,10 +297,10 @@ async function main() {
   }
   console.log();
 
-  const files = await findMdFiles(scanDir, projectRoot);
+  const files = await findMdFiles(scanDir, projectRoot, config.exts, config.excludeDirs);
 
   if (files.length === 0) {
-    console.log('No .md files found');
+    console.log(`No .${config.exts.join('/.')} files found`);
     return;
   }
 

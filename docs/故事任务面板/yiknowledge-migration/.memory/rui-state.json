@@ -1,0 +1,28 @@
+{
+  "session_id": "yiknowledge-migration-20260509",
+  "command": "full",
+  "story_name": "yiknowledge-migration",
+  "current_stage": "交付",
+  "blocked": false,
+  "block_reason": null,
+  "timestamp": "2026-05-09T12:35:00+08:00",
+  "storyboard": "docs/故事任务面板/yiknowledge-migration/01-故事任务.md",
+  "pipeline_progress": {
+    "自适应规划": "completed",
+    "影响分析": "completed",
+    "架构设计": "completed",
+    "文档生成": "completed",
+    "预检": "completed",
+    "测试先行": "completed",
+    "实现": "completed",
+    "验证": "completed",
+    "自改进": "completed"
+  },
+  "change_history": [
+    {"timestamp": "2026-05-09T12:30:00+08:00", "from_stage": "需求解析", "to_stage": "故事拆分", "trigger": "/rui 将 /var/www/YiKnowledge 迁移到了 ~/YiKnowledge"},
+    {"timestamp": "2026-05-09T12:32:00+08:00", "from_stage": "故事拆分", "to_stage": "文档生成", "trigger": "单故事 T1 变更"},
+    {"timestamp": "2026-05-09T12:34:00+08:00", "from_stage": "文档生成", "to_stage": "实现", "trigger": "代码管线"},
+    {"timestamp": "2026-05-09T12:35:00+08:00", "from_stage": "实现", "to_stage": "交付", "trigger": "验证通过"}
+  ],
+  "related_proposals": []
+}

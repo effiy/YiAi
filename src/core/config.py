@@ -18,6 +18,7 @@ class YamlConfigSettingsSource(PydanticBaseSettingsSource):
             with open(config_file, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f) or {}
                 self.data = self._flatten(data)
+        self.data = {k: os.path.expanduser(v) if isinstance(v, str) else v for k, v in self.data.items()}
 
     def _flatten(self, d: Dict[str, Any], parent_key: str = '', sep: str = '_') -> Dict[str, Any]:
         items = []
