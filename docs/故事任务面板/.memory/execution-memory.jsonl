@@ -1,5 +1,0 @@
-{"ts":"2026-05-12T15:42:00+08:00","cmd":"init","phase":"baseline","action":"extract","input":["CLAUDE.md","README.md"],"output":"conventions extracted: FastAPI+MongoDB+Ollama stack, success/fail response wrapper, BusinessException pattern, middleware chain, path safety rules"}
-{"ts":"2026-05-12T15:43:00+08:00","cmd":"init","phase":"inject","action":"create","files":[".claude/agents/AGENT.md",".claude/rules/project-conventions.md",".claude/settings.json"],"output":"project .claude/ structure initialized with project-specific agent context and convention rules"}
-{"ts":"2026-05-12T15:44:00+08:00","cmd":"init","phase":"readiness-check","action":"verify","checks":{"project-claude":"pass","claude-md":"pass","agents":"pass","rules":"pass","templates":"pass","story-panel":"pass","memory":"pass","settings":"pass"},"output":"8/8 passed"}
-{"ts":"2026-05-12T15:44:30+08:00","cmd":"init","phase":"delivery","action":"import-docs","files":6,"output":"6 created, 0 overwritten, 0 failed"}
-{"ts":"2026-05-12T15:45:00+08:00","cmd":"init","phase":"delivery","action":"wework-bot","status":"log-appended","sendStatus":"skipped (webhook not configured)"}
