@@ -1,0 +1,35 @@
+{
+  "project": "YiAi",
+  "lastCommand": "doc --from-code core-foundation",
+  "lastStatus": "completed",
+  "completedAt": "2026-05-12T16:08:00+08:00",
+  "stories": {
+    "core-foundation": {
+      "status": "doc-complete",
+      "branch": "feat/YiAi-core-foundation",
+      "files": [
+        "01-故事任务.md",
+        "02-后端技术评审.md",
+        "03-前端技术评审.md",
+        "04-测试用例评审.md",
+        "00-消息通知列表.md"
+      ],
+      "stories": 7,
+      "modules": ["config", "database", "middleware", "response", "exception_handler", "main", "models"]
+    }
+  },
+  "metrics": {
+    "init": {
+      "status": "pass",
+      "checks": 8,
+      "passed": 8
+    },
+    "core-foundation-doc": {
+      "status": "pass",
+      "docFiles": 4,
+      "totalSize": "22KB",
+      "importDocsSynced": 12,
+      "notificationSent": false
+    }
+  }
+}
