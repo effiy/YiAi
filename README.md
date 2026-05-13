@@ -2,6 +2,22 @@
 
 AI 服务后端，基于 FastAPI + MongoDB + Ollama。
 
+## 项目结构
+
+```
+YiAi/
+├── main.py           # 入口
+├── config.yaml       # 配置
+├── src/
+│   ├── main.py       # App 工厂
+│   ├── api/routes/   # API 路由
+│   ├── core/         # 核心模块
+│   ├── models/       # 数据模型
+│   └── services/     # 业务服务
+├── static/           # 静态文件
+└── tests/            # 测试
+```
+
 ## 快速开始
 
 ```bash
@@ -12,7 +28,9 @@ python main.py
 # 服务启动在 http://0.0.0.0:10086
 ```
 
-## 核心能力
+项目基线初始化：`/rui init`
+
+## 系统能力
 
 | 模块 | 功能 |
 |------|------|
@@ -52,22 +70,6 @@ middleware:
 ```
 
 所有配置项见 `config.yaml` 和 `src/core/config.py` 的 `Settings` 类。
-
-## 目录结构
-
-```
-YiAi/
-├── main.py           # 入口
-├── config.yaml       # 配置
-├── src/
-│   ├── main.py       # App 工厂
-│   ├── api/routes/   # API 路由
-│   ├── core/         # 核心模块
-│   ├── models/       # 数据模型
-│   └── services/     # 业务服务
-├── static/           # 静态文件
-└── tests/            # 测试
-```
 
 ## API
 
