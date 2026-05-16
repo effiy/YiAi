@@ -1,0 +1,26 @@
+{
+  "command": "/rui init",
+  "current_stage": "complete",
+  "blocked": false,
+  "block_reason": null,
+  "timestamp": "2026-05-16T11:00:00Z",
+  "delivery_pipeline": {
+    "log_appended": true,
+    "docs_synced": true,
+    "notification_sent": true
+  },
+  "init_result": {
+    "files_generated": [
+      "CLAUDE.md",
+      "README.md",
+      ".claude/skills/wework-bot/config.json",
+      "docs/故事任务面板/.init-memory.json"
+    ],
+    "import_docs": {
+      "created": 1,
+      "overwritten": 3,
+      "failed": 0
+    },
+    "wework_bot": "success"
+  }
+}
