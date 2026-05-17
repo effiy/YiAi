@@ -4,21 +4,30 @@
   "current_stage": "complete",
   "blocked": false,
   "block_reason": null,
-  "timestamp": "2026-05-17T10:15:00Z",
+  "timestamp": "2026-05-17T10:30:00Z",
   "story": {
     "project": "YiAi",
     "name": "execution-executor-doc",
     "branch": "feat/YiAi-execution-executor-doc"
   },
   "update": {
-    "level": "T1",
-    "scope": "02-用户使用场景.md 新增场景 5",
-    "context": "GET /api/execution?module_name=services.database.data_service&method_name=query_documents&parameters={\"cname\":\"sessions\"}",
-    "files_changed": ["02-用户使用场景.md", "10-交互日志.md"]
+    "level": "T2",
+    "scope": "data_service.py 新增 list_story_task_dirs() + 02 新增场景6 + 03 文档同步",
+    "context": "参考场景5 GET直调模式，添加查询sessions中故事任务面板下所有故事任务目录列表",
+    "files_changed": [
+      "src/services/database/data_service.py",
+      "docs/故事任务面板/YiAi/execution-executor-doc/02-用户使用场景.md",
+      "docs/故事任务面板/YiAi/execution-executor-doc/03-后端技术评审.md",
+      "docs/故事任务面板/YiAi/execution-executor-doc/10-交互日志.md"
+    ]
   },
   "delivery_pipeline": {
     "log_appended": true,
-    "docs_synced": false,
-    "notification_sent": false
+    "docs_synced": true,
+    "notification_sent": false,
+    "last_step": "docs_synced",
+    "last_step_at": "2026-05-17T10:35:00Z",
+    "import_docs": {"created": 0, "overwritten": 10, "failed": 0},
+    "wework_bot": "skipped — webhook URL not configured"
   }
 }

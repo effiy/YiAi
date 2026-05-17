@@ -444,17 +444,96 @@ async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
 async def delete_document(params: Dict[str, Any]) -> Dict[str, Any]:
     collection_name = params.get('collection_name') or params.get('cname')
     doc_id = params.get('key') or params.get('id')
-    
+
     if not collection_name or not doc_id:
         raise ValueError("collection_name/cname and key are required")
-        
+
     await db.initialize()
     collection_name = _validate_collection_name(collection_name)
     collection = db.db[collection_name]
-    
+
     result = await collection.delete_one({'key': doc_id})
-    
+
     if result.deleted_count == 0:
         raise ValueError(f"未找到ID为 {doc_id} 的数据")
-        
+
     return {'key': doc_id, 'deleted': True}
+
+
+async def list_story_task_dirs(params: Dict[str, Any]) -> Dict[str, Any]:
+    """查询 sessions 集合中故事任务面板下所有故事任务目录列表
+
+    遍历 sessions 集合，提取含 projectName + storyName 的文档，
+    按 projectName/storyName 去重后返回故事任务目录清单。
+
+    Args:
+        params: 可选筛选参数
+            - project_name: 按项目名过滤（可选）
+            - page_num / page_size: 分页（默认 1 / 2000）
+
+    Returns:
+        {list: [{project_name, story_name, dir_path, session_count, latest_time}], total, ...}
+    """
+    await db.initialize()
+    collection_name = settings.collection_sessions
+    collection = db.db[collection_name]
+
+    page_num = max(1, int(params.get('pageNum', params.get('page_num', 1))))
+    page_size = min(8000, max(1, int(params.get('pageSize', params.get('page_size', 2000)))))
+    project_filter = params.get('project_name', params.get('projectName'))
+
+    match_stage: Dict[str, Any] = {
+        'projectName': {'$exists': True, '$ne': None, '$ne': ''},
+    }
+    if project_filter:
+        match_stage['projectName'] = project_filter
+
+    pipeline: List[Dict[str, Any]] = [
+        {'$match': match_stage},
+        {
+            '$group': {
+                '_id': {
+                    'projectName': '$projectName',
+                    'storyName': '$storyName',
+                },
+                'session_count': {'$sum': 1},
+                'latest_time': {'$max': '$updatedTime'},
+            },
+        },
+        {'$sort': {'_id.projectName': 1, '_id.storyName': 1}},
+        {'$skip': (page_num - 1) * page_size},
+        {'$limit': page_size},
+    ]
+
+    cursor = collection.aggregate(pipeline)
+    raw = [doc async for doc in cursor]
+
+    dirs = []
+    for doc in raw:
+        proj = doc['_id']['projectName']
+        story = doc['_id'].get('storyName', '')
+        dirs.append({
+            'project_name': proj,
+            'story_name': story,
+            'dir_path': f'docs/故事任务面板/{proj}/{story}',
+            'session_count': doc['session_count'],
+            'latest_time': doc['latest_time'],
+        })
+
+    # count total via a lightweight aggregation
+    count_pipeline: List[Dict[str, Any]] = [
+        {'$match': match_stage},
+        {'$group': {'_id': {'projectName': '$projectName', 'storyName': '$storyName'}}},
+        {'$count': 'total'},
+    ]
+    count_cursor = collection.aggregate(count_pipeline)
+    count_result = [c async for c in count_cursor]
+    total = count_result[0]['total'] if count_result else 0
+
+    return {
+        'list': dirs,
+        'total': total,
+        'pageNum': page_num,
+        'pageSize': page_size,
+        'totalPages': (total + page_size - 1) // page_size if total else 0,
+    }

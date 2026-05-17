@@ -1,0 +1,45 @@
+{
+  "project": "YiAi",
+  "project_type": "backend",
+  "framework": "FastAPI",
+  "language": "Python",
+  "database": "MongoDB (motor async driver)",
+  "version": "1.0.0",
+  "repo": "git@github.com:effiy/YiAi.git",
+  "init_time": "2026-05-16T21:35:00Z",
+  "dependencies": {
+    "web": "fastapi>=0.104.0",
+    "server": "uvicorn>=0.24.0",
+    "validation": "pydantic>=2.0.0, pydantic-settings>=2.0.0",
+    "database": "motor>=3.3.0, pymongo>=4.6.0",
+    "config": "PyYAML>=6.0, python-dotenv>=1.0.0",
+    "ai": "ollama>=0.1.0, qwen-vl-utils>=0.0.14, transformers>=4.37.0",
+    "rss": "feedparser>=6.0.10, apscheduler>=3.10.0",
+    "storage": "oss2>=2.18.0",
+    "http": "aiohttp>=3.9.0, aiofiles>=23.2.1",
+    "cli": "typer>=0.9.0, rich>=13.0.0",
+    "resilience": "tenacity>=8.2.3, python-multipart>=0.0.9"
+  },
+  "test_framework": null,
+  "modules": {
+    "api_routes": ["execution", "upload", "wework", "maintenance", "state", "observer_health"],
+    "core": ["config", "database", "middleware", "response", "error_codes", "exceptions", "exception_handler", "logger", "utils"],
+    "observer": ["throttle", "sampler", "sandbox", "lazy_start", "guard"],
+    "services": ["execution", "database", "state", "rss", "ai", "static", "storage", "maintenance"],
+    "models": ["schemas", "collections"],
+    "cli": ["state_query"]
+  },
+  "security_surface": {
+    "user_input": "API route parameters and JSON bodies (pydantic validation)",
+    "api_auth": "X-Token header verification via header_verification_middleware",
+    "storage": "MongoDB (motor), OSS (aliyun), local filesystem (path traversal protection)",
+    "third_party": "Ollama AI, RSS feeds, WeChat Work Webhook"
+  },
+  "architecture": {
+    "pattern": "src-layout monolith",
+    "entry_points": ["main.py (root, production)", "src/main.py (app factory)"],
+    "config_source": "config.yaml (YAML flat mapping) + env vars override",
+    "error_handling": "BusinessException + ErrorCode enum + global exception handlers",
+    "response_format": "StandardResponse { code, message, data }"
+  }
+}
