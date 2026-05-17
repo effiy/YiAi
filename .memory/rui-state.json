@@ -1,41 +1,24 @@
 {
   "session_id": "20260517-001",
-  "command": "/rui doc --from-code YiAi-execution-executor-doc",
+  "command": "/rui update execution-executor-doc",
   "current_stage": "complete",
   "blocked": false,
   "block_reason": null,
-  "timestamp": "2026-05-17T10:00:00Z",
+  "timestamp": "2026-05-17T10:15:00Z",
   "story": {
     "project": "YiAi",
     "name": "execution-executor-doc",
-    "branch": "feat/YiAi-execution-executor-doc",
-    "story_type": "doc-from-code",
-    "project_type": "backend"
+    "branch": "feat/YiAi-execution-executor-doc"
   },
-  "doc_generation": {
-    "source_file": "src/services/execution/executor.py",
-    "related_files": [
-      "src/api/routes/execution.py",
-      "src/core/observer/guard.py",
-      "src/core/observer/sandbox.py",
-      "src/services/state/skill_recorder.py",
-      "src/core/config.py"
-    ],
-    "files_created": [
-      "01-故事任务.md",
-      "02-用户使用场景.md",
-      "03-后端技术评审.md",
-      "05-测试用例评审.md",
-      "10-交互日志.md",
-      "00-消息通知列表.md"
-    ],
-    "evidence_level": "B"
+  "update": {
+    "level": "T1",
+    "scope": "02-用户使用场景.md 新增场景 5",
+    "context": "GET /api/execution?module_name=services.database.data_service&method_name=query_documents&parameters={\"cname\":\"sessions\"}",
+    "files_changed": ["02-用户使用场景.md", "10-交互日志.md"]
   },
   "delivery_pipeline": {
     "log_appended": true,
-    "docs_synced": true,
-    "notification_sent": true,
-    "last_step": "notification_sent",
-    "last_step_at": "2026-05-17T10:00:00Z"
+    "docs_synced": false,
+    "notification_sent": false
   }
 }
