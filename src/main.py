@@ -21,7 +21,7 @@ from core.config import settings
 from core.middleware import header_verification_middleware
 from core.logger import setup_logging
 from core.exception_handler import register_exception_handlers
-from api.routes import upload, execution, wework, maintenance, state, observer_health
+from api.routes import upload, execution, wework, maintenance, state, observer_health, story_panel
 
 # 导入服务模块
 from services.rss.rss_scheduler import init_rss_system, shutdown_rss_system
@@ -115,6 +115,7 @@ def create_app(
     app.include_router(maintenance.router, tags=["Maintenance"])
     app.include_router(state.router, tags=["State"])
     app.include_router(observer_health.router, tags=["Observer"])
+    app.include_router(story_panel.router, tags=["StoryPanel"])
 
     origins = settings.get_cors_origins()
     app.add_middleware(
