@@ -8,11 +8,12 @@ from pathlib import Path
 from typing import Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from core.response import success, fail
 from core.error_codes import ErrorCode
+from core.exceptions import BusinessException
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,9 +24,9 @@ NAME_KEBAB_RE = re.compile(r"^[a-z][a-z0-9]*(-[a-z][a-z0-9]*)*$")  # kebab-case
 
 def _validate_name(name: str) -> None:
     if name != os.path.basename(name) or name.startswith(".") or ".." in name:
-        raise HTTPException(status_code=422, detail=f"name 含非法路径字符: {name}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"name 含非法路径字符: {name}")
     if not NAME_KEBAB_RE.match(name):
-        raise HTTPException(status_code=400, detail=f"name 必须为 kebab-case: {name}")
+        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"name 必须为 kebab-case: {name}")
 
 
 def _list_story_dirs() -> list[Path]:

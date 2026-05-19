@@ -22,16 +22,15 @@ def _get_service() -> StateStoreService:
     return _state_service
 
 
-@router.post("/records", status_code=201, operation_id="create_state_record")
+@router.post("/records", operation_id="create_state_record")
 async def create_record(record: StateRecord):
     """创建状态记录"""
     service = _get_service()
     data = record.model_dump(exclude_unset=True)
-    # 如果 key 为空，让服务层生成
     if not data.get("key"):
         data.pop("key", None)
     result = await service.create(data)
-    return success(data=result)
+    return success(data=result, http_code=201)
 
 
 @router.get("/records", operation_id="query_state_records")

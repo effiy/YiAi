@@ -1,0 +1,8 @@
+{
+  "current_stage": "delivery",
+  "blocked": false,
+  "block_reason": null,
+  "timestamp": "2026-05-19T00:00:00Z",
+  "branch": "feat/api-response-standard",
+  "commit": "88130c7"
+}

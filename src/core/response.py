@@ -35,10 +35,11 @@ class StandardResponse(Generic[T]):
 def success(
     data: Union[list, dict, str, None] = None,
     message: str = "success",
-    pagination: dict = None
+    pagination: dict = None,
+    http_code: int = 200
 ) -> Response:
     """
-    创建成功响应 (200 OK)
+    创建成功响应
     """
     content = {
         "code": ErrorCode.OK.business,
@@ -47,9 +48,9 @@ def success(
     }
     if pagination:
         content["pagination"] = pagination
-        
+
     return JSONResponse(
-        status_code=ErrorCode.OK.http,
+        status_code=http_code,
         content=jsonable_encoder(content)
     )
 

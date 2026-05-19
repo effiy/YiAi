@@ -2,6 +2,7 @@
 import logging
 from fastapi import APIRouter
 from pydantic import BaseModel
+from core.response import success
 
 from core.config import settings
 
@@ -41,10 +42,10 @@ class ObserverHealth(BaseModel):
     guard_current_max_depth: int
 
 
-@router.get("/health/observer", response_model=ObserverHealth, tags=["Observer"], operation_id="get_observer_health")
+@router.get("/health/observer", tags=["Observer"], operation_id="get_observer_health")
 async def observer_health():
     """获取 Observer 运行时状态"""
-    return ObserverHealth(
+    health = ObserverHealth(
         throttle_enabled=settings.observer_throttle_enabled,
         throttle_active_ips=0,
         sampler_enabled=settings.observer_sampler_enabled,
@@ -55,3 +56,4 @@ async def observer_health():
         guard_enabled=settings.observer_guard_enabled,
         guard_current_max_depth=0,
     )
+    return success(data=health.model_dump())

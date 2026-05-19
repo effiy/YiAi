@@ -75,7 +75,7 @@ def _safe_rename(old_path: str, new_path: str, is_dir: bool = False) -> tuple[st
 
     # 检查源路径存在
     if not os.path.exists(abs_old):
-        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"原{'目录' if is_dir else '文件'}不存在: {old_path}")
+        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"原{'目录' if is_dir else '文件'}不存在: {old_path}")
 
     # 检查类型匹配
     if is_dir and not os.path.isdir(abs_old):
@@ -167,10 +167,10 @@ async def read_file(request: FileReadRequest):
     found_path = _resolve_static_path(target_file)
 
     if not os.path.exists(found_path):
-        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"文件不存在: {target_file}")
+        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"文件不存在: {target_file}")
 
     if not os.path.isfile(found_path):
-        raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"路径不是一个文件: {target_file}")
+        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"路径不是一个文件: {target_file}")
 
     # 获取文件名，用于判断是否是图片
     filename = os.path.basename(target_file)
@@ -228,7 +228,7 @@ async def write_file(request: FileWriteRequest):
         return success(data={"message": "保存成功", "path": target_path})
     except Exception as e:
         logger.error(f"写入文件失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"写入文件失败: {str(e)}") from e
+        raise BusinessException(ErrorCode.DATA_STORE_FAIL, message=f"写入文件失败: {str(e)}") from e
 
 @router.post("/delete-file", operation_id="delete_file")
 async def delete_file(request: FileDeleteRequest):
@@ -241,7 +241,7 @@ async def delete_file(request: FileDeleteRequest):
     abs_path = _resolve_static_path(target_file)
 
     if not os.path.exists(abs_path):
-        return success(data={"message": "文件不存在", "path": target_file})
+        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"文件不存在: {target_file}")
 
     if not os.path.isfile(abs_path):
         raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"路径不是一个文件: {target_file}")
@@ -266,7 +266,7 @@ async def delete_folder(request: FolderDeleteRequest):
     abs_path = _resolve_static_path(target_dir)
 
     if not os.path.exists(abs_path):
-        return success(data={"message": "目录不存在", "path": target_dir})
+        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"目录不存在: {target_dir}")
 
     if not os.path.isdir(abs_path):
         raise BusinessException(ErrorCode.INVALID_PARAMS, message=f"路径不是一个目录: {target_dir}")
@@ -296,7 +296,7 @@ async def rename_file(request: FileRenameRequest):
         logger.info(f"成功重命名文件: {abs_old} -> {abs_new}")
     except Exception as e:
         logger.error(f"重命名文件失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"重命名文件失败: {str(e)}") from e
+        raise BusinessException(ErrorCode.DATA_UPDATE_FAIL, message=f"重命名文件失败: {str(e)}") from e
 
     return success(data={"message": "重命名成功", "old_path": old_path_str, "new_path": new_path_str})
 
@@ -316,7 +316,7 @@ async def rename_folder(request: FolderRenameRequest):
         logger.info(f"成功重命名文件夹: {abs_old} -> {abs_new}")
     except Exception as e:
         logger.error(f"重命名文件夹失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"重命名文件夹失败: {str(e)}") from e
+        raise BusinessException(ErrorCode.DATA_UPDATE_FAIL, message=f"重命名文件夹失败: {str(e)}") from e
 
     return success(data={"message": "重命名成功", "old_path": old_dir_str, "new_path": new_dir_str})
 
@@ -345,7 +345,7 @@ async def upload_file(request: FileUploadRequest):
                 f.write(request.content)
     except Exception as e:
         logger.error(f"文件保存失败: {str(e)}", exc_info=True)
-        raise BusinessException(ErrorCode.INTERNAL_ERROR, message=f"文件保存失败: {str(e)}") from e
+        raise BusinessException(ErrorCode.DATA_STORE_FAIL, message=f"文件保存失败: {str(e)}") from e
         
     # 返回相对路径
     rel_path = f"/{target_dir}/{filename}"
