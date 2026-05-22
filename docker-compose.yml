@@ -1,0 +1,39 @@
+services:
+  mongo:
+    image: mongo:4.4
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yiai-dev
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "10086:10086"
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - API_X_TOKEN=${API_X_TOKEN:-dev-token-change-me}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - yiai-dev
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+networks:
+  yiai-dev:
+    driver: bridge
