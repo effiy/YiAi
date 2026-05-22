@@ -1,0 +1,27 @@
+{
+  "story": "test-coverage",
+  "version": "1.0.0",
+  "status": "done",
+  "pipeline": {
+    "doc": "done",
+    "code": "done",
+    "verify": "done",
+    "deliver": "done"
+  },
+  "metrics": {
+    "test_files": 6,
+    "test_cases": 48,
+    "modules_covered": 8,
+    "all_passing": true
+  },
+  "branch": "feat/test-coverage",
+  "created_at": "2026-05-22T00:00:00Z",
+  "updated_at": "2026-05-22T00:00:00Z",
+  "version_history": [
+    {
+      "version": "1.0.0",
+      "date": "2026-05-22",
+      "summary": "Initial test coverage expansion — 6 new test files, 48 test cases, 8/13 modules covered"
+    }
+  ]
+}
