@@ -1,33 +1,31 @@
 {
-  "session_id": "20260517-001",
-  "command": "/rui update execution-executor-doc",
+  "session_id": "20260522-009",
+  "command": "/rui doc --from-code services-state",
   "current_stage": "complete",
   "blocked": false,
   "block_reason": null,
-  "timestamp": "2026-05-17T10:30:00Z",
+  "timestamp": "2026-05-22T12:10:00Z",
   "story": {
     "project": "YiAi",
-    "name": "execution-executor-doc",
-    "branch": "feat/YiAi-execution-executor-doc"
+    "name": "services-state",
+    "branch": "feat/services-state"
   },
-  "update": {
-    "level": "T2",
-    "scope": "data_service.py 新增 list_story_task_dirs() + 02 新增场景6 + 03 文档同步",
-    "context": "参考场景5 GET直调模式，添加查询sessions中故事任务面板下所有故事任务目录列表",
-    "files_changed": [
-      "src/services/database/data_service.py",
-      "docs/故事任务面板/YiAi/execution-executor-doc/02-用户使用场景.md",
-      "docs/故事任务面板/YiAi/execution-executor-doc/03-后端技术评审.md",
-      "docs/故事任务面板/YiAi/execution-executor-doc/10-交互日志.md"
+  "doc": {
+    "source": "src/services/state/ (3 files)",
+    "documents_generated": [
+      "YiAi-故事任务.md",
+      "YiAi-使用场景.md",
+      "YiAi-技术评审.md",
+      "YiAi-测试设计.md",
+      "YiAi-安全审计.md"
     ]
   },
   "delivery_pipeline": {
-    "log_appended": true,
+    "log_appended": false,
     "docs_synced": true,
     "notification_sent": false,
     "last_step": "docs_synced",
-    "last_step_at": "2026-05-17T10:35:00Z",
-    "import_docs": {"created": 0, "overwritten": 10, "failed": 0},
-    "wework_bot": "skipped — webhook URL not configured"
+    "last_step_at": "2026-05-22T12:10:00Z",
+    "import_docs": {"created": 5, "overwritten": 0, "failed": 0}
   }
 }
