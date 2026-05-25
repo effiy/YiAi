@@ -34,6 +34,13 @@ def _is_image_file(filename: str) -> bool:
 def _normalize_no_spaces(value: str) -> str:
     return re.sub(r"\s+", "_", (value or "").strip())
 
+def _normalize_db_key(target_file: str) -> str:
+    """将 target_file 规范化为统一的 DB 键（去掉 static/ 前缀）"""
+    key = (target_file or "").strip().replace("\\", "/")
+    if key.startswith("static/"):
+        key = key[7:]
+    return key.lstrip("/")
+
 def _validate_path(path: str, param_name: str = "路径") -> str:
     """验证路径安全性，返回规范化的相对路径。使用 realpath 防止编码绕过。"""
     if not path:
@@ -159,6 +166,7 @@ async def read_file(request: FileReadRequest):
     优先从磁盘读取，磁盘未找到时回退到 MongoDB
     """
     target_file = _normalize_no_spaces(request.target_file)
+    db_key = _normalize_db_key(target_file)
 
     found_path = _resolve_static_path(target_file)
 
@@ -166,7 +174,7 @@ async def read_file(request: FileReadRequest):
         try:
             await db.initialize()
             doc = await db.db[settings.collection_static_files].find_one(
-                {'target_file': target_file},
+                {'target_file': db_key},
                 projection={'_id': 0}
             )
             if doc:
@@ -175,11 +183,7 @@ async def read_file(request: FileReadRequest):
 
                 filename = os.path.basename(target_file)
                 if _is_image_file(filename):
-                    clean_path = target_file.replace('\\', '/')
-                    if clean_path.startswith('static/'):
-                        clean_path = clean_path[7:]
-                    clean_path = clean_path.lstrip('/')
-                    static_url = f"{settings.static_base_url.rstrip('/')}/{clean_path}"
+                    static_url = f"{settings.static_base_url.rstrip('/')}/{db_key}"
                     logger.info(f"从 MongoDB 读取图片，返回静态 URL: {static_url}")
                     return success(data={"content": static_url, "type": "url", "source": "database"})
 
@@ -232,13 +236,30 @@ async def read_file(request: FileReadRequest):
 async def write_file(request: FileWriteRequest):
     """
     写入文件接口
+    先查询数据库和静态目录下是否已存在，存在则覆盖，不重复插入。
     """
     target_file = _normalize_no_spaces(request.target_file)
+    db_key = _normalize_db_key(target_file)
     content = request.content
     is_base64 = request.is_base64
 
     target_path = _resolve_static_path(target_file)
-    
+
+    # 检查文件系统中是否已存在
+    file_exists_on_disk = os.path.exists(target_path) and os.path.isfile(target_path)
+
+    # 检查数据库中是否已有记录
+    db_exists = False
+    try:
+        await db.initialize()
+        existing_doc = await db.db[settings.collection_static_files].find_one(
+            {'target_file': db_key},
+            projection={'_id': 0}
+        )
+        db_exists = existing_doc is not None
+    except Exception as e:
+        logger.warning(f"查询数据库失败: {target_file}: {e}")
+
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         if is_base64:
@@ -260,19 +281,21 @@ async def write_file(request: FileWriteRequest):
             await db.initialize()
             await upsert_document({
                 'collection_name': settings.collection_static_files,
-                'filter': {'target_file': target_file},
+                'filter': {'target_file': db_key},
                 'update': {
-                    'target_file': target_file,
+                    'target_file': db_key,
                     'content': content,
                     'is_base64': is_base64,
                     'size': len(content_bytes),
                 }
             })
-            logger.info(f"文件已同步到 MongoDB: {target_file}")
+            action = "更新" if (db_exists or file_exists_on_disk) else "保存"
+            logger.info(f"文件已同步到 MongoDB ({action}): {db_key}")
         except Exception as e:
-            logger.warning(f"MongoDB 持久化失败 (文件已落盘): {target_file}: {e}")
+            logger.warning(f"MongoDB 持久化失败 (文件已落盘): {db_key}: {e}")
 
-        return success(data={"message": "保存成功", "path": target_path})
+        action = "更新" if (db_exists or file_exists_on_disk) else "保存"
+        return success(data={"message": f"{action}成功", "path": target_path})
     except Exception as e:
         logger.error(f"写入文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.DATA_STORE_FAIL, message=f"写入文件失败: {str(e)}") from e
