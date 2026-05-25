@@ -93,6 +93,8 @@ class MongoDB:
         try:
             # RSS Link Unique Index
             await self._ensure_unique_index(settings.collection_rss, 'link')
+            # Static Files target_file Unique Index
+            await self._ensure_unique_index(settings.collection_static_files, 'target_file')
         except Exception as e:
             logger.error(f"Index creation failed: {str(e)}")
 

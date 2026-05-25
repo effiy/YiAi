@@ -48,6 +48,7 @@ collection:
   seeds: "seeds"
   oss_file_tags: "oss_file_tags"
   oss_file_info: "oss_file_info"
+  static_files: "static_files"
 
 # OSS (Object Storage Service) Configuration
 oss:

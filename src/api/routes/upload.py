@@ -14,7 +14,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from core.config import settings
+from core.database import db
+from core.utils import get_current_time
 from services.storage.oss_client import upload_bytes_to_oss
+from services.database.data_service import upsert_document
 
 
 def _is_image_file(filename: str) -> bool:
@@ -152,22 +155,43 @@ async def upload_image_to_oss(request: ImageUploadToOssRequest):
 async def read_file(request: FileReadRequest):
     """
     读取文件接口
-    要求 target_file 必须包含文件扩展名（如 .md, .txt, .json 等）
     对于图片文件，直接返回静态文件 URL 而不是 base64 编码
+    优先从磁盘读取，磁盘未找到时回退到 MongoDB
     """
     target_file = _normalize_no_spaces(request.target_file)
 
-    # 验证文件路径是否包含扩展名
-    if not target_file or '.' not in target_file.split('/')[-1]:
-        raise BusinessException(
-            ErrorCode.INVALID_PARAMS,
-            message=f"文件路径必须包含扩展名: {target_file}"
-        )
-
     found_path = _resolve_static_path(target_file)
 
-    if not os.path.exists(found_path):
-        raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"文件不存在: {target_file}")
+    if not os.path.exists(found_path) or not os.path.isfile(found_path):
+        try:
+            await db.initialize()
+            doc = await db.db[settings.collection_static_files].find_one(
+                {'target_file': target_file},
+                projection={'_id': 0}
+            )
+            if doc:
+                content = doc.get('content', '')
+                is_base64 = doc.get('is_base64', False)
+
+                filename = os.path.basename(target_file)
+                if _is_image_file(filename):
+                    clean_path = target_file.replace('\\', '/')
+                    if clean_path.startswith('static/'):
+                        clean_path = clean_path[7:]
+                    clean_path = clean_path.lstrip('/')
+                    static_url = f"{settings.static_base_url.rstrip('/')}/{clean_path}"
+                    logger.info(f"从 MongoDB 读取图片，返回静态 URL: {static_url}")
+                    return success(data={"content": static_url, "type": "url", "source": "database"})
+
+                logger.info(f"从 MongoDB 读取文件: {target_file}")
+                return success(data={"content": content, "type": "base64" if is_base64 else "text", "source": "database"})
+            else:
+                raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"文件不存在: {target_file}")
+        except BusinessException:
+            raise
+        except Exception as e:
+            logger.error(f"MongoDB 回退读取失败: {target_file}: {e}")
+            raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"文件不存在: {target_file}")
 
     if not os.path.isfile(found_path):
         raise BusinessException(ErrorCode.DATA_NOT_FOUND, message=f"路径不是一个文件: {target_file}")
@@ -222,9 +246,32 @@ async def write_file(request: FileWriteRequest):
              with open(target_path, "wb") as f:
                  f.write(content_bytes)
         else:
+             content_bytes = content.encode("utf-8")
              with open(target_path, "w", encoding="utf-8") as f:
                  f.write(content)
-                 
+
+        if not os.path.exists(target_path) or not os.path.isfile(target_path):
+            raise BusinessException(
+                ErrorCode.DATA_STORE_FAIL,
+                message=f"文件写入后验证失败: {target_file}"
+            )
+
+        try:
+            await db.initialize()
+            await upsert_document({
+                'collection_name': settings.collection_static_files,
+                'filter': {'target_file': target_file},
+                'update': {
+                    'target_file': target_file,
+                    'content': content,
+                    'is_base64': is_base64,
+                    'size': len(content_bytes),
+                }
+            })
+            logger.info(f"文件已同步到 MongoDB: {target_file}")
+        except Exception as e:
+            logger.warning(f"MongoDB 持久化失败 (文件已落盘): {target_file}: {e}")
+
         return success(data={"message": "保存成功", "path": target_path})
     except Exception as e:
         logger.error(f"写入文件失败: {str(e)}", exc_info=True)
@@ -252,6 +299,16 @@ async def delete_file(request: FileDeleteRequest):
     except Exception as e:
         logger.error(f"删除文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.DATA_DESTROY_FAIL, message=f"删除文件失败: {str(e)}") from e
+
+    try:
+        await db.initialize()
+        result = await db.db[settings.collection_static_files].delete_one(
+            {'target_file': target_file}
+        )
+        if result.deleted_count > 0:
+            logger.info(f"已从 MongoDB 删除文件: {target_file}")
+    except Exception as e:
+        logger.warning(f"MongoDB 删除失败: {target_file}: {e}")
 
     return success(data={"message": "删除成功", "path": target_file})
 
