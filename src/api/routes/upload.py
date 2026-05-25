@@ -235,8 +235,8 @@ async def read_file(request: FileReadRequest):
 async def write_file(request: FileWriteRequest):
     """
     写入文件接口
-    文件内容仅存储于磁盘，不再双写 MongoDB，避免重复数据。
-    相同 target_file 则覆盖已有文件。
+    磁盘 + MongoDB 双持久化。MongoDB 使用 upsert（已存在则覆盖，不存在则插入），
+    通过 target_file 唯一索引保证不产生重复数据。MongoDB 写入为 best-effort，失败不影响磁盘写入。
     """
     target_file = _normalize_no_spaces(request.target_file)
     _validate_path(target_file, "目标文件路径")
@@ -261,6 +261,27 @@ async def write_file(request: FileWriteRequest):
                 ErrorCode.DATA_STORE_FAIL,
                 message=f"文件写入后验证失败: {target_file}"
             )
+
+        # MongoDB 同步持久化（upsert：已存在则覆盖，不存在则插入）
+        db_key = _normalize_db_key(target_file)
+        try:
+            await db.initialize()
+            await db.db[settings.collection_static_files].update_one(
+                {'target_file': db_key},
+                {'$set': {
+                    'target_file': db_key,
+                    'content': content,
+                    'is_base64': is_base64,
+                    'size': len(content_bytes),
+                    'updatedTime': get_current_time(),
+                }, '$setOnInsert': {
+                    'createdTime': get_current_time(),
+                }},
+                upsert=True
+            )
+            logger.info(f"文件已同步到 MongoDB: {db_key}")
+        except Exception as e:
+            logger.warning(f"MongoDB 持久化失败 (文件已落盘): {target_file}: {e}")
 
         logger.info(f"文件写入成功: {target_path} ({len(content_bytes)} bytes)")
         return success(data={"message": "写入成功", "path": target_path})

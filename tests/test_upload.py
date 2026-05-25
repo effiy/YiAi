@@ -23,6 +23,7 @@ def _setup_mock_db():
     mock_collection = MagicMock()
     mock_collection.find_one = AsyncMock(return_value=None)
     mock_collection.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
+    mock_collection.update_one = AsyncMock()
     mock_db.__getitem__.return_value = mock_collection
     upload_module.db._db = mock_db
     upload_module.db._initialized = True
@@ -125,12 +126,11 @@ class TestDeleteFile:
 class TestWriteReadRoundTrip:
     def test_write_then_read_no_extension(self, client):
         """回归: 写入无扩展名文件后应立即能读取（不再要求扩展名）"""
+        _setup_mock_db()
         with patch("os.makedirs"), \
              patch("builtins.open", MagicMock()), \
              patch("os.path.exists", return_value=True), \
-             patch("os.path.isfile", return_value=True), \
-             patch("src.api.routes.upload.db.initialize", new_callable=AsyncMock), \
-             patch("src.api.routes.upload.upsert_document", new_callable=AsyncMock):
+             patch("os.path.isfile", return_value=True):
             # Write
             resp = client.post("/write-file", json={
                 "target_file": "test/myfile",
