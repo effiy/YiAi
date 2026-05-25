@@ -236,7 +236,7 @@ async def read_file(request: FileReadRequest):
 async def write_file(request: FileWriteRequest):
     """
     写入文件接口
-    先查询数据库和静态目录下是否已存在，存在则覆盖，不重复插入。
+    相同 target_file 则覆盖已有记录，不重复插入。
     """
     target_file = _normalize_no_spaces(request.target_file)
     db_key = _normalize_db_key(target_file)
@@ -245,31 +245,16 @@ async def write_file(request: FileWriteRequest):
 
     target_path = _resolve_static_path(target_file)
 
-    # 检查文件系统中是否已存在
-    file_exists_on_disk = os.path.exists(target_path) and os.path.isfile(target_path)
-
-    # 检查数据库中是否已有记录
-    db_exists = False
-    try:
-        await db.initialize()
-        existing_doc = await db.db[settings.collection_static_files].find_one(
-            {'target_file': db_key},
-            projection={'_id': 0}
-        )
-        db_exists = existing_doc is not None
-    except Exception as e:
-        logger.warning(f"查询数据库失败: {target_file}: {e}")
-
     try:
         os.makedirs(os.path.dirname(target_path), exist_ok=True)
         if is_base64:
-             content_bytes = base64.b64decode(content)
-             with open(target_path, "wb") as f:
-                 f.write(content_bytes)
+            content_bytes = base64.b64decode(content)
+            with open(target_path, "wb") as f:
+                f.write(content_bytes)
         else:
-             content_bytes = content.encode("utf-8")
-             with open(target_path, "w", encoding="utf-8") as f:
-                 f.write(content)
+            content_bytes = content.encode("utf-8")
+            with open(target_path, "w", encoding="utf-8") as f:
+                f.write(content)
 
         if not os.path.exists(target_path) or not os.path.isfile(target_path):
             raise BusinessException(
@@ -277,9 +262,11 @@ async def write_file(request: FileWriteRequest):
                 message=f"文件写入后验证失败: {target_file}"
             )
 
+        # 相同 target_file 覆盖已有记录，不重复插入
+        is_new = False
         try:
             await db.initialize()
-            await upsert_document({
+            result = await upsert_document({
                 'collection_name': settings.collection_static_files,
                 'filter': {'target_file': db_key},
                 'update': {
@@ -289,13 +276,16 @@ async def write_file(request: FileWriteRequest):
                     'size': len(content_bytes),
                 }
             })
-            action = "更新" if (db_exists or file_exists_on_disk) else "保存"
+            is_new = result.get('upserted_id') is not None
+            action = "更新" if not is_new else "保存"
             logger.info(f"文件已同步到 MongoDB ({action}): {db_key}")
         except Exception as e:
             logger.warning(f"MongoDB 持久化失败 (文件已落盘): {db_key}: {e}")
 
-        action = "更新" if (db_exists or file_exists_on_disk) else "保存"
+        action = "更新" if not is_new else "保存"
         return success(data={"message": f"{action}成功", "path": target_path})
+    except BusinessException:
+        raise
     except Exception as e:
         logger.error(f"写入文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.DATA_STORE_FAIL, message=f"写入文件失败: {str(e)}") from e
