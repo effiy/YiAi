@@ -17,7 +17,6 @@ from core.config import settings
 from core.database import db
 from core.utils import get_current_time
 from services.storage.oss_client import upload_bytes_to_oss
-from services.database.data_service import upsert_document
 
 
 def _is_image_file(filename: str) -> bool:
@@ -236,10 +235,11 @@ async def read_file(request: FileReadRequest):
 async def write_file(request: FileWriteRequest):
     """
     写入文件接口
-    相同 target_file 则覆盖已有记录，不重复插入。
+    文件内容仅存储于磁盘，不再双写 MongoDB，避免重复数据。
+    相同 target_file 则覆盖已有文件。
     """
     target_file = _normalize_no_spaces(request.target_file)
-    db_key = _normalize_db_key(target_file)
+    _validate_path(target_file, "目标文件路径")
     content = request.content
     is_base64 = request.is_base64
 
@@ -262,28 +262,8 @@ async def write_file(request: FileWriteRequest):
                 message=f"文件写入后验证失败: {target_file}"
             )
 
-        # 相同 target_file 覆盖已有记录，不重复插入
-        is_new = False
-        try:
-            await db.initialize()
-            result = await upsert_document({
-                'collection_name': settings.collection_static_files,
-                'filter': {'target_file': db_key},
-                'update': {
-                    'target_file': db_key,
-                    'content': content,
-                    'is_base64': is_base64,
-                    'size': len(content_bytes),
-                }
-            })
-            is_new = result.get('upserted_id') is not None
-            action = "更新" if not is_new else "保存"
-            logger.info(f"文件已同步到 MongoDB ({action}): {db_key}")
-        except Exception as e:
-            logger.warning(f"MongoDB 持久化失败 (文件已落盘): {db_key}: {e}")
-
-        action = "更新" if not is_new else "保存"
-        return success(data={"message": f"{action}成功", "path": target_path})
+        logger.info(f"文件写入成功: {target_path} ({len(content_bytes)} bytes)")
+        return success(data={"message": "写入成功", "path": target_path})
     except BusinessException:
         raise
     except Exception as e:
@@ -297,6 +277,7 @@ async def delete_file(request: FileDeleteRequest):
     """
     target_file = _normalize_no_spaces(request.target_file)
     _validate_path(target_file)
+    db_key = _normalize_db_key(target_file)
 
     abs_path = _resolve_static_path(target_file)
 
@@ -316,12 +297,12 @@ async def delete_file(request: FileDeleteRequest):
     try:
         await db.initialize()
         result = await db.db[settings.collection_static_files].delete_one(
-            {'target_file': target_file}
+            {'target_file': db_key}
         )
         if result.deleted_count > 0:
-            logger.info(f"已从 MongoDB 删除文件: {target_file}")
+            logger.info(f"已从 MongoDB 删除文件: {db_key}")
     except Exception as e:
-        logger.warning(f"MongoDB 删除失败: {target_file}: {e}")
+        logger.warning(f"MongoDB 删除失败: {db_key}: {e}")
 
     return success(data={"message": "删除成功", "path": target_file})
 
@@ -368,6 +349,20 @@ async def rename_file(request: FileRenameRequest):
         logger.error(f"重命名文件失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.DATA_UPDATE_FAIL, message=f"重命名文件失败: {str(e)}") from e
 
+    # 同步 MongoDB 中的旧记录（如果存在）
+    old_db_key = _normalize_db_key(old_path_str)
+    new_db_key = _normalize_db_key(new_path_str)
+    try:
+        await db.initialize()
+        result = await db.db[settings.collection_static_files].update_one(
+            {'target_file': old_db_key},
+            {'$set': {'target_file': new_db_key, 'updatedTime': get_current_time()}}
+        )
+        if result.matched_count > 0:
+            logger.info(f"已同步 MongoDB 重命名: {old_db_key} -> {new_db_key}")
+    except Exception as e:
+        logger.warning(f"MongoDB 重命名同步失败: {old_db_key} -> {new_db_key}: {e}")
+
     return success(data={"message": "重命名成功", "old_path": old_path_str, "new_path": new_path_str})
 
 @router.post("/rename-folder", operation_id="rename_folder")
@@ -387,6 +382,27 @@ async def rename_folder(request: FolderRenameRequest):
     except Exception as e:
         logger.error(f"重命名文件夹失败: {str(e)}", exc_info=True)
         raise BusinessException(ErrorCode.DATA_UPDATE_FAIL, message=f"重命名文件夹失败: {str(e)}") from e
+
+    # 同步 MongoDB 中该目录下所有旧记录（如果存在）
+    old_db_prefix = _normalize_db_key(old_dir_str)
+    new_db_prefix = _normalize_db_key(new_dir_str)
+    try:
+        await db.initialize()
+        collection = db.db[settings.collection_static_files]
+        old_docs = collection.find({'target_file': {'$regex': f'^{re.escape(old_db_prefix)}/'}})
+        updated_count = 0
+        async for doc in old_docs:
+            old_key = doc['target_file']
+            new_key = new_db_prefix + old_key[len(old_db_prefix):]
+            await collection.update_one(
+                {'target_file': old_key},
+                {'$set': {'target_file': new_key, 'updatedTime': get_current_time()}}
+            )
+            updated_count += 1
+        if updated_count > 0:
+            logger.info(f"已同步 MongoDB 文件夹重命名: {old_db_prefix} -> {new_db_prefix} ({updated_count} 条)")
+    except Exception as e:
+        logger.warning(f"MongoDB 文件夹重命名同步失败: {old_db_prefix} -> {new_db_prefix}: {e}")
 
     return success(data={"message": "重命名成功", "old_path": old_dir_str, "new_path": new_dir_str})
 
