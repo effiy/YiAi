@@ -59,7 +59,7 @@ class Settings(BaseSettings):
 
     # Pagination
     pagination_default_size: int = Field(2000, validation_alias="pagination_default_size")
-    pagination_max_size: int = Field(8000, validation_alias="pagination_max_size")
+    pagination_max_size: int = Field(100000000, validation_alias="pagination_max_size")
     pagination_min_size: int = Field(1, validation_alias="pagination_min_size")
 
     # User
@@ -115,7 +115,7 @@ class Settings(BaseSettings):
     # State Store
     state_store_enabled: bool = Field(True, validation_alias="state_store_enabled")
     state_store_default_ttl: int = Field(0, validation_alias="state_store_default_ttl")
-    state_store_query_max_limit: int = Field(8000, validation_alias="state_store_query_max_limit")
+    state_store_query_max_limit: int = Field(100000000, validation_alias="state_store_query_max_limit")
     collection_state_records: str = Field("state_records", validation_alias="collection_state_records")
 
     # Observer

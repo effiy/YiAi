@@ -19,7 +19,7 @@ cors:
 # Pagination Settings
 pagination:
   default_size: 2000
-  max_size: 8000
+  max_size: 100000000
   min_size: 1
 
 # User Settings
@@ -93,7 +93,7 @@ module:
 state_store:
   enabled: true
   default_ttl: 0
-  query_max_limit: 8000
+  query_max_limit: 100000000
 
 # Observer Reliability Configuration
 observer:

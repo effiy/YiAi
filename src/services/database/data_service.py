@@ -210,7 +210,7 @@ async def query_documents(params: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         page_num = max(1, int(query_params.pop('pageNum', 1)))
-        page_size = min(8000, max(1, int(query_params.pop('pageSize', 2000))))
+        page_size = min(settings.pagination_max_size, max(settings.pagination_min_size, int(query_params.pop('pageSize', settings.pagination_default_size))))
     except ValueError:
         raise ValueError("分页参数必须是有效的整数")
 
@@ -350,28 +350,36 @@ async def create_document(params: Dict[str, Any]) -> Dict[str, Any]:
 async def update_document(params: Dict[str, Any]) -> Dict[str, Any]:
     collection_name = params.get('collection_name') or params.get('cname')
     data = params.get('data')
-    
+    file_path = params.get('file_path')
+
     if not collection_name:
         raise ValueError("Collection name (collection_name/cname) is required")
     if data is None:
         data = params.copy()
         data.pop('cname', None)
         data.pop('collection_name', None)
+        data.pop('file_path', None)
 
     await db.initialize()
     collection_name = _validate_collection_name(collection_name)
-    
-    doc_id = data.get('key')
-    if not doc_id:
-        raise ValueError("更新数据必须包含 key 字段")
-        
+
+    # sessions 集合支持通过 file_path 作为查询键
+    if collection_name == 'sessions' and file_path:
+        query_filter = {'file_path': file_path}
+        query_label = f'file_path={file_path}'
+    else:
+        doc_id = data.get('key')
+        if not doc_id:
+            raise ValueError("更新数据必须包含 key 字段")
+        query_filter = {'key': doc_id}
+        query_label = f'key={doc_id}'
+
     collection = db.db[collection_name]
-    
-    # 检查是否存在
-    existing_doc = await collection.find_one({'key': doc_id})
+
+    existing_doc = await collection.find_one(query_filter)
     if not existing_doc:
-        raise ValueError(f"未找到ID为 {doc_id} 的数据")
-        
+        raise ValueError(f"未找到 {query_label} 的数据")
+
     # 移除不可更新字段
     update_data = data.copy()
     update_data.pop('_id', None)
@@ -379,18 +387,17 @@ async def update_document(params: Dict[str, Any]) -> Dict[str, Any]:
     update_data.pop('createdTime', None)
     if collection_name == 'sessions':
         update_data.pop('pageContent', None)
-        # 如果 messages 为空数组，也不更新（避免覆盖已有的消息数据）
         if 'messages' in update_data and update_data['messages'] == []:
             update_data.pop('messages', None)
-    
+
     update_data['updatedTime'] = get_current_time()
-    
+
     await collection.update_one(
-        {'key': doc_id},
+        query_filter,
         {'$set': update_data}
     )
-    
-    return {'key': doc_id, 'updated': True}
+
+    return {'query': query_filter, 'updated': True}
 
 async def upsert_document(params: Dict[str, Any]) -> Dict[str, Any]:
     collection_name = params.get('collection_name') or params.get('cname')
